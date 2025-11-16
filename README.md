@@ -1,0 +1,109 @@
+# Void Harvest - Roguelite
+
+A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
+
+## Documentation
+
+- **[USER_GUIDE.md](USER_GUIDE.md)** - Complete gameplay guide with all stats and strategies
+- **[CLAUDE.md](CLAUDE.md)** - Maintenance guide for AI assistants and developers
+
+## Features
+
+- Twin-stick shooter mechanics (WASD + Mouse)
+- 4 enemy types with unique behaviors
+- 10 different skill upgrades
+- Meta-progression system with permanent unlocks
+- Comprehensive stats tracking with run comparisons
+- Wave-based difficulty scaling
+- Procedurally generated pixel art sprites
+
+## Controls
+
+- **WASD** - Move
+- **Mouse** - Aim and shoot
+- **ESC** - Pause/Resume
+
+## Development
+
+### Setup
+
+```bash
+npm install
+```
+
+### Build Commands
+
+```bash
+# Development server on http://localhost:3000 with hot reload
+npm run dev
+
+# Production build (outputs to dist/ with content-hashed assets)
+npm run build
+```
+
+The dev server includes:
+- Hot module replacement (HMR) for instant updates
+- Source maps for debugging
+- Automatic browser opening
+- Serves on http://localhost:3000
+
+The production build creates:
+- Minified JS and CSS
+- Content-hashed filenames for cache busting
+- Source maps for debugging
+- Optimized bundle in `dist/` folder
+
+### File Structure
+
+```
+arpg-shooter/
+├── js/                    # Source files (modular)
+│   ├── main.js           # Entry point (imports CSS & Game)
+│   ├── constants.js      # Game constants
+│   ├── sprites.js        # Sprite generation
+│   ├── particles.js      # Particle system
+│   ├── entities.js       # Player, Enemy, Bullet, Item classes
+│   ├── input.js          # Input handler
+│   ├── skills.js         # Skills and upgrades
+│   ├── stats.js          # Stats tracking & persistence
+│   ├── ui.js             # UI management (modals, screens)
+│   └── game.js           # Main game class & loop
+├── dist/                  # Production build output (gitignored)
+│   ├── index.html        # HTML with hashed asset references
+│   ├── game.[hash].js    # Bundled & minified JS
+│   └── styles.[hash].css # CSS with content hash
+├── index.html            # Main HTML file (webpack template)
+├── styles.css            # Game styling (imported by JS)
+├── webpack.config.js     # Webpack configuration
+└── package.json          # Dependencies & scripts
+```
+
+## Game Systems
+
+### Progression
+
+1. **In-Run Leveling** - Kill enemies, gain XP, level up and choose skills
+2. **Item Drops** - Collect XP orbs and health pickups
+3. **Meta-Progression** - Spend Souls on permanent stat upgrades
+
+### Skills
+
+- Increased Damage, Fire Rate, Movement Speed
+- Max Health, Health Regeneration, Vampiric Touch
+- Multi-Shot, Piercing Shots, Bullet Velocity, Extended Range
+
+### Difficulty Scaling
+
+- Waves increase every 15 seconds
+- Enemy stats scale +10% per wave
+- Additional scaling after wave 15 and 25
+- Survive 10 minutes to win!
+
+## Stats Tracking
+
+The game tracks detailed stats including:
+- Enemies killed by type
+- Damage received by source
+- Accuracy percentage
+- Skills picked during run
+- Run-to-run comparison with delta highlights

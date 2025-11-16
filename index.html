@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Harvest - Roguelite</title>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-overlay">
+            <div id="stats-panel">
+                <div class="stat-bar">
+                    <span>HP</span>
+                    <div class="bar-container">
+                        <div id="health-bar" class="bar health-bar"></div>
+                    </div>
+                    <span id="health-text">100/100</span>
+                </div>
+                <div id="status-effects"></div>
+                <div class="stat-bar">
+                    <span>XP</span>
+                    <div class="bar-container">
+                        <div id="xp-bar" class="bar xp-bar"></div>
+                    </div>
+                    <span id="level-text">Lv 1</span>
+                </div>
+                <div id="active-skills"></div>
+                <div id="game-stats">
+                    <div>
+                        <span id="time-text">Time: 0:00</span>
+                        <span id="wave-text">Wave: 1</span>
+                    </div>
+                    <span id="kills-text">Kills: 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pause Modal -->
+        <div id="pause-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Game Paused</h2>
+                <div id="pause-stats"></div>
+                <button id="resume-btn" class="btn btn-large">Resume (ESC)</button>
+                <button id="restart-pause-btn" class="btn">Restart</button>
+                <button id="exit-pause-btn" class="btn">Exit to Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Level Up Modal -->
+        <div id="levelup-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 1100px;">
+                <h2>Level Up!</h2>
+                <p style="font-size: 18px;">Choose an upgrade:</p>
+                <div id="skill-choices"></div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="gameover-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Game Over</h2>
+                <div id="final-stats"></div>
+                <button id="restart-btn" class="btn">Play Again</button>
+                <button id="upgrades-btn" class="btn">View Upgrades</button>
+            </div>
+        </div>
+
+        <!-- Meta Progression Modal -->
+        <div id="meta-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Permanent Upgrades</h2>
+                <div id="meta-upgrades"></div>
+                <p id="currency-text">Souls: 0</p>
+                <button id="close-meta-btn" class="btn">Close</button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="modal">
+            <div class="modal-content">
+                <h1>Void Harvest</h1>
+                <p>Survive waves of enemies and become stronger!</p>
+                <div class="controls-info">
+                    <p style="margin-bottom: 15px;"><strong>Controls:</strong></p>
+                    <div class="controls-visual">
+                        <div class="keyboard-section">
+                            <div class="keyboard-row">
+                                <div class="key esc">ESC</div>
+                            </div>
+                            <div class="key-label" style="margin-top: 3px;">Pause/Unpause</div>
+                        </div>
+                        <div class="keyboard-section">
+                            <div class="keyboard-row">
+                                <div style="width: 50px;"></div>
+                                <div class="key">W</div>
+                                <div style="width: 50px;"></div>
+                            </div>
+                            <div class="keyboard-row">
+                                <div class="key">A</div>
+                                <div class="key">S</div>
+                                <div class="key">D</div>
+                            </div>
+                            <div class="key-label">Movement</div>
+                        </div>
+                        <div class="mouse-section">
+                            <div class="mouse">
+                                <div class="mouse-buttons">
+                                    <div class="mouse-button left"></div>
+                                    <div class="mouse-button right"></div>
+                                </div>
+                                <div class="mouse-wheel"></div>
+                            </div>
+                            <div class="key-label">Aim & Shoot</div>
+                        </div>
+                    </div>
+                </div>
+                <button id="start-btn" class="btn btn-large">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M20 7h-7L10 2 7 7H0l6 5-2 7 6-4 6 4-2-7z"/>
+                        <path d="M14 7h7l-6 5 2 7-6-4"/>
+                    </svg>
+                    Start Game
+                </button>
+                <button id="custom-btn" class="btn btn-large" style="margin-top: 10px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.4 4.4l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.4-4.4l4.2-4.2"/>
+                    </svg>
+                    Custom Game
+                </button>
+                <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
+                    <button id="meta-btn" class="btn" style="flex: 1;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M12 19V5M5 12l7-7 7 7"/>
+                        </svg>
+                        Upgrades
+                    </button>
+                    <button id="guide-btn" class="btn" style="flex: 1;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        Guide
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guide Modal -->
+        <div id="guide-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
+                <button id="close-guide-x" class="close-x" aria-label="Close">&times;</button>
+                <h2>Survivor's Guide</h2>
+                <div id="guide-content"></div>
+                <button id="close-guide-btn" class="btn">Close</button>
+            </div>
+        </div>
+
+        <!-- Custom Game Config Modal -->
+        <div id="custom-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                <h2>Custom Game Configuration</h2>
+
+                <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Enemy Types</h3>
+                <p style="color: #ccc; margin-bottom: 15px;">Click to toggle which enemy types to spawn:</p>
+                <div id="enemy-type-config"></div>
+
+                <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>
+                <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease. Click at max level to reset.</p>
+                <div id="custom-skill-config"></div>
+
+                <button id="start-custom-btn" class="btn btn-large" style="margin-top: 20px;">Start Custom Game</button>
+                <button id="cancel-custom-btn" class="btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
