@@ -10,7 +10,6 @@ npm-debug.log*
 
 # Editor/IDE files
 .vscode/
-.idea/
 *.swp
 *.swo
 *~
