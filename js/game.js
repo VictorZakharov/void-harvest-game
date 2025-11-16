@@ -100,6 +100,9 @@ export class Game {
     }
 
     start() {
+        // Reset game state and apply meta upgrades (important for newly purchased upgrades!)
+        this.reset();
+
         // Ensure clean start
         this.state = 'playing';
         this.lastTime = performance.now();
