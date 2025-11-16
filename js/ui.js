@@ -98,7 +98,16 @@ export class UIManager {
         };
 
         document.getElementById('reset-meta-btn').onclick = () => {
-            this.resetMetaUpgrades();
+            this.showResetConfirmation();
+        };
+
+        document.getElementById('confirm-reset-btn').onclick = () => {
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
+            this.performMetaReset();
+        };
+
+        document.getElementById('cancel-reset-btn').onclick = () => {
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
         };
 
         document.getElementById('close-meta-btn').onclick = () => {
@@ -500,18 +509,26 @@ export class UIManager {
         modal.classList.remove('hidden');
     }
 
-    resetMetaUpgrades() {
-        // Confirm reset
-        if (!confirm('Reset all permanent upgrades? This will refund all spent souls.')) {
-            return;
+    showResetConfirmation() {
+        // Calculate total souls that will be refunded
+        let soulsSpent = 0;
+        for (let upgrade of META_UPGRADES) {
+            const level = this.game.metaProgress.upgrades[upgrade.id] || 0;
+            soulsSpent += upgrade.cost * level * (level + 1) / 2;
         }
 
+        // Show refund amount in the modal
+        document.getElementById('refund-amount').textContent = `You will receive ${soulsSpent} souls back`;
+
+        // Show confirmation modal
+        document.getElementById('reset-confirm-modal').classList.remove('hidden');
+    }
+
+    performMetaReset() {
         // Calculate total souls spent
         let soulsSpent = 0;
         for (let upgrade of META_UPGRADES) {
             const level = this.game.metaProgress.upgrades[upgrade.id] || 0;
-            // Sum of arithmetic series: cost + (cost*2) + (cost*3) + ... + (cost*level)
-            // = cost * (1 + 2 + 3 + ... + level) = cost * level * (level + 1) / 2
             soulsSpent += upgrade.cost * level * (level + 1) / 2;
         }
 
@@ -537,6 +554,21 @@ export class UIManager {
 
         currencyText.textContent = `Souls: ${this.game.totalSouls}`;
         container.innerHTML = '';
+
+        // Check if any upgrades have been purchased
+        let hasUpgrades = false;
+        for (let upgrade of META_UPGRADES) {
+            if ((this.game.metaProgress.upgrades[upgrade.id] || 0) > 0) {
+                hasUpgrades = true;
+                break;
+            }
+        }
+
+        // Enable/disable reset button
+        const resetBtn = document.getElementById('reset-meta-btn');
+        resetBtn.disabled = !hasUpgrades;
+        resetBtn.style.opacity = hasUpgrades ? '1' : '0.5';
+        resetBtn.style.cursor = hasUpgrades ? 'pointer' : 'not-allowed';
 
         META_UPGRADES.forEach(upgrade => {
             const currentLevel = this.game.metaProgress.upgrades[upgrade.id] || 0;

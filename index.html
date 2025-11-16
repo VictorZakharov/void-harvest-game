@@ -77,6 +77,20 @@
             </div>
         </div>
 
+        <!-- Reset Confirmation Modal -->
+        <div id="reset-confirm-modal" class="modal hidden" style="z-index: 1001;">
+            <div class="modal-content" style="max-width: 500px; text-align: center;">
+                <h2 style="color: #ff8844; margin-bottom: 20px;">⚠️ Reset All Upgrades?</h2>
+                <p style="font-size: 18px; margin: 20px 0;">This will reset all permanent upgrades to level 0.</p>
+                <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;"></p>
+                <p style="color: #aaa; margin-bottom: 30px;">This action cannot be undone.</p>
+                <div style="display: flex; gap: 20px; justify-content: center;">
+                    <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes, Reset</button>
+                    <button id="cancel-reset-btn" class="btn" style="min-width: 120px;">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Start Screen -->
         <div id="start-screen" class="modal">
             <div class="modal-content">
