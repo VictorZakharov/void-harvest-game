@@ -339,11 +339,11 @@ When you press ESC, the game pauses and shows:
 #### Base Health I
 - **Cost:** 15, 30, 45, 60, 75 Souls
 - **Max Level:** 5
-- **Effect:** Start with +20 max HP per level
-- **Total at Max:** +100 HP (200 total)
+- **Effect:** Start with +10 max HP per level
+- **Total at Max:** +50 HP (150 total)
 
 #### Base Speed I
-- **Cost:** 12, 24, 36 Souls
+- **Cost:** 20, 40, 60 Souls
 - **Max Level:** 3
 - **Effect:** Start with +5% speed per level
 - **Total at Max:** +15% starting speed
@@ -351,9 +351,19 @@ When you press ESC, the game pauses and shows:
 #### XP Boost
 - **Cost:** 20, 40, 60 Souls
 - **Max Level:** 3
-- **Effect:** Gain +10% more XP per level
-- **Total at Max:** +30% XP gain
+- **Effect:** Gain +20% more XP per level
+- **Total at Max:** +60% XP gain
 - **Impact:** Faster leveling, more skills per run
+
+### Reset Upgrades
+
+You can reset all permanent upgrades at any time:
+
+- **Reset All Button:** Available in the permanent upgrades menu
+- **Refund:** Returns all souls spent on upgrades
+- **Confirmation:** Custom dialog shows exact refund amount before resetting
+- **Disabled State:** Button is grayed out when no upgrades have been purchased
+- **Strategy:** Allows you to respec and try different upgrade combinations
 
 ## Stats & Tracking
 
