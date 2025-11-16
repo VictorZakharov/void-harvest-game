@@ -101,8 +101,9 @@ When you press ESC, the game pauses and shows:
 
 ### Experience & Leveling
 - Enemies drop **XP orbs** (green crystals)
-- XP orbs are magnetic - auto-collect when nearby (80px range)
+- XP orbs are magnetic - auto-collect when nearby (80px range, pulls 10% faster than player speed)
 - XP needed per level: Previous × 1.5 (exponential growth)
+- Excess XP carries over to next level (can level up multiple times at once)
 - Choose 1 of 3 random skills on level up
 - Game pauses during skill selection
 
@@ -118,7 +119,7 @@ When you press ESC, the game pauses and shows:
 - Default fire rate: 1 shot per 10 frames (~6 shots/second at 60 FPS)
 - Default damage: 10 per bullet
 - Default bullet speed: 8 pixels/frame
-- Default range: 600 pixels
+- Default range: 427 pixels (~30% of screen diagonal)
 - Bullets destroyed on hit (unless piercing)
 
 ### Difficulty Scaling
@@ -256,7 +257,7 @@ When you press ESC, the game pauses and shows:
 #### 8. Extended Range
 - **Effect:** +50% bullet range per level
 - **Stacks:** Multiplicative
-- **Example:** 600 → 900 → 1350 → 2025 pixels
+- **Example:** 427 → 641 → 961 → 1442 pixels (max = full screen diagonal)
 - **Best For:** Safety, kiting strategies
 
 #### 9. Health Regeneration
