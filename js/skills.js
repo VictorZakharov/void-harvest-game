@@ -233,12 +233,12 @@ export const META_UPGRADES = [
     {
         id: 'start_health',
         name: 'Base Health I',
-        description: 'Start with +20 max HP',
+        description: 'Start with +10 max HP',
         cost: 15,
         maxLevel: 5,
         icon: ICONS.health,
         apply: (player, level) => {
-            player.maxHealth += 20 * level;
+            player.maxHealth += 10 * level;
             player.health = player.maxHealth;
         }
     },
@@ -246,7 +246,7 @@ export const META_UPGRADES = [
         id: 'start_speed',
         name: 'Base Speed I',
         description: 'Start with +5% speed',
-        cost: 12,
+        cost: 20,
         maxLevel: 3,
         icon: ICONS.speed,
         apply: (player, level) => { player.speed *= (1 + 0.05 * level); }
@@ -254,7 +254,7 @@ export const META_UPGRADES = [
     {
         id: 'xp_gain',
         name: 'XP Boost',
-        description: 'Gain +10% more XP',
+        description: 'Gain +20% more XP',
         cost: 20,
         maxLevel: 3,
         icon: ICONS.xp,

@@ -653,7 +653,7 @@ export class Game {
             case 'xp':
                 let xpGain = 1;
                 const xpBoostLevel = this.metaProgress.upgrades['xp_gain'] || 0;
-                xpGain *= (1 + 0.1 * xpBoostLevel);
+                xpGain *= (1 + 0.2 * xpBoostLevel); // +20% per level
 
                 if (this.player.addXP(xpGain)) {
                     this.ui.showLevelUpScreen();
