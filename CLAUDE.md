@@ -238,26 +238,39 @@ To modify a screen, edit the corresponding method and update the HTML template s
 
 ### Custom Game Mode
 
-The custom game mode allows players to test specific enemy types:
+The custom game mode allows players to test specific enemy types and skill builds:
 
 **Implementation:**
-1. **HTML (`index.html`):** Custom game button and config modal with checkboxes for each enemy type
-2. **UI Handler (`js/ui.js`):**
-   - Reads checkbox states when "Start Custom Game" is clicked
+1. **HTML (`index.html`):** Custom game button and config modal with visual card-based UI
+2. **Enemy Selection (`js/ui.js` renderCustomEnemySelection()):**
+   - Visual card system with colored circular icons for each enemy type
+   - Click to toggle enemy types on/off
+   - Active enemies show green border and checkmark
    - Stores config in `game.customEnemies` object: `{basic: bool, fast: bool, tank: bool, shooter: bool, ice: bool}`
    - Validates at least one type is selected
-   - On restart/death in custom mode, reopens config screen with previous selections
-3. **Spawn Logic (`js/game.js` spawnEnemy()):**
+3. **Skill Pre-selection (`js/ui.js` renderCustomSkillSelection()):**
+   - Grid of all 16 skills with visual icons
+   - Left-click to increase level (wraps from max to 0)
+   - Right-click to decrease level (wraps from 0 to max)
+   - Shows skill values at each level (+1/2/3 format)
+   - Pink badge shows current level in skill icon corner
+   - Stores config in `this.customSkills` object
+4. **Visual Indicators:**
+   - Starting skills display in greyscale in active skills HUD
+   - Upgraded custom skills become colored and move to end
+   - `game.customSkillIds` Set tracks which skills were pre-selected
+5. **Spawn Logic (`js/game.js` spawnEnemy()):**
    - Checks if `game.customEnemies` exists
    - Filters selected enemy type against enabled types
    - Randomly chooses from enabled types if selected type is disabled
-4. **Reset Logic (`js/game.js` reset()):**
-   - Clears `customEnemies` property to return to normal mode
+6. **Restart Flow:**
+   - On restart/death in custom mode, reopens config screen with previous selections
+   - Both pause and game over restart buttons preserve custom game state
 
 **Testing Custom Mode:**
-- Use to test individual enemy mechanics (e.g., ice slow stacking)
-- Helpful for balancing specific enemy types
-- Validates config to prevent empty enemy pool
+- Test specific skill builds without RNG
+- Practice against individual enemy types (e.g., ice slow stacking)
+- Helpful for balancing and learning mechanics
 
 ### Status Effects System
 
@@ -268,13 +281,24 @@ The custom game mode allows players to test specific enemy types:
   - Effects sum additively, capped at 100% (complete immobilization)
 
 - **HUD Display (`js/ui.js` updateHUD()):**
-  - Status effects container positioned right of health bar
+  - Status effects container positioned **above health bar** (left side)
+  - Active skills container positioned **above XP bar** (right side)
+  - Symmetric layout with flex-wrap for overflow
+
+  **Debuffs (Ice):**
   - Shows ice effect as `❄ [count]` with stack count
+  - Light blue color (#66ccff)
   - Tooltip shows total slow percentage
-  - Updates every frame in `updateHUD()`
+
+  **Passive Skills:**
+  - Shows skill icon + level number (e.g., shield icon + "2")
+  - Red color (#ff4444) for all passive effects
+  - Displays: Passive Heal, Vampiric Touch, Armor, Berserk Mode (when active)
+  - Uses actual skill icons from SKILLS array
+  - Berserk only appears when health is below threshold
 
 - **Visual Feedback (`js/game.js` draw()):**
-  - Blue glow overlay that intensifies with stacks
+  - Blue glow overlay that intensifies with ice stacks
   - At 1-2 stacks: Subtle blue tint
   - At 3-5 stacks: Moderate tunnel vision effect
   - At 6+ stacks: Intense blue-white overlay
@@ -283,9 +307,9 @@ The custom game mode allows players to test specific enemy types:
   - Color transitions from ice blue to white at high stacks
 
 - **Styling (`styles.css`):**
-  - Absolutely positioned status effects container
-  - Ice effect has glowing box-shadow
-  - Professional badge styling with color-coding
+  - Absolutely positioned containers (bottom: 60px for effects/skills, bottom: 15px for HP/XP bars)
+  - Status effects use glowing box-shadow and color-coding
+  - Professional badge styling with consistent design
 
 ### Pause Menu Features
 
@@ -327,12 +351,19 @@ When making changes, verify:
 - [ ] Level-up screen appears and skills apply
 - [ ] Pause (ESC) works and resumes correctly
 - [ ] Pause menu has "Exit to Main Menu" option
-- [ ] Custom game mode config screen appears
+- [ ] Custom game mode config screen appears with visual cards
+- [ ] Enemy selection cards show colored circles and toggle properly
+- [ ] Skill selection shows +X/Y/Z values and level badges
+- [ ] Left/right click on custom skills works (increase/decrease)
 - [ ] Custom game mode filters enemy spawns correctly
-- [ ] Custom game restart returns to config screen
-- [ ] Status effects display next to health bar
+- [ ] Custom game restart returns to config screen with selections preserved
+- [ ] Status effects display above health bar
 - [ ] Ice slow effect stacks and shows count
+- [ ] Passive skill effects (regen, vampire, armor, berserk) show with icons
 - [ ] Visual ice effect intensifies with stacks
+- [ ] Active skills display above XP bar
+- [ ] Custom skills show greyscale, earned skills show colored
+- [ ] Upgrading a custom skill makes it colored and moves to end
 - [ ] Game over shows stats correctly (accuracy as whole number)
 - [ ] Meta upgrades save/load from localStorage
 - [ ] Build succeeds without errors
