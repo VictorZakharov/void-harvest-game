@@ -47,7 +47,7 @@ export class Player extends Entity {
         this.bulletSize = 8;
         this.projectileCount = 1;
         this.piercing = 0;
-        this.range = 600;
+        this.range = 427; // Base range scales to full diagonal (1442px) at max upgrade
 
         // XP and leveling
         this.xp = 0;
@@ -161,16 +161,20 @@ export class Player extends Entity {
 
     addXP(amount) {
         this.xp += amount;
-        if (this.xp >= this.xpToLevel) {
+        let leveledUp = false;
+
+        // Handle multiple level-ups if enough XP collected
+        while (this.xp >= this.xpToLevel) {
             this.levelUp();
-            return true;
+            leveledUp = true;
         }
-        return false;
+
+        return leveledUp;
     }
 
     levelUp() {
         this.level++;
-        this.xp = 0;
+        this.xp -= this.xpToLevel; // Carry over excess XP to next level
         this.xpToLevel = Math.floor(this.xpToLevel * 1.5);
     }
 
@@ -371,6 +375,7 @@ export class Bullet extends Entity {
         this.sprite = SpriteGenerator.createBulletSprite(
             isPlayer ? 'player' : (enemyType === 'ice' ? 'ice' : 'enemy')
         );
+        this.hitEnemies = new Set(); // Track which enemies this bullet has already hit
 
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
@@ -407,7 +412,7 @@ export class Item extends Entity {
         this.magnetSpeed = 3;
     }
 
-    update(playerX, playerY, playerMagnetBonus = 0) {
+    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3) {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -415,8 +420,10 @@ export class Item extends Entity {
         // Magnet effect with bonus range
         const effectiveMagnetRange = this.magnetRange * (1 + playerMagnetBonus);
         if (dist < effectiveMagnetRange && dist > 0) {
-            this.vx = (dx / dist) * this.magnetSpeed;
-            this.vy = (dy / dist) * this.magnetSpeed;
+            // Magnet pull speed is always 10% faster than player speed
+            const effectiveMagnetSpeed = playerSpeed * 1.1;
+            this.vx = (dx / dist) * effectiveMagnetSpeed;
+            this.vy = (dy / dist) * effectiveMagnetSpeed;
             this.x += this.vx;
             this.y += this.vy;
         }

@@ -167,19 +167,42 @@ export class UIManager {
 
         // Determine which enemies can spawn this wave
         const wave = this.game.wave;
-        let enemyIcons = '<span style="color: #ff3333;">●</span>'; // Basic (always)
+        let enemyIcons = '';
 
-        if (wave >= 3) {
-            enemyIcons += ' <span style="color: #ff66aa;">●</span>'; // Fast
-        }
-        if (wave >= 5) {
-            enemyIcons += ' <span style="color: #ffaa44;">●</span>'; // Shooter
-        }
-        if (wave >= 7) {
-            enemyIcons += ' <span style="color: #cc88cc;">●</span>'; // Tank
-        }
-        if (wave >= 8) {
-            enemyIcons += ' <span style="color: #66ccff;">●</span>'; // Ice
+        // Custom game mode: show only enabled enemies
+        if (this.game.customEnemies) {
+            if (this.game.customEnemies.basic) {
+                enemyIcons += '<span style="color: #ff3333;">●</span> '; // Basic
+            }
+            if (this.game.customEnemies.fast) {
+                enemyIcons += '<span style="color: #ff66aa;">●</span> '; // Fast
+            }
+            if (this.game.customEnemies.shooter) {
+                enemyIcons += '<span style="color: #ffaa44;">●</span> '; // Shooter
+            }
+            if (this.game.customEnemies.tank) {
+                enemyIcons += '<span style="color: #cc88cc;">●</span> '; // Tank
+            }
+            if (this.game.customEnemies.ice) {
+                enemyIcons += '<span style="color: #66ccff;">●</span> '; // Ice
+            }
+            enemyIcons = enemyIcons.trim();
+        } else {
+            // Normal mode: show enemies based on wave progression
+            enemyIcons = '<span style="color: #ff3333;">●</span>'; // Basic (always)
+
+            if (wave >= 3) {
+                enemyIcons += ' <span style="color: #ff66aa;">●</span>'; // Fast
+            }
+            if (wave >= 5) {
+                enemyIcons += ' <span style="color: #ffaa44;">●</span>'; // Shooter
+            }
+            if (wave >= 7) {
+                enemyIcons += ' <span style="color: #cc88cc;">●</span>'; // Tank
+            }
+            if (wave >= 8) {
+                enemyIcons += ' <span style="color: #66ccff;">●</span>'; // Ice
+            }
         }
 
         waveText.innerHTML = `Wave: ${this.game.wave} ${enemyIcons}`;

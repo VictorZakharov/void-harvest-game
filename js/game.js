@@ -219,7 +219,14 @@ export class Game {
             if (bullet.isPlayer) {
                 for (let j = this.enemies.length - 1; j >= 0; j--) {
                     const enemy = this.enemies[j];
+
+                    // Skip if this bullet already hit this enemy
+                    if (bullet.hitEnemies.has(enemy)) continue;
+
                     if (bullet.collidesWith(enemy)) {
+                        // Mark this enemy as hit by this bullet
+                        bullet.hitEnemies.add(enemy);
+
                         // Track stats
                         this.stats.shotsHit++;
                         this.stats.damageDealt += bullet.damage;
@@ -242,10 +249,12 @@ export class Game {
                             this.createParticles(enemy.x, enemy.y, '#ffff00', 3);
                         }
 
+                        // Only remove bullet and stop checking if it has no piercing left
                         if (bullet.onHit()) {
                             this.bullets.splice(i, 1);
+                            break;
                         }
-                        break;
+                        // Otherwise, bullet continues to next enemy (piercing)
                     }
                 }
             } else {
@@ -274,7 +283,7 @@ export class Game {
         // Update items
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
-            item.update(playerBounds.centerX, playerBounds.centerY, this.player.magnetBonus);
+            item.update(playerBounds.centerX, playerBounds.centerY, this.player.magnetBonus, this.player.speed);
 
             if (item.collidesWith(this.player)) {
                 this.collectItem(item);
