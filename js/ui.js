@@ -97,6 +97,10 @@ export class UIManager {
             this.showMetaUpgrades();
         };
 
+        document.getElementById('reset-meta-btn').onclick = () => {
+            this.resetMetaUpgrades();
+        };
+
         document.getElementById('close-meta-btn').onclick = () => {
             document.getElementById('meta-modal').classList.add('hidden');
 
@@ -494,6 +498,33 @@ export class UIManager {
 
         statsDiv.innerHTML = html;
         modal.classList.remove('hidden');
+    }
+
+    resetMetaUpgrades() {
+        // Confirm reset
+        if (!confirm('Reset all permanent upgrades? This will refund all spent souls.')) {
+            return;
+        }
+
+        // Calculate total souls spent
+        let soulsSpent = 0;
+        for (let upgrade of META_UPGRADES) {
+            const level = this.game.metaProgress.upgrades[upgrade.id] || 0;
+            // Sum of arithmetic series: cost + (cost*2) + (cost*3) + ... + (cost*level)
+            // = cost * (1 + 2 + 3 + ... + level) = cost * level * (level + 1) / 2
+            soulsSpent += upgrade.cost * level * (level + 1) / 2;
+        }
+
+        // Refund souls
+        this.game.totalSouls += soulsSpent;
+        this.game.metaProgress.souls = this.game.totalSouls;
+
+        // Reset all upgrades to level 0
+        this.game.metaProgress.upgrades = {};
+
+        // Save and refresh
+        this.game.saveMetaProgress();
+        this.showMetaUpgrades();
     }
 
     showMetaUpgrades() {
