@@ -1,0 +1,104 @@
+// ============================================
+// USER GUIDE MODAL
+// ============================================
+
+@use 'variables' as v;
+
+#guide-content {
+    text-align: left;
+    line-height: 1.6;
+
+    h3 {
+        color: v.$color-primary;
+        margin-top: 25px;
+        margin-bottom: v.$spacing-md;
+        font-size: v.$font-size-h2;
+        border-bottom: v.$border-width-md solid rgba(v.$color-primary, 0.3);
+        padding-bottom: v.$spacing-sm;
+    }
+
+    h4 {
+        color: v.$color-primary;
+        margin-top: v.$spacing-xxl - 2px;
+        margin-bottom: v.$spacing-xs + v.$spacing-xs;
+        font-size: v.$font-size-xl;
+    }
+
+    p {
+        margin: v.$spacing-xs + v.$spacing-xs 0;
+        color: v.$color-light-gray;
+        font-size: v.$font-size-lg;
+    }
+
+    ul {
+        margin: v.$spacing-xs + v.$spacing-xs 0;
+        padding-left: v.$spacing-xl;
+        color: v.$color-light-gray;
+    }
+
+    li {
+        margin: v.$spacing-sm 0;
+        font-size: v.$font-size-lg;
+    }
+}
+
+.guide-intro {
+    background: linear-gradient(135deg, rgba(v.$color-primary, 0.1), rgba(v.$color-secondary, 0.1));
+    padding: v.$spacing-xl;
+    border-radius: v.$border-radius-lg;
+    border-left: 4px solid v.$color-primary;
+    margin-bottom: v.$spacing-xl;
+}
+
+.guide-section {
+    background: rgba(v.$color-primary, 0.05);
+    padding: v.$spacing-lg;
+    border-radius: v.$border-radius-lg;
+    margin: v.$spacing-lg 0;
+    border: v.$border-width-sm solid rgba(v.$color-primary, 0.2);
+}
+
+.enemy-card {
+    background: rgba(v.$color-black, 0.3);
+    padding: v.$spacing-md;
+    border-radius: v.$spacing-xs;
+    margin: v.$spacing-xs + v.$spacing-xs 0;
+    border-left: v.$border-width-lg solid;
+
+    &.basic {
+        border-left-color: v.$enemy-basic;
+    }
+
+    &.fast {
+        border-left-color: v.$enemy-fast;
+    }
+
+    &.tank {
+        border-left-color: v.$enemy-tank;
+    }
+
+    &.shooter {
+        border-left-color: v.$enemy-shooter;
+    }
+
+    &.ice {
+        border-left-color: v.$enemy-ice;
+    }
+}
+
+.stat-highlight {
+    color: v.$color-info;
+    font-weight: bold;
+}
+
+.tip-box {
+    background: rgba(v.$color-info, 0.1);
+    padding: v.$spacing-md;
+    border-radius: v.$spacing-xs;
+    border-left: v.$border-width-lg solid v.$color-info;
+    margin: v.$spacing-xs + v.$spacing-xs 0;
+
+    strong {
+        color: v.$color-info;
+    }
+}

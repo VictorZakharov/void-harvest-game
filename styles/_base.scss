@@ -1,0 +1,22 @@
+// ============================================
+// BASE STYLES & RESET
+// ============================================
+
+@use 'variables' as v;
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: v.$font-family;
+    background: v.$color-bg-dark;
+    color: v.$color-white;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}

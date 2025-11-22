@@ -1,0 +1,36 @@
+// ============================================
+// LAYOUT - Game Container & Canvas
+// ============================================
+
+@use 'variables' as v;
+
+#game-container {
+    position: relative;
+    width: 100%;
+    max-width: v.$game-max-width;
+    height: 100vh;
+    max-height: v.$game-max-height;
+    background: v.$color-black;
+    box-shadow: v.$glow-cyan-lg;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#stats-panel {
+    display: contents;
+}

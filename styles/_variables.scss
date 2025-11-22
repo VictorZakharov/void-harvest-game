@@ -1,0 +1,133 @@
+// ============================================
+// COLOR PALETTE
+// ============================================
+
+// Enemy Colors
+$enemy-basic: #ff6666;
+$enemy-fast: #ff3399;
+$enemy-tank: #cc00cc;
+$enemy-shooter: #ffaa44;
+$enemy-ice: #66ccff;
+
+// UI Theme Colors
+$color-primary: #00ffff;      // Cyan - primary theme color
+$color-secondary: #0088ff;    // Blue - secondary accents
+$color-success: #00ff00;      // Green - success/XP
+$color-danger: #ff0000;       // Red - health/danger
+$color-warning: #ffaa00;      // Orange - warnings
+$color-info: #ffff00;         // Yellow - currency/info
+$color-magenta: #ff00ff;      // Magenta - skill levels
+$color-pink: #ff3399;         // Pink - special effects
+
+// Neutral Colors
+$color-white: #ffffff;
+$color-light-gray: #cccccc;
+$color-gray: #888888;
+$color-dark-gray: #444444;
+$color-darker-gray: #222222;
+$color-black: #000000;
+$color-bg-dark: #0a0a0a;
+$color-bg-darker: #1a1a1a;
+
+// ============================================
+// LAYOUT & SPACING
+// ============================================
+
+$spacing-xs: 5px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 15px;
+$spacing-xl: 20px;
+$spacing-xxl: 30px;
+
+$border-radius-sm: 3px;
+$border-radius-md: 4px;
+$border-radius-lg: 8px;
+$border-radius-xl: 10px;
+$border-radius-round: 50%;
+
+$border-width-sm: 1px;
+$border-width-md: 2px;
+$border-width-lg: 3px;
+
+// ============================================
+// TYPOGRAPHY
+// ============================================
+
+$font-family: 'Courier New', monospace;
+$font-size-xs: 10px;
+$font-size-sm: 11px;
+$font-size-base: 12px;
+$font-size-md: 13px;
+$font-size-lg: 14px;
+$font-size-xl: 16px;
+$font-size-xxl: 18px;
+$font-size-title: 20px;
+$font-size-h2: 22px;
+$font-size-h1: 24px;
+$font-size-hero: 32px;
+$font-size-mega: 48px;
+
+// ============================================
+// GAME DIMENSIONS
+// ============================================
+
+$game-max-width: 1200px;
+$game-max-height: 800px;
+
+$stat-bar-width: 150px;
+$stat-bar-height: 16px;
+
+$skill-icon-sm: 16px;
+$skill-icon-md: 18px;
+$skill-icon-lg: 24px;
+$skill-icon-xl: 36px;
+$skill-icon-xxl: 50px;
+
+// ============================================
+// EFFECTS & SHADOWS
+// ============================================
+
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+$shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.4);
+
+// Glow shadows
+$glow-cyan: 0 0 10px rgba(0, 255, 255, 0.2);
+$glow-cyan-md: 0 0 25px rgba(0, 255, 255, 0.6);
+$glow-cyan-lg: 0 0 50px rgba(0, 255, 255, 0.3);
+
+$glow-green: 0 0 8px rgba(0, 255, 0, 0.4);
+$glow-red: 0 0 8px rgba(255, 68, 68, 0.4);
+$glow-yellow: 0 0 10px rgba(0, 255, 255, 0.6);
+
+// Text shadows
+$text-shadow-sm: 0 0 4px currentColor;
+$text-shadow-md: 0 0 8px rgba(0, 0, 0, 0.9);
+$text-shadow-glow: 0 0 10px rgba(0, 255, 255, 0.8);
+
+// ============================================
+// TRANSITIONS
+// ============================================
+
+$transition-fast: 0.2s ease;
+$transition-base: 0.3s ease;
+$transition-slow: 0.5s ease;
+
+// ============================================
+// Z-INDEX LAYERS
+// ============================================
+
+$z-modal: 100;
+$z-modal-meta: 200;
+$z-close-button: 200;
+
+// ============================================
+// OPACITY VALUES
+// ============================================
+
+$opacity-overlay: 0.9;
+$opacity-bg-dark: 0.6;
+$opacity-bg-darker: 0.8;
+$opacity-hover: 0.3;
+$opacity-active: 0.2;

@@ -1,0 +1,18 @@
+// ============================================
+// VOID HARVEST - Main Stylesheet
+// ============================================
+// This is the main entry point for all styles.
+// Using modern @use syntax instead of deprecated @import.
+// Each partial imports variables independently.
+// ============================================
+
+// Import all partials
+// Note: Variables are imported within each partial using @use
+@use 'base';
+@use 'layout';
+@use 'hud';
+@use 'modals';
+@use 'buttons';
+@use 'skills';
+@use 'guide';
+@use 'custom-game';

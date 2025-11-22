@@ -1,0 +1,237 @@
+// ============================================
+// MODALS
+// ============================================
+
+@use 'variables' as v;
+
+.modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(v.$color-black, v.$opacity-overlay);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: v.$z-modal;
+
+    &.hidden {
+        display: none;
+    }
+}
+
+// Meta upgrades modal should be above other modals
+#meta-modal {
+    z-index: v.$z-modal-meta;
+}
+
+.modal-content {
+    background: v.$color-bg-darker;
+    border: v.$border-width-lg solid v.$color-primary;
+    border-radius: v.$border-radius-xl;
+    padding: v.$spacing-xxl;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(v.$color-primary, 0.5);
+
+    h1 {
+        font-size: v.$font-size-mega;
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-xl;
+        text-shadow: v.$text-shadow-glow;
+    }
+
+    h2 {
+        font-size: v.$font-size-hero;
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-xl;
+    }
+
+    p {
+        font-size: v.$font-size-xl;
+        margin-bottom: v.$spacing-xl;
+        color: v.$color-light-gray;
+    }
+}
+
+// ============================================
+// Controls Info Section
+// ============================================
+
+.controls-info {
+    background: rgba(v.$color-primary, 0.05);
+    padding: 25px;
+    border-radius: v.$border-radius-xl;
+    margin: v.$spacing-xl 0;
+    border: v.$border-width-sm solid rgba(v.$color-primary, 0.2);
+}
+
+.controls-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 60px;
+    margin: v.$spacing-xl 0;
+}
+
+.keyboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-xs;
+    align-items: center;
+}
+
+.keyboard-row {
+    display: flex;
+    gap: v.$spacing-xs;
+}
+
+.key {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
+    border: v.$border-width-md solid v.$color-gray;
+    border-radius: v.$border-radius-lg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-xxl;
+    font-weight: bold;
+    color: v.$color-light-gray;
+    box-shadow: 0 4px 6px rgba(v.$color-black, 0.4),
+                inset 0 -2px 0 rgba(v.$color-black, 0.6),
+                inset 0 2px 0 rgba(v.$color-white, 0.15);
+    position: relative;
+    cursor: default;
+
+    &.esc {
+        width: 60px;
+        font-size: v.$font-size-base;
+    }
+}
+
+.key-label {
+    font-size: v.$font-size-xs;
+    color: #999;
+    text-align: center;
+    margin-top: 3px;
+}
+
+.mouse-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: v.$spacing-xs + v.$spacing-xs;
+}
+
+.mouse {
+    width: 60px;
+    height: 90px;
+    background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
+    border: v.$border-width-md solid v.$color-gray;
+    border-radius: 30px 30px 20px 20px;
+    position: relative;
+    box-shadow: v.$shadow-md;
+}
+
+.mouse-buttons {
+    position: absolute;
+    top: v.$spacing-xs;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 35px;
+    display: flex;
+    gap: 2px;
+}
+
+.mouse-button {
+    flex: 1;
+    background: rgba(v.$color-gray, 0.2);
+    border: v.$border-width-sm solid v.$color-gray;
+    border-bottom: none;
+
+    &.left {
+        border-radius: 15px 0 0 0;
+        background: rgba(255, 100, 100, 0.4);
+        border-color: #ff6666;
+        box-shadow: 0 0 12px rgba(255, 100, 100, 0.6),
+                    inset 0 2px 4px rgba(255, 150, 150, 0.3);
+    }
+
+    &.right {
+        border-radius: 0 15px 0 0;
+    }
+}
+
+.mouse-wheel {
+    position: absolute;
+    top: v.$spacing-lg;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 15px;
+    background: rgba(v.$color-gray, 0.3);
+    border: v.$border-width-sm solid v.$color-gray;
+    border-radius: v.$border-radius-md;
+}
+
+// ============================================
+// Close X Button
+// ============================================
+
+.close-x {
+    position: fixed;
+    top: calc(50vh - 42.5vh + 10px);
+    right: calc(50% - 400px + 25px);
+    background: transparent;
+    border: none;
+    color: v.$color-primary;
+    font-size: 36px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all v.$transition-fast;
+    z-index: v.$z-close-button;
+    pointer-events: all;
+    text-shadow: 0 0 8px rgba(v.$color-black, 0.9),
+                 0 0 15px rgba(v.$color-primary, 0.6),
+                 2px 2px 4px rgba(v.$color-black, 0.8);
+    filter: drop-shadow(0 2px 6px rgba(v.$color-black, 0.8));
+
+    &:hover {
+        color: v.$color-white;
+        transform: scale(1.2);
+        text-shadow: 0 0 12px rgba(v.$color-black, 1),
+                     0 0 20px rgba(v.$color-primary, 0.9),
+                     2px 2px 6px rgba(v.$color-black, 0.9);
+        filter: drop-shadow(0 4px 8px rgba(v.$color-black, 1));
+    }
+
+    &:active {
+        transform: scale(1.1);
+    }
+}
+
+// ============================================
+// Final Stats Section
+// ============================================
+
+#final-stats {
+    background: rgba(v.$color-primary, 0.1);
+    padding: v.$spacing-xl;
+    border-radius: v.$spacing-xs;
+    margin: v.$spacing-xl 0;
+
+    p {
+        margin: v.$spacing-xs + v.$spacing-xs 0;
+        font-size: v.$font-size-xxl;
+    }
+}

@@ -1,0 +1,190 @@
+// ============================================
+// CUSTOM GAME MODE - Skill & Enemy Configuration
+// ============================================
+
+@use 'variables' as v;
+
+// Custom Skill Selection
+#custom-skill-config {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: v.$spacing-md;
+    margin: v.$spacing-lg 0;
+}
+
+.custom-skill-item {
+    background: rgba(v.$color-primary, 0.1);
+    border: v.$border-width-md solid v.$color-primary;
+    border-radius: v.$border-radius-lg;
+    padding: v.$spacing-xs + v.$spacing-xs;
+    cursor: pointer;
+    transition: background v.$transition-fast, box-shadow v.$transition-fast, border-color v.$transition-fast;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: v.$spacing-sm;
+    position: relative;
+    user-select: none;
+
+    &:hover {
+        background: rgba(v.$color-primary, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(v.$color-primary, 0.4);
+    }
+
+    &:active {
+        box-shadow: 0 0 20px rgba(v.$color-primary, 0.6);
+    }
+
+    &.active {
+        border-color: v.$color-success;
+        background: rgba(v.$color-success, 0.15);
+    }
+
+    .skill-icon {
+        width: 60px;
+        height: 60px;
+        border-width: v.$border-width-md;
+        position: relative;
+
+        svg {
+            width: v.$skill-icon-xl;
+            height: v.$skill-icon-xl;
+        }
+    }
+}
+
+.custom-skill-level-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: v.$color-magenta;
+    color: v.$color-white;
+    border-radius: v.$border-radius-round;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-sm;
+    font-weight: bold;
+    border: v.$border-width-md solid v.$color-black;
+}
+
+.custom-skill-name {
+    font-size: v.$font-size-sm;
+    color: v.$color-primary;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+}
+
+.custom-skill-desc {
+    font-size: v.$font-size-md;
+    text-align: center;
+    line-height: 1.2;
+    margin-top: 2px;
+    font-weight: bold;
+
+    .active-value {
+        color: v.$color-warning;
+    }
+
+    .inactive-value {
+        color: #666;
+    }
+}
+
+// ============================================
+// Custom Enemy Selection
+// ============================================
+
+#enemy-type-config {
+    display: flex;
+    flex-direction: row;
+    gap: v.$spacing-xs + v.$spacing-xs;
+    margin: v.$spacing-lg 0;
+    justify-content: center;
+}
+
+.custom-enemy-item {
+    background: rgba(v.$color-white, 0.05);
+    border: v.$border-width-md solid #666;
+    border-radius: v.$border-radius-lg;
+    padding: v.$spacing-md;
+    cursor: pointer;
+    transition: background v.$transition-fast, box-shadow v.$transition-fast, border-color v.$transition-fast;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: v.$spacing-sm;
+    position: relative;
+    user-select: none;
+    flex: 1;
+    min-width: 0;
+
+    &:hover {
+        background: rgba(v.$color-white, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 0 15px rgba(v.$color-primary, 0.3);
+    }
+
+    &:active {
+        box-shadow: 0 0 20px rgba(v.$color-primary, 0.5);
+    }
+
+    &.active {
+        border-color: v.$color-success;
+        background: rgba(v.$color-success, 0.1);
+    }
+
+    &:not(.active) .custom-enemy-status {
+        color: #666;
+    }
+}
+
+.enemy-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(v.$color-black, 0.4);
+    border-radius: v.$border-radius-lg;
+    flex-shrink: 0;
+}
+
+.enemy-emoji {
+    font-size: 36px;
+}
+
+.custom-enemy-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+    width: 100%;
+}
+
+.custom-enemy-name {
+    font-size: v.$font-size-md;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.custom-enemy-desc {
+    font-size: v.$font-size-sm;
+    color: #999;
+    line-height: 1.2;
+}
+
+.custom-enemy-status {
+    font-size: v.$font-size-title;
+    font-weight: bold;
+    color: v.$color-success;
+}

@@ -1,5 +1,5 @@
 // ==================== INITIALIZE GAME ====================
-import '../styles.css';
+import '../styles/main.scss';
 import { Game } from './game.js';
 
 window.addEventListener('load', () => {

@@ -1,0 +1,245 @@
+// ============================================
+// HUD - Health/XP Bars, Status Effects, Active Skills
+// ============================================
+
+@use 'sass:color';
+@use 'variables' as v;
+
+// Stat Bars (Health & XP)
+.stat-bar {
+    display: flex;
+    align-items: center;
+    gap: v.$spacing-sm;
+    background: rgba(v.$color-black, v.$opacity-bg-dark);
+    padding: v.$spacing-sm v.$spacing-md;
+    border-radius: v.$border-radius-md;
+
+    span {
+        min-width: 25px;
+        font-size: v.$font-size-base;
+        font-weight: bold;
+        color: v.$color-white;
+    }
+}
+
+// Health Bar - Bottom Left
+.stat-bar:nth-child(1) {
+    position: absolute;
+    bottom: v.$spacing-lg;
+    left: v.$spacing-lg;
+    border: v.$border-width-sm solid v.$color-danger;
+}
+
+// XP Bar - Bottom Right
+.stat-bar:nth-child(3) {
+    position: absolute;
+    bottom: v.$spacing-lg;
+    right: v.$spacing-lg;
+    border: v.$border-width-sm solid v.$color-success;
+}
+
+.bar-container {
+    width: v.$stat-bar-width;
+    height: v.$stat-bar-height;
+    background: v.$color-darker-gray;
+    border: v.$border-width-sm solid v.$color-dark-gray;
+    border-radius: v.$border-radius-sm;
+    overflow: hidden;
+}
+
+.bar {
+    height: 100%;
+    transition: width v.$transition-base;
+}
+
+.health-bar {
+    background: linear-gradient(90deg, v.$color-danger, color.adjust(v.$color-danger, $lightness: 20%));
+}
+
+.xp-bar {
+    background: linear-gradient(90deg, v.$color-success, color.adjust(v.$color-success, $lightness: 20%));
+}
+
+// ============================================
+// Status Effects - positioned above health bar
+// ============================================
+
+#status-effects {
+    position: absolute;
+    bottom: 60px; // Position above HP bar
+    left: v.$spacing-lg; // Align with HP bar
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 245px; // Match HP bar width
+    justify-content: flex-start; // Align to left
+}
+
+.status-effect {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap; // Prevent text wrapping
+    height: 28px;
+    padding: 0 v.$spacing-sm;
+    background: rgba(v.$color-black, v.$opacity-bg-darker);
+    border: v.$border-width-md solid;
+    border-radius: v.$border-radius-md;
+    font-size: v.$font-size-md;
+    font-weight: bold;
+    color: v.$color-white;
+    text-shadow: v.$text-shadow-sm;
+    box-shadow: v.$shadow-sm;
+
+    &.ice {
+        border-color: v.$enemy-ice;
+        background: rgba(v.$enemy-ice, 0.25);
+        color: v.$enemy-ice;
+        box-shadow: 0 0 8px rgba(v.$enemy-ice, 0.4), v.$shadow-sm;
+    }
+
+    &.passive {
+        border-color: #ff4444;
+        background: rgba(#ff4444, 0.25);
+        color: #ff4444;
+        box-shadow: 0 0 8px rgba(#ff4444, 0.4), v.$shadow-sm;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        .status-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg {
+                width: v.$skill-icon-sm;
+                height: v.$skill-icon-sm;
+            }
+        }
+
+        .status-level {
+            font-size: v.$font-size-md;
+            font-weight: bold;
+        }
+    }
+}
+
+// ============================================
+// Active Skills - positioned above XP bar
+// ============================================
+
+#active-skills {
+    position: absolute;
+    bottom: 60px; // Position above XP bar
+    right: v.$spacing-lg; // Align with XP bar
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 245px; // Match XP bar width
+    justify-content: flex-end; // Align to right
+    flex-direction: row-reverse; // Skills appear right-to-left (newest on right)
+}
+
+.active-skill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(v.$color-success, 0.15);
+    border: v.$border-width-md solid v.$color-success;
+    border-radius: 6px;
+    position: relative;
+    box-shadow: v.$shadow-sm;
+
+    .skill-icon {
+        width: 100%;
+        height: 100%;
+        color: v.$color-success;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: none;
+        background: none;
+        border-radius: 0;
+
+        svg {
+            width: v.$skill-icon-md;
+            height: v.$skill-icon-md;
+        }
+    }
+}
+
+.active-skill-level {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: v.$color-info;
+    color: v.$color-black;
+    border-radius: v.$border-radius-round;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-sm;
+    font-weight: bold;
+    box-shadow: 0 0 4px rgba(v.$color-info, 0.6);
+}
+
+// Custom (starting) skills - greyscale
+.active-skill.custom-skill {
+    background: rgba(v.$color-gray, 0.15);
+    border-color: v.$color-gray;
+
+    .skill-icon {
+        color: v.$color-gray;
+        filter: grayscale(100%);
+    }
+
+    .active-skill-level {
+        background: v.$color-gray;
+        color: v.$color-white;
+        box-shadow: 0 0 4px rgba(v.$color-gray, 0.6);
+    }
+}
+
+// ============================================
+// Game Stats - Top Corners
+// ============================================
+
+#game-stats {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: v.$spacing-lg;
+
+    > div {
+        display: flex;
+        gap: v.$spacing-xs + v.$spacing-xs;
+    }
+}
+
+#time-text,
+#kills-text,
+#wave-text {
+    background: rgba(v.$color-black, v.$opacity-bg-dark);
+    padding: v.$spacing-sm v.$spacing-lg;
+    border: v.$border-width-sm solid v.$color-primary;
+    border-radius: v.$border-radius-md;
+    font-size: v.$font-size-lg;
+    font-weight: bold;
+    color: v.$color-primary;
+}
+
+#wave-text {
+    border-color: v.$color-warning;
+    color: v.$color-warning;
+}

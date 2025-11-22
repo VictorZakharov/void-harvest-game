@@ -8,7 +8,7 @@ This document provides instructions for AI assistants (like Claude) to maintain 
 - Vanilla JavaScript (ES6 modules)
 - HTML5 Canvas for rendering
 - Webpack 5 for bundling
-- CSS for UI styling
+- SCSS for UI styling (modular architecture)
 - localStorage for persistence
 
 **Architecture:**
@@ -22,7 +22,7 @@ This document provides instructions for AI assistants (like Claude) to maintain 
 
 ```
 js/
-├── main.js          - Entry point, imports CSS and initializes Game
+├── main.js          - Entry point, imports SCSS and initializes Game
 ├── constants.js     - Game configuration (canvas size, duration)
 ├── sprites.js       - SpriteGenerator for procedural pixel art
 ├── particles.js     - Particle class for visual effects
@@ -32,13 +32,25 @@ js/
 ├── stats.js         - StatsManager for tracking & localStorage
 ├── ui.js            - UIManager for all modals and screens
 └── game.js          - Game class with main loop and logic
+
+styles/
+├── main.scss        - Main entry point, imports all partials
+├── _variables.scss  - Color palette, enemy colors, spacing, typography
+├── _base.scss       - CSS reset and base styles
+├── _layout.scss     - Game container and canvas layout
+├── _hud.scss        - Health/XP bars, status effects, active skills
+├── _modals.scss     - All modal dialogs and overlays
+├── _buttons.scss    - Button styles and interactions
+├── _skills.scss     - Skill choices and meta upgrades
+├── _guide.scss      - User guide modal styles
+└── _custom-game.scss - Custom game mode configuration
 ```
 
 ## Module Dependencies
 
 ```
 main.js
-  ├─> styles.css (imported)
+  ├─> styles/main.scss (imports all SCSS partials)
   └─> game.js
        ├─> constants.js
        ├─> entities.js
@@ -51,6 +63,17 @@ main.js
        ├─> stats.js
        └─> ui.js
             └─> skills.js
+
+styles/main.scss
+  ├─> _variables.scss (must be first - defines all colors and constants)
+  ├─> _base.scss
+  ├─> _layout.scss
+  ├─> _hud.scss
+  ├─> _modals.scss
+  ├─> _buttons.scss
+  ├─> _skills.scss
+  ├─> _guide.scss
+  └─> _custom-game.scss
 ```
 
 ## Development Workflow
@@ -73,19 +96,75 @@ npm run build  # Creates dist/ with hashed assets
 - Keep functions small and focused
 - Document complex algorithms with comments
 
+### SCSS Style Guidelines
+- All style changes should be made in SCSS files (not CSS)
+- Variables are defined in `styles/_variables.scss` - use them consistently
+- Follow the modular structure - put styles in the appropriate partial
+- Use nesting for related selectors (but don't nest too deeply)
+- Use SCSS variables for colors, spacing, and sizing
+- Maintain the existing naming conventions
+
+## Working with Styles
+
+### Changing Enemy Colors
+
+Enemy colors are centralized in `styles/_variables.scss`. To change an enemy's color throughout the entire UI:
+
+```scss
+// In styles/_variables.scss
+$enemy-basic: #ff6666;   // Red - basic enemy
+$enemy-fast: #ff3399;    // Pink - fast enemy
+$enemy-tank: #cc00cc;    // Purple - tank enemy
+$enemy-shooter: #ffaa44; // Orange - shooter enemy
+$enemy-ice: #66ccff;     // Cyan - ice enemy
+```
+
+These variables are automatically used in:
+- Guide modal enemy cards (`styles/_guide.scss`)
+- Enemy-related UI elements throughout the application
+
+### Changing Theme Colors
+
+UI theme colors are also in `styles/_variables.scss`:
+
+```scss
+$color-primary: #00ffff;   // Cyan - primary theme color
+$color-success: #00ff00;   // Green - success/XP
+$color-danger: #ff0000;    // Red - health/danger
+$color-info: #ffff00;      // Yellow - currency/info
+```
+
+### Adding New Styles
+
+1. Identify which partial file is most appropriate:
+   - HUD elements → `_hud.scss`
+   - Modal dialogs → `_modals.scss`
+   - Buttons → `_buttons.scss`
+   - Skills/upgrades → `_skills.scss`
+   - User guide → `_guide.scss`
+   - Custom game → `_custom-game.scss`
+
+2. Add your styles using existing variables when possible
+3. If you need new variables, add them to `_variables.scss` first
+
 ## Common Maintenance Tasks
 
 ### Adding a New Enemy Type
 
-1. **Add sprite in `js/sprites.js`:**
+1. **Add color variable in `styles/_variables.scss`:**
+```scss
+$enemy-newtype: #ff00ff;  // Choose appropriate color
+```
+
+2. **Add sprite in `js/sprites.js`:**
 ```javascript
 case 'newtype':
-    ctx.fillStyle = '#color';
+    ctx.fillStyle = '#ff00ff';  // Use same color as SCSS variable
     // Draw sprite...
     break;
 ```
 
-2. **Add stats in `js/entities.js` Enemy constructor:**
+3. **Add stats in `js/entities.js` Enemy constructor:**
 ```javascript
 case 'newtype':
     this.maxHealth = 50;
@@ -95,7 +174,7 @@ case 'newtype':
     break;
 ```
 
-3. **Add spawn logic in `js/game.js` spawnEnemy():**
+4. **Add spawn logic in `js/game.js` spawnEnemy():**
 ```javascript
 if (this.wave >= X) {
     if (rand < 0.Y) type = 'newtype';
@@ -103,11 +182,18 @@ if (this.wave >= X) {
 }
 ```
 
-4. **Update stats tracking in `js/stats.js`:**
+5. **Update stats tracking in `js/stats.js`:**
 ```javascript
 enemiesKilled: {
     // ...
     newtype: 0
+}
+```
+
+6. **Add enemy card styling in `styles/_guide.scss`:**
+```scss
+.enemy-card.newtype {
+    border-left-color: $enemy-newtype;
 }
 ```
 

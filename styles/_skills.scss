@@ -1,0 +1,179 @@
+// ============================================
+// SKILL CHOICES
+// ============================================
+
+@use 'variables' as v;
+
+#skill-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: v.$spacing-lg;
+    margin-top: v.$spacing-xl;
+}
+
+.skill-option {
+    background: rgba(v.$color-primary, 0.1);
+    border: v.$border-width-md solid v.$color-primary;
+    padding: 25px v.$spacing-xl;
+    border-radius: v.$border-radius-lg;
+    cursor: pointer;
+    transition: all v.$transition-base;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: v.$spacing-lg;
+    text-align: center;
+    min-height: 220px;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:hover {
+        background: rgba(v.$color-primary, 0.3);
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: v.$glow-cyan-md;
+    }
+
+    h3 {
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-sm;
+        font-size: v.$font-size-title;
+    }
+
+    p {
+        font-size: v.$font-size-xl;
+        margin: 0;
+        color: v.$color-light-gray;
+        line-height: 1.4;
+    }
+}
+
+.skill-icon {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    color: v.$color-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(v.$color-primary, 0.2);
+    border-radius: v.$border-radius-xl;
+    border: v.$border-width-md solid v.$color-primary;
+    position: relative;
+
+    svg {
+        width: v.$skill-icon-xxl;
+        height: v.$skill-icon-xxl;
+    }
+}
+
+.skill-level {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: v.$color-magenta;
+    color: v.$color-white;
+    border-radius: v.$border-radius-round;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-base;
+    font-weight: bold;
+    border: v.$border-width-md solid v.$color-black;
+}
+
+.skill-info {
+    flex: 1;
+    text-align: center;
+    width: 100%;
+}
+
+// ============================================
+// META UPGRADES
+// ============================================
+
+#meta-upgrades {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: v.$spacing-lg;
+    margin: v.$spacing-xl 0;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: v.$spacing-xs;
+}
+
+.meta-upgrade {
+    background: rgba(v.$color-primary, 0.1);
+    border: v.$border-width-md solid #666;
+    padding: v.$spacing-lg;
+    border-radius: v.$spacing-xs;
+    cursor: pointer;
+    transition: all v.$transition-base;
+    pointer-events: all;
+
+    &.unlocked {
+        border-color: v.$color-primary;
+        background: rgba(v.$color-primary, 0.2);
+
+        .meta-icon {
+            background: rgba(v.$color-primary, 0.4);
+            box-shadow: v.$glow-yellow;
+        }
+    }
+
+    &.affordable:not(.unlocked) {
+        border-color: v.$color-success;
+
+        .meta-icon {
+            border-color: v.$color-success;
+            color: v.$color-success;
+        }
+    }
+
+    &:hover:not(.unlocked) {
+        background: rgba(v.$color-primary, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(v.$color-primary, 0.4);
+    }
+
+    h4 {
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-xs;
+    }
+
+    p {
+        font-size: v.$font-size-base;
+        margin: v.$spacing-xs 0;
+    }
+
+    .cost {
+        color: v.$color-info;
+        font-weight: bold;
+    }
+}
+
+.meta-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto v.$spacing-xs + v.$spacing-xs;
+    color: v.$color-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(v.$color-primary, 0.2);
+    border-radius: v.$border-radius-round;
+    border: v.$border-width-md solid v.$color-primary;
+
+    svg {
+        width: v.$skill-icon-lg;
+        height: v.$skill-icon-lg;
+    }
+}
+
+#currency-text {
+    font-size: v.$font-size-title;
+    color: v.$color-info;
+    margin: v.$spacing-xl 0;
+}
