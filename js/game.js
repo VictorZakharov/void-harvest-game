@@ -1,5 +1,11 @@
 // ==================== GAME CLASS ====================
-import { CANVAS_WIDTH, CANVAS_HEIGHT, GAME_DURATION } from './constants.js';
+import {
+    CANVAS_WIDTH, CANVAS_HEIGHT, GAME_DURATION,
+    WAVE_DURATION, INITIAL_SPAWN_RATE, MIN_SPAWN_RATE, SPAWN_RATE_DECREASE,
+    WAVE_UNLOCK_FAST, WAVE_UNLOCK_SHOOTER, WAVE_UNLOCK_TANK, WAVE_UNLOCK_ICE,
+    WAVE_SCALING_BOOST_1, WAVE_SCALING_BOOST_2, ENEMY_SCALING_PER_WAVE,
+    HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT, PARTICLE_COUNT_HIT, PARTICLE_COUNT_DEATH
+} from './constants.js';
 import { Player, Enemy, Bullet, Item } from './entities.js';
 import { Particle } from './particles.js';
 import { InputHandler } from './input.js';
@@ -48,7 +54,7 @@ export class Game {
 
         // Reset all game timers and counters
         this.spawnTimer = 0;
-        this.spawnRate = 60;
+        this.spawnRate = INITIAL_SPAWN_RATE;
         this.difficultyTimer = 0;
         this.gameTime = 0;
         this.kills = 0;
@@ -100,8 +106,16 @@ export class Game {
     }
 
     start() {
+        // Preserve custom game settings before reset
+        const savedCustomEnemies = this.customEnemies;
+        const savedCustomSkills = this.customSkills;
+
         // Reset game state and apply meta upgrades (important for newly purchased upgrades!)
         this.reset();
+
+        // Restore custom game settings after reset
+        this.customEnemies = savedCustomEnemies;
+        this.customSkills = savedCustomSkills;
 
         // Ensure clean start
         this.state = 'playing';
@@ -179,9 +193,9 @@ export class Game {
 
         // Increase difficulty over time
         this.difficultyTimer++;
-        if (this.difficultyTimer >= 900) { // Every 15 seconds
+        if (this.difficultyTimer >= WAVE_DURATION) { // Every 15 seconds
             this.difficultyTimer = 0;
-            this.spawnRate = Math.max(20, this.spawnRate - 2);
+            this.spawnRate = Math.max(MIN_SPAWN_RATE, this.spawnRate - SPAWN_RATE_DECREASE);
             this.wave++;
         }
 
@@ -202,7 +216,7 @@ export class Game {
                 if (this.player.takeDamage(enemy.damage)) {
                     this.gameOver();
                 }
-                this.createParticles(enemy.x, enemy.y, '#ff0000', 5);
+                this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
                 this.enemies.splice(i, 1);
                 this.camera.shake = 10;
             }
@@ -245,11 +259,11 @@ export class Game {
                             this.kills++;
                             this.stats.enemiesKilled[enemy.type]++;
                             this.player.onKill(); // Vampire effect
-                            this.createParticles(enemy.x, enemy.y, '#ff0000', 10);
+                            this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
                             this.spawnXP(enemy.x, enemy.y, enemy.xpValue);
                             this.enemies.splice(j, 1);
                         } else {
-                            this.createParticles(enemy.x, enemy.y, '#ffff00', 3);
+                            this.createParticles(enemy.x, enemy.y, '#ffff00', PARTICLE_COUNT_HIT);
                         }
 
                         // Only remove bullet and stop checking if it has no piercing left
@@ -275,7 +289,7 @@ export class Game {
                         if (this.player.takeDamage(bullet.damage)) {
                             this.gameOver();
                         }
-                        this.createParticles(this.player.x, this.player.y, '#ff0000', 5);
+                        this.createParticles(this.player.x, this.player.y, '#ff0000', PARTICLE_COUNT_HIT);
                     }
                     this.bullets.splice(i, 1);
                     this.camera.shake = 8;
@@ -557,7 +571,7 @@ export class Game {
             else if (rand < 0.8) type = 'ice';
             else if (rand < 0.95) type = 'fast';
             else type = 'basic';
-        } else if (this.wave >= 15) {
+        } else if (this.wave >= WAVE_SCALING_BOOST_1) {
             // Very late game - very hard
             if (rand < 0.3) type = 'tank';
             else if (rand < 0.55) type = 'shooter';
@@ -571,25 +585,25 @@ export class Game {
             else if (rand < 0.65) type = 'ice';
             else if (rand < 0.85) type = 'fast';
             else type = 'basic';
-        } else if (this.wave >= 8) {
+        } else if (this.wave >= WAVE_UNLOCK_ICE) {
             // Mid-late game - ice introduced
             if (rand < 0.1) type = 'tank';
             else if (rand < 0.3) type = 'shooter';
             else if (rand < 0.45) type = 'ice';
             else if (rand < 0.7) type = 'fast';
             else type = 'basic';
-        } else if (this.wave >= 7) {
+        } else if (this.wave >= WAVE_UNLOCK_TANK) {
             // Mid-late game - tanks introduced
             if (rand < 0.1) type = 'tank';
             else if (rand < 0.35) type = 'shooter';
             else if (rand < 0.65) type = 'fast';
             else type = 'basic';
-        } else if (this.wave >= 5) {
+        } else if (this.wave >= WAVE_UNLOCK_SHOOTER) {
             // Mid game - shooters introduced
             if (rand < 0.25) type = 'shooter';
             else if (rand < 0.55) type = 'fast';
             else type = 'basic';
-        } else if (this.wave >= 3) {
+        } else if (this.wave >= WAVE_UNLOCK_FAST) {
             // Early-mid game - fast enemies introduced
             if (rand < 0.35) type = 'fast';
             else type = 'basic';
@@ -612,14 +626,14 @@ export class Game {
         const enemy = new Enemy(x, y, type);
 
         // Scale enemy stats based on wave (10% HP and damage increase per wave after wave 1)
-        let scaleFactor = 1 + ((this.wave - 1) * 0.1);
+        let scaleFactor = 1 + ((this.wave - 1) * ENEMY_SCALING_PER_WAVE);
 
         // Extra scaling for extreme late game
-        if (this.wave >= 15) {
-            scaleFactor += (this.wave - 15) * 0.05; // Additional 5% per wave after 15
+        if (this.wave >= WAVE_SCALING_BOOST_1) {
+            scaleFactor += (this.wave - WAVE_SCALING_BOOST_1) * 0.05; // Additional 5% per wave after 15
         }
-        if (this.wave >= 25) {
-            scaleFactor += (this.wave - 25) * 0.1; // Even more brutal after wave 25
+        if (this.wave >= WAVE_SCALING_BOOST_2) {
+            scaleFactor += (this.wave - WAVE_SCALING_BOOST_2) * 0.1; // Even more brutal after wave 25
         }
 
         enemy.maxHealth = Math.floor(enemy.maxHealth * scaleFactor);
@@ -642,7 +656,7 @@ export class Game {
         }
 
         // Chance for health drop (base 5% + player bonus)
-        const healthDropRate = 0.05 + (this.player.dropBonus || 0);
+        const healthDropRate = HEALTH_DROP_BASE_RATE + (this.player.dropBonus || 0);
         if (Math.random() < healthDropRate) {
             this.items.push(new Item(x, y, 'health'));
         }
@@ -660,7 +674,7 @@ export class Game {
                 }
                 break;
             case 'health':
-                this.player.heal(20);
+                this.player.heal(HEALTH_RESTORE_AMOUNT);
                 break;
         }
     }

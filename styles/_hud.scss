@@ -243,3 +243,15 @@
     border-color: v.$color-warning;
     color: v.$color-warning;
 }
+
+// ============================================
+// Enemy Type Indicators
+// ============================================
+
+.enemy-indicator {
+    &.basic { color: v.$enemy-basic; }
+    &.fast { color: v.$enemy-fast; }
+    &.tank { color: v.$enemy-tank; }
+    &.shooter { color: v.$enemy-shooter; }
+    &.ice { color: v.$enemy-ice; }
+}

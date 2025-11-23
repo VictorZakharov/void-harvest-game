@@ -23,14 +23,20 @@ This document provides instructions for AI assistants (like Claude) to maintain 
 ```
 js/
 ├── main.js          - Entry point, imports SCSS and initializes Game
-├── constants.js     - Game configuration (canvas size, duration)
+├── constants.js     - Comprehensive game configuration (all balance values)
 ├── sprites.js       - SpriteGenerator for procedural pixel art
 ├── particles.js     - Particle class for visual effects
 ├── entities.js      - Entity base + Player, Enemy, Bullet, Item classes
 ├── input.js         - InputHandler for keyboard/mouse
 ├── skills.js        - ICONS, SKILLS, META_UPGRADES definitions
 ├── stats.js         - StatsManager for tracking & localStorage
-├── ui.js            - UIManager for all modals and screens
+├── ui.js            - UIManager main coordinator
+├── ui-hud.js        - HUD updates (health, XP, wave, status effects)
+├── ui-levelup.js    - Level-up skill selection screen
+├── ui-gameover.js   - Game over stats display
+├── ui-meta.js       - Meta upgrades and reset functionality
+├── ui-modals.js     - Pause, start, and guide modals
+├── ui-custom.js     - Custom game mode configuration
 └── game.js          - Game class with main loop and logic
 
 styles/
@@ -38,7 +44,7 @@ styles/
 ├── _variables.scss  - Color palette, enemy colors, spacing, typography
 ├── _base.scss       - CSS reset and base styles
 ├── _layout.scss     - Game container and canvas layout
-├── _hud.scss        - Health/XP bars, status effects, active skills
+├── _hud.scss        - Health/XP bars, status effects, active skills, enemy indicators
 ├── _modals.scss     - All modal dialogs and overlays
 ├── _buttons.scss    - Button styles and interactions
 ├── _skills.scss     - Skill choices and meta upgrades
@@ -146,6 +152,50 @@ $color-info: #ffff00;      // Yellow - currency/info
 
 2. Add your styles using existing variables when possible
 3. If you need new variables, add them to `_variables.scss` first
+
+## Working with Constants
+
+### Comprehensive Game Configuration
+
+All game balance and configuration values are centralized in `constants.js` for easy tuning:
+
+```javascript
+// In constants.js
+export const WAVE_DURATION = 900; // Change wave timing
+export const PLAYER_BASE_HEALTH = 100; // Adjust starting health
+export const ENEMY_SCALING_PER_WAVE = 0.1; // Tune difficulty curve
+```
+
+**Key constant categories:**
+- **Canvas & Layout** - Screen dimensions
+- **Wave & Spawn System** - Enemy spawn rates, wave unlocks
+- **Enemy Colors** - Match SCSS variables for consistency
+- **Progression & XP** - Level-up curves
+- **Player/Item/Bullet Defaults** - Base stats
+- **Balance Modifiers** - Skill bonuses, scaling factors
+
+**Best practice:** Always use constants instead of magic numbers in game logic.
+
+## Working with UI Modules
+
+The UI system is split into modular files for easier maintenance:
+
+**ui.js** - Main coordinator with UIManager class
+- Sets up event handlers
+- Delegates to specific UI modules
+
+**ui-hud.js** - Real-time HUD updates
+- Health/XP bars
+- Wave display with enemy indicators
+- Status effects and active skills
+
+**ui-levelup.js** - Skill selection
+**ui-gameover.js** - End game stats
+**ui-meta.js** - Permanent upgrades
+**ui-modals.js** - Pause/start/guide screens
+**ui-custom.js** - Custom game configuration
+
+**Pattern:** Each module exports functions that accept `game` as first parameter.
 
 ## Common Maintenance Tasks
 

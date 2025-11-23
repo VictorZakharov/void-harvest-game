@@ -1,5 +1,12 @@
 // ==================== ENTITY CLASSES ====================
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
+import {
+    CANVAS_WIDTH, CANVAS_HEIGHT,
+    PLAYER_BASE_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_DAMAGE, PLAYER_BASE_FIRE_RATE, PLAYER_SIZE,
+    XP_LEVEL_MULTIPLIER, INITIAL_XP_REQUIRED,
+    ITEM_MAGNET_BASE_RANGE, ITEM_MOVE_SPEED,
+    BULLET_BASE_SPEED, BULLET_BASE_RANGE, BULLET_SIZE, BULLET_COLOR,
+    XP_ITEM_BASE_VALUE
+} from './constants.js';
 import { SpriteGenerator } from './sprites.js';
 
 export class Entity {
@@ -33,26 +40,27 @@ export class Entity {
 
 export class Player extends Entity {
     constructor(x, y) {
-        super(x, y, 32, 32);
-        this.maxHealth = 100;
+        const playerSize = PLAYER_SIZE * 2 + 8; // Convert radius to sprite size (12*2 + 8 = 32)
+        super(x, y, playerSize, playerSize);
+        this.maxHealth = PLAYER_BASE_HEALTH;
         this.health = this.maxHealth;
-        this.speed = 3;
-        this.sprite = SpriteGenerator.createPlayerSprite(32);
+        this.speed = PLAYER_BASE_SPEED;
+        this.sprite = SpriteGenerator.createPlayerSprite(playerSize);
 
         // Combat stats
-        this.damage = 10;
-        this.fireRate = 10; // frames between shots
+        this.damage = PLAYER_BASE_DAMAGE;
+        this.fireRate = PLAYER_BASE_FIRE_RATE;
         this.fireTimer = 0;
-        this.bulletSpeed = 8;
-        this.bulletSize = 8;
+        this.bulletSpeed = BULLET_BASE_SPEED;
+        this.bulletSize = BULLET_SIZE * 2; // Convert to sprite size
         this.projectileCount = 1;
         this.piercing = 0;
-        this.range = 427; // Base range scales to full diagonal (1442px) at max upgrade
+        this.range = BULLET_BASE_RANGE; // Base range
 
         // XP and leveling
         this.xp = 0;
         this.level = 1;
-        this.xpToLevel = 10;
+        this.xpToLevel = INITIAL_XP_REQUIRED;
 
         // Rotation for aiming
         this.angle = 0;
@@ -175,7 +183,7 @@ export class Player extends Entity {
     levelUp() {
         this.level++;
         this.xp -= this.xpToLevel; // Carry over excess XP to next level
-        this.xpToLevel = Math.floor(this.xpToLevel * 1.5);
+        this.xpToLevel = Math.floor(this.xpToLevel * XP_LEVEL_MULTIPLIER);
     }
 
     takeDamage(amount) {
@@ -251,7 +259,7 @@ export class Enemy extends Entity {
                 this.maxHealth = 25;
                 this.speed = 0.9;
                 this.damage = 5; // Contact damage (same as shooter)
-                this.xpValue = 3;
+                this.xpValue = XP_ITEM_BASE_VALUE;
                 this.shootTimer = 0;
                 this.shootRate = 180; // Slower fire rate than regular shooter
                 this.width = this.height = 32;
@@ -361,8 +369,9 @@ export class Enemy extends Entity {
 }
 
 export class Bullet extends Entity {
-    constructor(x, y, angle, speed, damage, isPlayer = true, piercing = 0, range = 600, enemyType = null) {
-        super(x, y, 8, 8);
+    constructor(x, y, angle, speed, damage, isPlayer = true, piercing = 0, range = BULLET_BASE_RANGE, enemyType = null) {
+        const bulletSize = BULLET_SIZE * 2; // Convert to sprite size
+        super(x, y, bulletSize, bulletSize);
         this.angle = angle;
         this.speed = speed;
         this.damage = damage;
@@ -408,8 +417,8 @@ export class Item extends Entity {
         super(x, y, 12, 12);
         this.type = type;
         this.sprite = SpriteGenerator.createItemSprite(type);
-        this.magnetRange = 80;
-        this.magnetSpeed = 3;
+        this.magnetRange = ITEM_MAGNET_BASE_RANGE;
+        this.magnetSpeed = ITEM_MOVE_SPEED;
     }
 
     update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3) {

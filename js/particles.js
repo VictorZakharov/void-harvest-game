@@ -1,6 +1,8 @@
 // ==================== PARTICLE SYSTEM ====================
+import { PARTICLE_LIFETIME } from './constants.js';
+
 export class Particle {
-    constructor(x, y, color, vx, vy, lifetime = 30) {
+    constructor(x, y, color, vx, vy, lifetime = PARTICLE_LIFETIME) {
         this.x = x;
         this.y = y;
         this.vx = vx;

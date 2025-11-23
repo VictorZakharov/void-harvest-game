@@ -1,4 +1,6 @@
 // ==================== SPRITE GENERATOR ====================
+import { ENEMY_SPRITE_COLORS } from './constants.js';
+
 export class SpriteGenerator {
     static createPlayerSprite(size = 32) {
         const canvas = document.createElement('canvas');
@@ -39,51 +41,51 @@ export class SpriteGenerator {
         switch(type) {
             case 'basic':
                 // Red blob enemy
-                ctx.fillStyle = '#ff0000';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.basic.main;
                 ctx.fillRect(3 * scale, 5 * scale, 10 * scale, 6 * scale);
                 ctx.fillRect(5 * scale, 3 * scale, 6 * scale, 10 * scale);
-                ctx.fillStyle = '#660000';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.basic.dark;
                 ctx.fillRect(6 * scale, 6 * scale, 2 * scale, 2 * scale);
                 ctx.fillRect(8 * scale, 6 * scale, 2 * scale, 2 * scale);
                 break;
             case 'fast':
                 // Pink speedy enemy
-                ctx.fillStyle = '#ff3399';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.fast.main;
                 ctx.fillRect(4 * scale, 6 * scale, 8 * scale, 4 * scale);
                 ctx.fillRect(6 * scale, 4 * scale, 4 * scale, 8 * scale);
-                ctx.fillStyle = '#990055';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.fast.dark;
                 ctx.fillRect(7 * scale, 7 * scale, 1 * scale, 1 * scale);
                 ctx.fillRect(8 * scale, 7 * scale, 1 * scale, 1 * scale);
                 break;
             case 'tank':
                 // Purple tank enemy
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.tank.main;
                 ctx.fillRect(2 * scale, 3 * scale, 12 * scale, 10 * scale);
-                ctx.fillStyle = '#660066';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.tank.dark;
                 ctx.fillRect(4 * scale, 5 * scale, 3 * scale, 3 * scale);
                 ctx.fillRect(9 * scale, 5 * scale, 3 * scale, 3 * scale);
                 break;
             case 'shooter':
                 // Orange shooter enemy
-                ctx.fillStyle = '#ff8800';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.shooter.main;
                 ctx.fillRect(4 * scale, 4 * scale, 8 * scale, 8 * scale);
-                ctx.fillStyle = '#664400';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.shooter.dark;
                 ctx.fillRect(6 * scale, 6 * scale, 2 * scale, 2 * scale);
                 ctx.fillRect(8 * scale, 6 * scale, 2 * scale, 2 * scale);
-                ctx.fillStyle = '#ff8800';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.shooter.main;
                 ctx.fillRect(12 * scale, 7 * scale, 3 * scale, 2 * scale); // Weapon on right side
                 break;
             case 'ice':
                 // Light blue ice shooter enemy
-                ctx.fillStyle = '#66ccff';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.ice.main;
                 ctx.fillRect(4 * scale, 4 * scale, 8 * scale, 8 * scale);
-                ctx.fillStyle = '#004488';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.ice.medium;
                 ctx.fillRect(6 * scale, 6 * scale, 2 * scale, 2 * scale);
                 ctx.fillRect(8 * scale, 6 * scale, 2 * scale, 2 * scale);
-                ctx.fillStyle = '#66ccff';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.ice.main;
                 ctx.fillRect(12 * scale, 7 * scale, 3 * scale, 2 * scale); // Weapon on right side
                 // Ice crystals
-                ctx.fillStyle = '#aaddff';
+                ctx.fillStyle = ENEMY_SPRITE_COLORS.ice.light;
                 ctx.fillRect(3 * scale, 3 * scale, 1 * scale, 1 * scale);
                 ctx.fillRect(12 * scale, 3 * scale, 1 * scale, 1 * scale);
                 ctx.fillRect(3 * scale, 12 * scale, 1 * scale, 1 * scale);
@@ -104,7 +106,7 @@ export class SpriteGenerator {
             ctx.fillStyle = '#ffff00';
             ctx.fillRect(2, 2, 4, 4);
         } else if (type === 'ice') {
-            ctx.fillStyle = '#66ccff';
+            ctx.fillStyle = ENEMY_SPRITE_COLORS.ice.main;
             ctx.fillRect(2, 2, 4, 4);
             // Ice sparkle
             ctx.fillStyle = '#ffffff';
@@ -143,18 +145,6 @@ export class SpriteGenerator {
                 ctx.fillRect(4, 4, 4, 4);
                 break;
         }
-
-        return canvas;
-    }
-
-    static createParticle(color, size = 4) {
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, size, size);
 
         return canvas;
     }
