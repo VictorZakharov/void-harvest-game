@@ -90,7 +90,7 @@ export const EXTRA_CHOICE_MAX_LEVEL = 1; // Extra Choice is unique
 export const PLAYER_BASE_HEALTH = 100;
 export const PLAYER_BASE_SPEED = 3;
 export const PLAYER_BASE_DAMAGE = 10;
-export const PLAYER_BASE_FIRE_RATE = 30; // frames between shots
+export const PLAYER_BASE_FIRE_RATE = 18; // frames between shots
 export const PLAYER_SIZE = 12; // radius
 
 // ============================================
