@@ -9,6 +9,7 @@
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: v.$spacing-lg;
     margin-top: v.$spacing-xl;
+    perspective: 1000px;
 }
 
 .skill-option {
@@ -17,7 +18,8 @@
     padding: 25px v.$spacing-xl;
     border-radius: v.$border-radius-lg;
     cursor: pointer;
-    transition: all v.$transition-base;
+    // Use faster transition for transform to make parallax responsive, but keep other props smooth
+    transition: background 0.3s ease, box-shadow 0.3s ease;
     pointer-events: all;
     display: flex;
     flex-direction: column;
@@ -30,7 +32,7 @@
 
     &:hover {
         background: rgba(v.$color-primary, 0.3);
-        transform: translateY(-5px) scale(1.05);
+        // Transform is handled by JS for parallax
         box-shadow: v.$glow-cyan-md;
     }
 

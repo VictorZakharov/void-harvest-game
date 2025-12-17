@@ -93,5 +93,62 @@ export function showLevelUpScreen(game) {
         choicesContainer.appendChild(div);
     });
 
+    // Add Parallax Effect
+    let cardRects = [];
+    let rafId = null;
+
+    // Init rects after layout stabilises
+    setTimeout(() => {
+        const cards = choicesContainer.children;
+        cardRects = Array.from(cards).map(card => {
+            const rect = card.getBoundingClientRect();
+            return {
+                card: card,
+                centerX: rect.left + rect.width / 2,
+                centerY: rect.top + rect.height / 2
+            };
+        });
+    }, 50);
+
+    modal.onmousemove = (e) => {
+        if (rafId) return;
+
+        rafId = requestAnimationFrame(() => {
+            // Safety check if rects are missing
+            if (cardRects.length === 0 && choicesContainer.children.length > 0) {
+                const cards = choicesContainer.children;
+                cardRects = Array.from(cards).map(card => {
+                    const rect = card.getBoundingClientRect();
+                    return {
+                        card: card,
+                        centerX: rect.left + rect.width / 2,
+                        centerY: rect.top + rect.height / 2
+                    };
+                });
+            }
+
+            for (let item of cardRects) {
+                const { card, centerX, centerY } = item;
+
+                const mouseX = e.clientX - centerX;
+                const mouseY = e.clientY - centerY;
+
+                // Sensitivity reduced to 60% (Divisor 35)
+                const rotateY = (mouseX / 35).toFixed(2);
+                const rotateX = (-mouseY / 35).toFixed(2);
+
+                const isHovered = card.matches(':hover');
+                const scale = 0.90; // Reduced to 90% per user request
+                const translateZ = '0px';
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale}) translateZ(${translateZ})`;
+            }
+            rafId = null;
+        });
+    };
+
+    // Reset on mouse leave or when closing? 
+    // Not strictly necessary as modal closes/reopens freshly
+
     modal.classList.remove('hidden');
 }
