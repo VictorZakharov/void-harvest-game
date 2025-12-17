@@ -12,11 +12,12 @@ import { InputHandler } from './input.js';
 import { META_UPGRADES, SKILLS } from './skills.js';
 import { UIManager } from './ui.js';
 import { StatsManager } from './stats.js';
+import * as THREE from 'three';
 
 export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        // this.ctx = this.canvas.getContext('2d'); // Removed for Three.js
         this.canvas.width = CANVAS_WIDTH;
         this.canvas.height = CANVAS_HEIGHT;
 
@@ -28,11 +29,89 @@ export class Game {
         this.totalSouls = this.metaProgress.souls || 0;
 
         this.ui = new UIManager(this);
+
+        // Initialize 3D Scene
+        this.init3D();
+
         this.reset();
+    }
+
+    init3D() {
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x1a1a2e);
+
+        // Camera (Adjusted for wider view)
+        this.camera3D = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 3000);
+        this.camera3D.position.set(0, 1200, 800); // Higher up to see more field
+        this.camera3D.lookAt(0, 0, 0);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+        this.renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        this.renderer.shadowMap.enabled = true;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // Soft white light
+        this.scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(500, 1000, 500);
+        dirLight.castShadow = true;
+
+        // Optimize shadow map
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 2500;
+        dirLight.shadow.camera.left = -1000;
+        dirLight.shadow.camera.right = 1000;
+        dirLight.shadow.camera.top = 1000;
+        dirLight.shadow.camera.bottom = -1000;
+
+        this.scene.add(dirLight);
+
+        // Ground
+        const groundGeo = new THREE.PlaneGeometry(CANVAS_WIDTH * 2, CANVAS_HEIGHT * 2);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x222233 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(CANVAS_WIDTH * 2, 40, 0x444455, 0x222233);
+        gridHelper.position.y = 1;
+        this.scene.add(gridHelper);
+
+        // Field Boundaries
+        const boundaryGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 2, 0),
+            new THREE.Vector3(CANVAS_WIDTH, 2, 0),
+            new THREE.Vector3(CANVAS_WIDTH, 2, CANVAS_HEIGHT),
+            new THREE.Vector3(0, 2, CANVAS_HEIGHT),
+            new THREE.Vector3(0, 2, 0)
+        ]);
+        const boundaryMat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+        const boundaryLine = new THREE.Line(boundaryGeo, boundaryMat);
+        this.scene.add(boundaryLine);
+
+        // Raycasting
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -5); // Intersect at y=5 (mid-height of player/items)
     }
 
     reset() {
         // Clear all game state completely
+        if (this.scene) {
+            // Remove existing meshes
+            this.enemies?.forEach(e => this.scene.remove(e.mesh));
+            this.bullets?.forEach(b => this.scene.remove(b.mesh));
+            this.items?.forEach(i => this.scene.remove(i.mesh));
+            this.particles?.forEach(p => this.scene.remove(p.mesh));
+            if (this.player?.mesh) this.scene.remove(this.player.mesh);
+        }
+
         this.enemies = [];
         this.bullets = [];
         this.items = [];
@@ -47,7 +126,9 @@ export class Game {
         this.player = null;
 
         // Create completely fresh player with base stats
+        // Create completely fresh player with base stats
         this.player = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+        if (this.scene && this.player.mesh) this.scene.add(this.player.mesh);
 
         // Apply meta upgrades AFTER player is created (permanent upgrades only)
         this.applyMetaUpgrades();
@@ -145,7 +226,7 @@ export class Game {
         // Handle frozen state - check for any input to unfreeze
         if (this.state === 'frozen') {
             const hasMovementInput = this.input.keys['w'] || this.input.keys['a'] ||
-                                    this.input.keys['s'] || this.input.keys['d'];
+                this.input.keys['s'] || this.input.keys['d'];
             const hasShootInput = this.input.mouseDown;
 
             if (hasMovementInput || hasShootInput) {
@@ -159,8 +240,9 @@ export class Game {
         }
 
         // Always draw, even when paused or gameover
+        // Always render
         if (this.state !== 'start') {
-            this.draw();
+            this.render3D();
         }
 
         requestAnimationFrame(() => this.gameLoop());
@@ -176,8 +258,18 @@ export class Game {
             return;
         }
 
-        // Update player
-        this.player.update(this.input, this.input.mouseX, this.input.mouseY);
+        // Calculate 3D mouse position
+        const ndcX = (this.input.mouseX / CANVAS_WIDTH) * 2 - 1;
+        const ndcY = -(this.input.mouseY / CANVAS_HEIGHT) * 2 + 1;
+        this.mouse.set(ndcX, ndcY);
+
+        this.raycaster.setFromCamera(this.mouse, this.camera3D);
+        const target = new THREE.Vector3();
+        this.raycaster.ray.intersectPlane(this.groundPlane, target);
+
+        // Update player with world coordinates
+        // target.z maps to 2D y
+        this.player.update(this.input, target.x, target.z);
 
         // Player shooting
         if (this.player.shoot(this.input.mouseDown)) {
@@ -217,6 +309,8 @@ export class Game {
                     this.gameOver();
                 }
                 this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
+
+                this.scene.remove(enemy.mesh);
                 this.enemies.splice(i, 1);
                 this.camera.shake = 10;
             }
@@ -228,6 +322,7 @@ export class Game {
             bullet.update();
 
             if (bullet.isOutOfBounds()) {
+                this.scene.remove(bullet.mesh);
                 this.bullets.splice(i, 1);
                 continue;
             }
@@ -261,6 +356,8 @@ export class Game {
                             this.player.onKill(); // Vampire effect
                             this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
                             this.spawnXP(enemy.x, enemy.y, enemy.xpValue);
+
+                            this.scene.remove(enemy.mesh);
                             this.enemies.splice(j, 1);
                         } else {
                             this.createParticles(enemy.x, enemy.y, '#ffff00', PARTICLE_COUNT_HIT);
@@ -268,6 +365,7 @@ export class Game {
 
                         // Only remove bullet and stop checking if it has no piercing left
                         if (bullet.onHit()) {
+                            this.scene.remove(bullet.mesh);
                             this.bullets.splice(i, 1);
                             break;
                         }
@@ -291,6 +389,7 @@ export class Game {
                         }
                         this.createParticles(this.player.x, this.player.y, '#ff0000', PARTICLE_COUNT_HIT);
                     }
+                    this.scene.remove(bullet.mesh);
                     this.bullets.splice(i, 1);
                     this.camera.shake = 8;
                 }
@@ -304,6 +403,7 @@ export class Game {
 
             if (item.collidesWith(this.player)) {
                 this.collectItem(item);
+                this.scene.remove(item.mesh);
                 this.items.splice(i, 1);
             }
         }
@@ -312,6 +412,7 @@ export class Game {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
             if (this.particles[i].isDead()) {
+                this.scene.remove(this.particles[i].mesh);
                 this.particles.splice(i, 1);
             }
         }
@@ -325,185 +426,52 @@ export class Game {
         this.ui.updateHUD();
     }
 
-    draw() {
+    render3D() {
+        // Update entity meshes
+        this.player.updateMesh();
+        this.enemies.forEach(e => e.updateMesh());
+        this.bullets.forEach(b => b.updateMesh());
+        this.items.forEach(i => i.updateMesh());
+        this.particles.forEach(p => p.update()); // Particle update handles mesh update
+
+        // Camera follow (Basic)
+        // Camera is already set at specific height/angle in init3D.
+        // We just move X, Z to follow player.
+        // Camera offset was (0, 800, 500) looking at (0,0,0).
+        // So offset from target point (0,0,0) is (0, 800, 500).
+        const targetX = this.player.x + this.player.width / 2;
+        const targetZ = this.player.y + this.player.height / 2;
+
+        this.camera3D.position.x = targetX;
+        this.camera3D.position.z = targetZ + 700; // Increased offset z
+        this.camera3D.lookAt(targetX, 0, targetZ);
+
+        // Shake
+        if (this.camera.shake > 0) {
+            this.camera3D.position.x += (Math.random() - 0.5) * this.camera.shake * 2;
+            this.camera3D.position.z += (Math.random() - 0.5) * this.camera.shake * 2;
+        }
+
+        this.renderer.render(this.scene, this.camera3D);
+    }
+
+    // Kept for reference or removed
+    draw2D() {
         this.ctx.fillStyle = '#1a1a2e';
         this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-        // Camera shake (only when playing)
-        this.ctx.save();
-        if (this.camera.shake > 0 && this.state === 'playing') {
-            const shakeX = (Math.random() - 0.5) * this.camera.shake;
-            const shakeY = (Math.random() - 0.5) * this.camera.shake;
-            this.ctx.translate(shakeX, shakeY);
-        }
-
-        // Draw grid
-        this.ctx.strokeStyle = '#2a2a3e';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < CANVAS_WIDTH; x += 40) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, CANVAS_HEIGHT);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < CANVAS_HEIGHT; y += 40) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(CANVAS_WIDTH, y);
-            this.ctx.stroke();
-        }
-
-        // Draw items
-        this.items.forEach(item => item.draw(this.ctx));
-
-        // Draw particles
-        this.particles.forEach(particle => particle.draw(this.ctx));
-
-        // Draw bullets
-        this.bullets.forEach(bullet => bullet.draw(this.ctx));
-
-        // Draw enemies
-        this.enemies.forEach(enemy => enemy.draw(this.ctx));
-
-        // Draw player
-        this.player.draw(this.ctx);
-
-        this.ctx.restore();
-
-        // Draw slow effect overlay (blue glow on screen edges) - intensifies dramatically with stacks
-        if (this.player.slowEffects.length > 0) {
-            // Use the longest remaining timer for fade effect
-            const maxTimer = Math.max(...this.player.slowEffects.map(e => e.timer));
-            const timeFade = Math.min(1, maxTimer / 60); // Fade in/out
-
-            // Calculate total slow percentage for opacity (more stacks = much more visible)
-            const totalSlowPercent = Math.min(1, this.player.slowEffects.reduce((sum, e) => sum + e.amount, 0));
-
-            // Inner radius shrinks dramatically with more stacks (vision tunnel)
-            const innerRadius = CANVAS_WIDTH * (0.4 - totalSlowPercent * 0.35);
-            const outerRadius = CANVAS_WIDTH * 0.7;
-
-            const gradient = this.ctx.createRadialGradient(
-                CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, innerRadius,
-                CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, outerRadius
-            );
-
-            // At low stacks: subtle blue glow
-            // At high stacks: intense white-blue, almost complete whiteout
-            const baseOpacity = 0.4 + (totalSlowPercent * 0.5); // 0.4 to 0.9
-            const edgeIntensity = baseOpacity * timeFade;
-
-            // Mix in white at higher slow percentages for blinding effect
-            const whiteAmount = Math.max(0, totalSlowPercent - 0.5) * 2; // 0 at 50%, 1 at 100%
-            const r = 102 + (255 - 102) * whiteAmount;
-            const g = 204 + (255 - 204) * whiteAmount;
-            const b = 255;
-
-            gradient.addColorStop(0, 'rgba(102, 204, 255, 0)');
-            gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${edgeIntensity * 0.3})`);
-            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, ${edgeIntensity})`);
-
-            this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            // At very high stacks (80%+), add full-screen overlay for near-complete whiteout
-            if (totalSlowPercent >= 0.8) {
-                const whiteoutOpacity = (totalSlowPercent - 0.8) * 5 * timeFade; // 0 at 80%, 1 at 100%
-                this.ctx.fillStyle = `rgba(255, 255, 255, ${whiteoutOpacity * 0.6})`;
-                this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            }
-        }
-
-        // Draw frozen state overlay
-        if (this.state === 'frozen') {
-            // Semi-transparent dark overlay
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            // Message box positioned away from player
-            const boxWidth = 500;
-            const boxHeight = 120;
-            const margin = 60;
-
-            // Get player position
-            const playerX = this.player.x;
-            const playerY = this.player.y;
-
-            // Define possible message box positions
-            const positions = [
-                {
-                    name: 'top',
-                    x: (CANVAS_WIDTH - boxWidth) / 2,
-                    y: margin
-                },
-                {
-                    name: 'bottom',
-                    x: (CANVAS_WIDTH - boxWidth) / 2,
-                    y: CANVAS_HEIGHT - boxHeight - margin
-                },
-                {
-                    name: 'left',
-                    x: margin,
-                    y: (CANVAS_HEIGHT - boxHeight) / 2
-                },
-                {
-                    name: 'right',
-                    x: CANVAS_WIDTH - boxWidth - margin,
-                    y: (CANVAS_HEIGHT - boxHeight) / 2
-                }
-            ];
-
-            // Calculate distance from player to nearest edge of each message box
-            let maxDist = -1;
-            let bestPosition = positions[0];
-
-            for (const pos of positions) {
-                // Find closest point on rectangle to player
-                const closestX = Math.max(pos.x, Math.min(playerX, pos.x + boxWidth));
-                const closestY = Math.max(pos.y, Math.min(playerY, pos.y + boxHeight));
-
-                // Calculate distance to closest point on rectangle perimeter
-                const dist = Math.sqrt(
-                    Math.pow(playerX - closestX, 2) +
-                    Math.pow(playerY - closestY, 2)
-                );
-
-                if (dist > maxDist) {
-                    maxDist = dist;
-                    bestPosition = pos;
-                }
-            }
-
-            const boxX = bestPosition.x;
-            const boxY = bestPosition.y;
-
-            // Box background with glow
-            this.ctx.fillStyle = 'rgba(26, 26, 46, 0.95)';
-            this.ctx.strokeStyle = '#00ffff';
-            this.ctx.lineWidth = 3;
-            this.ctx.shadowBlur = 20;
-            this.ctx.shadowColor = '#00ffff';
-            this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-            this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-            this.ctx.shadowBlur = 0;
-
-            // Title text
-            this.ctx.fillStyle = '#00ffff';
-            this.ctx.font = 'bold 28px "Courier New"';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText('Skill Acquired!', boxX + boxWidth / 2, boxY + 35);
-
-            // Instruction text
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '18px "Courier New"';
-            this.ctx.fillText('Move or shoot to continue...', boxX + boxWidth / 2, boxY + 75);
-
-            // Reset text properties
-            this.ctx.textAlign = 'left';
-            this.ctx.textBaseline = 'alphabetic';
-        }
+        // ... (previous 2D code)
     }
+
+    draw() {
+        // Redirection to 3D render is done in gameLoop
+        // Or we can leave this EMPTY or use it for UI overlay only if using 2D context on same canvas?
+        // Three.js renderer overwrites canvas content. 
+        // Rendering slow effect overlay needs a separate approach or post-processing.
+        // For now, skip overlays or unimplemented.
+    }
+
+    // Draw slow/frozen effects not implemented in 3D yet
+
 
     createPlayerBullets() {
         const bounds = this.player.getBounds();
@@ -523,19 +491,23 @@ export class Game {
         }
 
         if (this.player.projectileCount === 1) {
-            this.bullets.push(new Bullet(
+            const bullet = new Bullet(
                 startX, startY, this.player.angle, this.player.bulletSpeed,
                 effectiveDamage, true, this.player.piercing, this.player.range
-            ));
+            );
+            this.bullets.push(bullet);
+            this.scene.add(bullet.mesh);
             this.stats.shotsFired++;
         } else {
             const spread = 0.3;
             for (let i = 0; i < this.player.projectileCount; i++) {
                 const offset = (i - (this.player.projectileCount - 1) / 2) * spread;
-                this.bullets.push(new Bullet(
+                const bullet = new Bullet(
                     startX, startY, this.player.angle + offset, this.player.bulletSpeed,
                     effectiveDamage, true, this.player.piercing, this.player.range
-                ));
+                );
+                this.bullets.push(bullet);
+                this.scene.add(bullet.mesh);
                 this.stats.shotsFired++;
             }
         }
@@ -544,16 +516,18 @@ export class Game {
     createEnemyBullet(enemy, targetX, targetY) {
         const bounds = enemy.getBounds();
         const angle = Math.atan2(targetY - bounds.centerY, targetX - bounds.centerX);
-        this.bullets.push(new Bullet(
+        const bullet = new Bullet(
             bounds.centerX, bounds.centerY, angle, 4, enemy.damage, false, 0, 600, enemy.type
-        ));
+        );
+        this.bullets.push(bullet);
+        this.scene.add(bullet.mesh);
     }
 
     spawnEnemy() {
         const side = Math.floor(Math.random() * 4);
         let x, y;
 
-        switch(side) {
+        switch (side) {
             case 0: x = Math.random() * CANVAS_WIDTH; y = -20; break;
             case 1: x = CANVAS_WIDTH + 20; y = Math.random() * CANVAS_HEIGHT; break;
             case 2: x = Math.random() * CANVAS_WIDTH; y = CANVAS_HEIGHT + 20; break;
@@ -646,24 +620,29 @@ export class Game {
         }
 
         this.enemies.push(enemy);
+        this.scene.add(enemy.mesh);
     }
 
     spawnXP(x, y, amount) {
         for (let i = 0; i < amount; i++) {
             const offsetX = (Math.random() - 0.5) * 20;
             const offsetY = (Math.random() - 0.5) * 20;
-            this.items.push(new Item(x + offsetX, y + offsetY, 'xp'));
+            const item = new Item(x + offsetX, y + offsetY, 'xp');
+            this.items.push(item);
+            this.scene.add(item.mesh);
         }
 
         // Chance for health drop (base 5% + player bonus)
         const healthDropRate = HEALTH_DROP_BASE_RATE + (this.player.dropBonus || 0);
         if (Math.random() < healthDropRate) {
-            this.items.push(new Item(x, y, 'health'));
+            const item = new Item(x, y, 'health');
+            this.items.push(item);
+            this.scene.add(item.mesh);
         }
     }
 
     collectItem(item) {
-        switch(item.type) {
+        switch (item.type) {
             case 'xp':
                 let xpGain = 1;
                 const xpBoostLevel = this.metaProgress.upgrades['xp_gain'] || 0;
@@ -683,11 +662,13 @@ export class Game {
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 3 + 1;
-            this.particles.push(new Particle(
+            const p = new Particle(
                 x, y, color,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed
-            ));
+            );
+            this.particles.push(p);
+            this.scene.add(p.mesh);
         }
     }
 

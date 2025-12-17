@@ -1,11 +1,12 @@
-// ==================== ENTITY CLASSES ====================
+import * as THREE from 'three';
 import {
     CANVAS_WIDTH, CANVAS_HEIGHT,
     PLAYER_BASE_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_DAMAGE, PLAYER_BASE_FIRE_RATE, PLAYER_SIZE,
     XP_LEVEL_MULTIPLIER, INITIAL_XP_REQUIRED,
     ITEM_MAGNET_BASE_RANGE, ITEM_MOVE_SPEED,
     BULLET_BASE_SPEED, BULLET_BASE_RANGE, BULLET_SIZE, BULLET_COLOR,
-    XP_ITEM_BASE_VALUE
+    XP_ITEM_BASE_VALUE,
+    ENEMY_SPRITE_COLORS
 } from './constants.js';
 import { SpriteGenerator } from './sprites.js';
 
@@ -17,6 +18,24 @@ export class Entity {
         this.height = height;
         this.vx = 0;
         this.vy = 0;
+        this.mesh = null;
+    }
+
+    createMesh() {
+        return null;
+    }
+
+    updateMesh() {
+        if (this.mesh) {
+            this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
+            // Height is y in 3D? No, standard 3D uses Y as up. Ground is XZ plane.
+            // So x -> x, y -> z.
+            // 2D y increases down. 3D z increases towards viewer.
+            // If camera is top down, looking -Y.
+            // Let's use XZ plane for ground.
+            // x -> x
+            // y -> z
+        }
     }
 
     getBounds() {
@@ -34,7 +53,7 @@ export class Entity {
         const a = this.getBounds();
         const b = other.getBounds();
         return a.left < b.right && a.right > b.left &&
-               a.top < b.bottom && a.bottom > b.top;
+            a.top < b.bottom && a.bottom > b.top;
     }
 }
 
@@ -56,6 +75,9 @@ export class Player extends Entity {
         this.projectileCount = 1;
         this.piercing = 0;
         this.range = BULLET_BASE_RANGE; // Base range
+
+        // Create 3D mesh
+        this.mesh = this.createMesh();
 
         // XP and leveling
         this.xp = 0;
@@ -210,11 +232,36 @@ export class Player extends Entity {
     }
 
     draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        ctx.rotate(this.angle);
-        ctx.drawImage(this.sprite, -this.width / 2, -this.height / 2);
-        ctx.restore();
+        // 2D draw - replaced by 3D render
+    }
+
+    createMesh() {
+        const group = new THREE.Group();
+
+        // Body
+        const bodyGeo = new THREE.BoxGeometry(this.width, 20, this.height);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x00ffff });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.castShadow = true;
+        group.add(body);
+
+        // Head
+        const headGeo = new THREE.BoxGeometry(this.width * 0.6, 15, this.height * 0.4);
+        const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc99 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 10;
+        head.position.z = -5;
+        head.castShadow = true;
+        group.add(head);
+
+        return group;
+    }
+
+    updateMesh() {
+        if (this.mesh) {
+            this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
+            this.mesh.rotation.y = -this.angle; // Rotate around Y axis
+        }
     }
 }
 
@@ -224,7 +271,7 @@ export class Enemy extends Entity {
         this.type = type;
 
         // Set stats based on type
-        switch(type) {
+        switch (type) {
             case 'basic':
                 this.maxHealth = 30;
                 this.speed = 1.5;
@@ -274,7 +321,10 @@ export class Enemy extends Entity {
 
         // Freeze effect
         this.frozen = false;
+        this.frozen = false;
         this.freezeTimer = 0;
+
+        this.mesh = this.createMesh();
     }
 
     update(playerX, playerY) {
@@ -327,43 +377,25 @@ export class Enemy extends Entity {
     }
 
     draw(ctx) {
-        ctx.save();
+        // 2D logic removed for 3D
+    }
 
-        // Apply blue tint if frozen
-        if (this.frozen) {
-            ctx.globalAlpha = 0.7;
-            ctx.filter = 'brightness(1.2) saturate(0.5)';
-        }
+    createMesh() {
+        const color = ENEMY_SPRITE_COLORS[this.type].main;
+        const geometry = new THREE.BoxGeometry(this.width, 20, this.height);
+        const material = new THREE.MeshLambertMaterial({ color: color });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        return mesh;
+    }
 
-        // Rotate shooter and ice enemies to face player
-        if (this.type === 'shooter' || this.type === 'ice') {
-            ctx.save();
-            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-            ctx.rotate(this.angle);
-            ctx.drawImage(this.sprite, -this.width / 2, -this.height / 2, this.width, this.height);
-            ctx.restore();
-        } else {
-            ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
-        }
-
-        // Draw ice overlay if frozen
-        if (this.frozen) {
-            ctx.fillStyle = 'rgba(102, 204, 255, 0.4)';
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-        }
-
-        ctx.restore();
-
-        // Health bar
-        if (this.health < this.maxHealth) {
-            const barWidth = this.width;
-            const barHeight = 3;
-            const healthPercent = this.health / this.maxHealth;
-
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(this.x, this.y - 6, barWidth, barHeight);
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x, this.y - 6, barWidth * healthPercent, barHeight);
+    updateMesh() {
+        if (this.mesh) {
+            this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
+            if (this.type === 'shooter' || this.type === 'ice') {
+                this.mesh.rotation.y = -this.angle;
+            }
+            // Visual feedback for froze/damage could be added here
         }
     }
 }
@@ -388,6 +420,8 @@ export class Bullet extends Entity {
 
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
+
+        this.mesh = this.createMesh();
     }
 
     update() {
@@ -398,8 +432,8 @@ export class Bullet extends Entity {
 
     isOutOfBounds() {
         return this.x < -50 || this.x > CANVAS_WIDTH + 50 ||
-               this.y < -50 || this.y > CANVAS_HEIGHT + 50 ||
-               this.distanceTraveled > this.maxDistance;
+            this.y < -50 || this.y > CANVAS_HEIGHT + 50 ||
+            this.distanceTraveled > this.maxDistance;
     }
 
     onHit() {
@@ -408,7 +442,33 @@ export class Bullet extends Entity {
     }
 
     draw(ctx) {
-        ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+        // Replaced by 3D
+    }
+
+    createMesh() {
+        const color = this.isPlayer ? 0xffff00 : (this.enemyType === 'ice' ? 0x66ccff : 0xff0000);
+        // Use Sphere for bullets
+        const geometry = new THREE.SphereGeometry(this.width / 2, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ color: color });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // Add fake glow (transparent larger sphere)
+        const glowGeo = new THREE.SphereGeometry(this.width, 8, 8);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.3
+        });
+        const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+        mesh.add(glowMesh);
+
+        return mesh;
+    }
+
+    updateMesh() {
+        if (this.mesh) {
+            this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
+        }
     }
 }
 
@@ -419,6 +479,7 @@ export class Item extends Entity {
         this.sprite = SpriteGenerator.createItemSprite(type);
         this.magnetRange = ITEM_MAGNET_BASE_RANGE;
         this.magnetSpeed = ITEM_MOVE_SPEED;
+        this.mesh = this.createMesh();
     }
 
     update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3) {
@@ -439,6 +500,30 @@ export class Item extends Entity {
     }
 
     draw(ctx) {
-        ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+        // Replaced by 3D
+    }
+
+    createMesh() {
+        let color;
+        switch (this.type) {
+            case 'xp': color = 0x00ff00; break;
+            case 'health': color = 0xff0000; break;
+            case 'weapon': color = 0x0088ff; break;
+            default: color = 0xffffff;
+        }
+        const geometry = new THREE.BoxGeometry(this.width, this.width, this.width); // Cube
+        const material = new THREE.MeshLambertMaterial({ color: color });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        mesh.userData = { rotationSpeed: Math.random() * 0.1 + 0.05 };
+        return mesh;
+    }
+
+    updateMesh() {
+        if (this.mesh) {
+            this.mesh.position.set(this.x + this.width / 2, 5, this.y + this.height / 2);
+            this.mesh.rotation.y += this.mesh.userData.rotationSpeed;
+            this.mesh.rotation.x += this.mesh.userData.rotationSpeed;
+        }
     }
 }
