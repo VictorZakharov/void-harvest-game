@@ -602,8 +602,31 @@ export class Game {
     createEnemyBullet(enemy, targetX, targetY) {
         const bounds = enemy.getBounds();
         const angle = Math.atan2(targetY - bounds.centerY, targetX - bounds.centerX);
+
+        let startX = bounds.centerX;
+        let startY = bounds.centerY;
+
+        // Visual offset to match gun position for shooters
+        if (enemy.type === 'shooter' || enemy.type === 'ice') {
+            // Gun is at Local: Forward (X) ~ Width/2 + 15, Right (Z) ~ Height/2 + 4
+            // 3D/Game Space Mapping:
+            // Local Forward X -> Rotated Vector
+            // Local Right Z -> Perpendicular Vector
+
+            const localFwd = enemy.width / 2 + 15;
+            const localRight = enemy.height / 2 + 4;
+
+            // Rotation formula derived from mesh.rotation.y = -angle
+            // x' = x*cos(a) - z*sin(a)
+            // z' = x*sin(a) + z*cos(a)
+            // Here 'z' is the 'right' component in local space
+
+            startX += localFwd * Math.cos(angle) - localRight * Math.sin(angle);
+            startY += localFwd * Math.sin(angle) + localRight * Math.cos(angle);
+        }
+
         const bullet = new Bullet(
-            bounds.centerX, bounds.centerY, angle, 4, enemy.damage, false, 0, 600, enemy.type
+            startX, startY, angle, 4, enemy.damage, false, 0, 600, enemy.type
         );
         this.bullets.push(bullet);
         this.scene.add(bullet.mesh);

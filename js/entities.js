@@ -462,6 +462,21 @@ export class Enemy extends Entity {
         group.add(leftEye);
         group.add(rightEye);
 
+        // Add Gun for shooter types
+        if (this.type === 'shooter' || this.type === 'ice') {
+            const gunLength = 20;
+            const gunGeo = new THREE.BoxGeometry(gunLength, 6, 6);
+            const gunColor = this.type === 'ice' ? 0x88ccff : 0x333333; // Icy gun for ice enemy
+            const gunMat = new THREE.MeshLambertMaterial({ color: gunColor });
+            const gun = new THREE.Mesh(gunGeo, gunMat);
+
+            // Mount on right side, pointing forward
+            // Body extends to this.height/2 in Z.
+            gun.position.set(this.width / 2, -2, this.height / 2 + 4);
+            gun.castShadow = true;
+            group.add(gun);
+        }
+
         // Health Bar (Billboard Group)
         const hpGroup = new THREE.Group();
         hpGroup.position.set(0, 40, 0); // Lift higher for visibility
