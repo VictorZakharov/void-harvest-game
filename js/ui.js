@@ -19,6 +19,7 @@ export class UIManager {
             ice: true
         };
         this.setupEventHandlers();
+        this.setupMainMenuEffects();
     }
 
     setupEventHandlers() {
@@ -215,5 +216,55 @@ export class UIManager {
             if (show) el.classList.remove('hidden');
             else el.classList.add('hidden');
         }
+    }
+    setupMainMenuEffects() {
+        const startScreen = document.getElementById('start-screen');
+        const card = startScreen.querySelector('.modal-content');
+
+        // Ensure card keeps 3D context
+        card.style.transformStyle = 'preserve-3d';
+        card.style.transition = 'transform 0.1s ease-out';
+
+        let rafId = null;
+
+        document.addEventListener('mousemove', (e) => {
+            // Only active if start screen is visible
+            if (startScreen.classList.contains('hidden')) return;
+
+            if (rafId) return; // Throttle to frame rate
+
+            rafId = requestAnimationFrame(() => {
+                const { clientX, clientY } = e;
+                const { innerWidth, innerHeight } = window;
+
+                // Caclulate normalized position (-1 to 1)
+                const cx = innerWidth / 2;
+                const cy = innerHeight / 2;
+
+                const nx = (clientX - cx) / cx;
+                const ny = (clientY - cy) / cy;
+
+                // Settings
+                const maxTilt = 5; // Reduced from 10 to prevent extreme clipping
+
+                // Tilt Calculation
+                const rx = -ny * maxTilt; // Rotate X (Up/Down tilt)
+                const ry = nx * maxTilt;  // Rotate Y (Left/Right tilt)
+
+                // Apply to Container
+                card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+                // Counter-Rotate Children (Keep them flat relative to screen)
+                const children = Array.from(card.children);
+                children.forEach(child => {
+                    // Reduce clipping by lifting Z high enough to clear the tilted background at edges
+                    child.style.transform = `translateZ(50px) rotateY(${-ry}deg) rotateX(${-rx}deg)`;
+                });
+
+                rafId = null;
+            });
+        });
+
+        // Reset on mouse leave or idle? Not strictly necessary for fullscreen overlay
     }
 }

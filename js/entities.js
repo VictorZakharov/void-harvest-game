@@ -525,18 +525,27 @@ export class Enemy extends Entity {
             // Update Health Bar
             if (this.healthBar) {
                 // Determine target visibility/opacity
-                const shouldBeVisible = (isVisible && this.health < this.maxHealth && this.health > 0);
+                const isDamaged = this.health < this.maxHealth;
+                const shouldBeVisible = (isVisible && isDamaged && this.health > 0);
                 const targetOpacity = shouldBeVisible ? 1.0 : 0.0;
 
                 // Initialize if missing
                 if (this.hbOpacity === undefined) this.hbOpacity = 0;
 
-                // Lerp opacity (approx 1 sec fade: 1.0 / 60 frames = ~0.016)
-                if (this.hbOpacity < targetOpacity) {
+                // Check for "First Hit" while visible -> Snap to 1.0
+                // If I am visible, damage occurred, and I wasn't damaged before (or opacity is low), snap it.
+                // Using wasDamaged flag to track state change.
+                if (isVisible && isDamaged && !this.wasDamaged) {
+                    this.hbOpacity = 1.0;
+                }
+                // Regular Lerp
+                else if (this.hbOpacity < targetOpacity) {
                     this.hbOpacity = Math.min(this.hbOpacity + 0.02, targetOpacity);
                 } else if (this.hbOpacity > targetOpacity) {
                     this.hbOpacity = Math.max(this.hbOpacity - 0.02, targetOpacity);
                 }
+
+                this.wasDamaged = isDamaged;
 
                 if (this.hbOpacity > 0.01) {
                     this.healthBar.visible = true;
