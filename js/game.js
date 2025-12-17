@@ -633,8 +633,9 @@ export class Game {
     }
 
     spawnEnemy() {
-        // Radial spawning: Spawn enemies in a circle around the player, just outside view
-        const spawnRadius = 1400; // Distance from player
+        // Radial spawning: Spawn enemies in a circle around the player
+        // User requested spawning just outside light radius (1.5x), even if on-screen (since it's dark)
+        const spawnRadius = this.player.getLightRadius() * 1.5;
         const angle = Math.random() * Math.PI * 2;
 
         let x = this.player.x + (this.player.width / 2) + Math.cos(angle) * spawnRadius;
