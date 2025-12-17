@@ -448,56 +448,94 @@ export class Enemy extends Entity {
         const group = new THREE.Group();
         group.add(body);
 
+        // Add "Face/Eyes" to indicate direction
+        // Front is +X direction based on atan2(dy, dx) and rotation logic
+        const eyeGeo = new THREE.BoxGeometry(4, 4, 4);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(this.width / 2, 5, -this.height / 4); // Front (+X), Up (+Y), Left (-Z)
+
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(this.width / 2, 5, this.height / 4); // Front (+X), Up (+Y), Right (+Z)
+
+        group.add(leftEye);
+        group.add(rightEye);
+
         // Health Bar (Billboard Group)
         const hpGroup = new THREE.Group();
         hpGroup.position.set(0, 40, 0); // Lift higher for visibility
 
-        // BG
         // BG (Large Dark Grey)
+        const bgMat = new THREE.MeshBasicMaterial({ color: 0x444444, transparent: true, opacity: 0 });
         const bg = new THREE.Mesh(
             new THREE.PlaneGeometry(54, 12),
-            new THREE.MeshBasicMaterial({ color: 0x444444 })
+            bgMat
         );
         hpGroup.add(bg);
+        hpGroup.bg = bg; // Store Ref
 
         // FG (Large Red)
         const fgGeo = new THREE.PlaneGeometry(50, 10);
         fgGeo.translate(25, 0, 0);
 
-        const fg = new THREE.Mesh(
-            fgGeo,
-            new THREE.MeshBasicMaterial({ color: 0xff0000 })
-        );
+        const fgMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
+        const fg = new THREE.Mesh(fgGeo, fgMat);
         fg.position.z = 1;
         fg.position.x = -25;
         hpGroup.add(fg);
         hpGroup.foreground = fg;
+        hpGroup.fg = fg; // Store Ref
+
         hpGroup.visible = false;
 
         group.add(hpGroup);
         this.healthBar = hpGroup;
 
+        // Init opacity state
+        this.hbOpacity = 0;
+
         return group;
     }
 
-    updateMesh() {
+    updateMesh(isVisible = true) {
         if (this.mesh) {
             this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
-            if (this.type === 'shooter' || this.type === 'ice') {
-                this.mesh.rotation.y = -this.angle;
-            }
+
+            // Rotate all enemies to face player
+            // angle is atan2(dy, dx) so 0 is +X. 
+            // We rotate around Y. -angle usually works for standard orientation
+            this.mesh.rotation.y = -this.angle;
 
             // Update Health Bar
             if (this.healthBar) {
-                if (this.health < this.maxHealth && this.health > 0) {
+                // Determine target visibility/opacity
+                const shouldBeVisible = (isVisible && this.health < this.maxHealth && this.health > 0);
+                const targetOpacity = shouldBeVisible ? 1.0 : 0.0;
+
+                // Initialize if missing
+                if (this.hbOpacity === undefined) this.hbOpacity = 0;
+
+                // Lerp opacity (approx 1 sec fade: 1.0 / 60 frames = ~0.016)
+                if (this.hbOpacity < targetOpacity) {
+                    this.hbOpacity = Math.min(this.hbOpacity + 0.02, targetOpacity);
+                } else if (this.hbOpacity > targetOpacity) {
+                    this.hbOpacity = Math.max(this.hbOpacity - 0.02, targetOpacity);
+                }
+
+                if (this.hbOpacity > 0.01) {
                     this.healthBar.visible = true;
+                    if (this.healthBar.bg) this.healthBar.bg.material.opacity = this.hbOpacity;
+                    if (this.healthBar.fg) this.healthBar.fg.material.opacity = this.hbOpacity;
+
                     const pct = this.health / this.maxHealth;
                     this.healthBar.foreground.scale.x = pct;
 
                     // Billboard effect (Counter rotation + Tilt)
-                    // Reset Y rotation relative to parent
-                    this.healthBar.rotation.y = (this.type === 'shooter' || this.type === 'ice') ? this.angle : 0;
-                    // Tilt to face camera 
+                    // Important: Change rotation order so we rotate around vertical Y *first* (to face screen),
+                    // THEN tilt back X. Otherwise we rotate around a tilted axis!
+                    this.healthBar.rotation.order = 'YXZ';
+                    this.healthBar.rotation.y = this.angle;
                     this.healthBar.rotation.x = -Math.PI / 4;
                 } else {
                     this.healthBar.visible = false;
@@ -505,6 +543,7 @@ export class Enemy extends Entity {
             }
         }
     }
+
 }
 
 export class Bullet extends Entity {

@@ -494,8 +494,28 @@ export class Game {
 
     render3D() {
         // Update entity meshes
+        const lightRadius = this.player.getLightRadius();
+        const cursorTarget = this.cursorLight ? this.cursorLight.target.position : null;
+
         this.player.updateMesh();
-        this.enemies.forEach(e => e.updateMesh());
+
+        this.enemies.forEach(e => {
+            let isVisible = false;
+
+            // Check Player Light (Self)
+            const dPlayer = Math.sqrt((e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2);
+            if (dPlayer < lightRadius * 0.7) isVisible = true;
+
+            // Check Cursor Light
+            if (!isVisible && cursorTarget) {
+                // cursorTarget.z is mapped to game Y
+                const dCursor = Math.sqrt((e.x - cursorTarget.x) ** 2 + (e.y - cursorTarget.z) ** 2);
+                if (dCursor < lightRadius) isVisible = true;
+            }
+
+            e.updateMesh(isVisible);
+        });
+
         this.bullets.forEach(b => b.updateMesh());
         this.items.forEach(i => i.updateMesh());
         this.particles.forEach(p => p.update()); // Particle update handles mesh update
