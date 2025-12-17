@@ -533,7 +533,7 @@ export class Game {
         this.camera3D.lookAt(targetX, 0, targetZ);
 
         // Shake
-        if (this.camera.shake > 0) {
+        if (this.camera.shake > 0 && this.state !== 'gameover') {
             this.camera3D.position.x += (Math.random() - 0.5) * this.camera.shake * 2;
             this.camera3D.position.z += (Math.random() - 0.5) * this.camera.shake * 2;
         }
