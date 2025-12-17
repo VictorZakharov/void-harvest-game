@@ -81,9 +81,14 @@ export function showLevelUpScreen(game) {
             }
             // Update HUD immediately to show new skill
             game.ui.updateHUD();
+
+            // Sync global lights (cursors etc)
+            if (game.updateGlobalLights) game.updateGlobalLights();
+
             modal.classList.add('hidden');
-            game.state = 'frozen'; // Freeze game to give player a breather
-            game.lastTime = performance.now(); // Reset time to avoid time jump
+
+            // Freeze game to give player a breather
+            game.setFrozen(true);
         };
         choicesContainer.appendChild(div);
     });

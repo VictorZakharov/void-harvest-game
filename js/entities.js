@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {
     CANVAS_WIDTH, CANVAS_HEIGHT,
-    PLAYER_BASE_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_DAMAGE, PLAYER_BASE_FIRE_RATE, PLAYER_SIZE,
+    PLAYER_BASE_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_DAMAGE, PLAYER_BASE_FIRE_RATE, PLAYER_SIZE, PLAYER_BASE_LIGHT_RADIUS,
     XP_LEVEL_MULTIPLIER, INITIAL_XP_REQUIRED,
     ITEM_MAGNET_BASE_RANGE, ITEM_MOVE_SPEED,
     BULLET_BASE_SPEED, BULLET_BASE_RANGE, BULLET_SIZE, BULLET_COLOR,
@@ -120,6 +120,9 @@ export class Player extends Entity {
 
         // Drop rate
         this.dropBonus = 0; // Increases health drop rate
+
+        // Light Radius
+        this.lightRadiusBonus = 0; // Increases light radius (+50% per level)
     }
 
     update(input, mouseX, mouseY) {
@@ -236,6 +239,24 @@ export class Player extends Entity {
         // 2D draw - replaced by 3D render
     }
 
+    getLightRadius() {
+        return PLAYER_BASE_LIGHT_RADIUS * (1 + this.lightRadiusBonus);
+    }
+
+    updateLights() {
+        // Scale lighting based on bonus
+        const radiusMultiplier = 1 + this.lightRadiusBonus;
+
+        if (this.selfLight) {
+            this.selfLight.distance = 400 * radiusMultiplier;
+        }
+        if (this.spotLight) {
+            this.spotLight.distance = 2500 * radiusMultiplier;
+            // Also widen the angle slightly? maybe capped?
+            // Let's keep angle consistent directly, radius implies distance/intensity for SpotLight
+        }
+    }
+
     createMesh() {
         const group = new THREE.Group();
 
@@ -265,28 +286,28 @@ export class Player extends Entity {
 
         // Player Self-Light (To ensure player is visible in the dark)
         // 50% visibility feel relative to main light
-        const selfLight = new THREE.PointLight(0xffaa00, 100.0, 400, 2);
-        selfLight.position.set(0, 50, 0);
-        group.add(selfLight);
+        this.selfLight = new THREE.PointLight(0xffaa00, 100.0, 400, 2);
+        this.selfLight.position.set(0, 50, 0);
+        group.add(this.selfLight);
 
         // Flashlight (Directional SpotLight)
         // Pointing +X relative to player rotation
-        const spotLight = new THREE.SpotLight(0xffffff, 50.0); // High intensity
-        spotLight.position.set(0, 50, 0);
-        spotLight.angle = Math.PI / 3; // 60 degree cone (120 total) - Wide but directional
-        spotLight.penumbra = 0.2; // Sharper edges
-        spotLight.decay = 2;
-        spotLight.distance = 2500;
-        spotLight.castShadow = true;
-        spotLight.shadow.mapSize.width = 1024;
-        spotLight.shadow.mapSize.height = 1024;
+        this.spotLight = new THREE.SpotLight(0xffffff, 50.0); // High intensity
+        this.spotLight.position.set(0, 50, 0);
+        this.spotLight.angle = Math.PI / 3; // 60 degree cone (120 total) - Wide but directional
+        this.spotLight.penumbra = 0.2; // Sharper edges
+        this.spotLight.decay = 2;
+        this.spotLight.distance = 2500;
+        this.spotLight.castShadow = true;
+        this.spotLight.shadow.mapSize.width = 1024;
+        this.spotLight.shadow.mapSize.height = 1024;
 
         // Target for Spotlight
         const target = new THREE.Object3D();
         target.position.set(100, 0, 0); // Ahead in X
         group.add(target);
-        spotLight.target = target;
-        group.add(spotLight);
+        this.spotLight.target = target;
+        group.add(this.spotLight);
 
 
 
@@ -565,13 +586,60 @@ export class Item extends Entity {
         this.sprite = SpriteGenerator.createItemSprite(type);
         this.magnetRange = ITEM_MAGNET_BASE_RANGE;
         this.magnetSpeed = ITEM_MOVE_SPEED;
+
+        // Illumination Memory
+        this.isDiscovered = false;
+        // Determine color based on type to store properly
+        switch (this.type) {
+            case 'xp': this.color = 0x00ff00; break;
+            case 'health': this.color = 0xff0000; break;
+            case 'weapon': this.color = 0x0088ff; break;
+            default: this.color = 0xffffff;
+        }
+
         this.mesh = this.createMesh();
     }
 
-    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3) {
+    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3, playerEntity = null, cursorX = null, cursorY = null) {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Check for "Discovery" (Visual Memory)
+        // Check if item is within Light Radius of the Cursor (Main Light Source)
+        // OR close to player (Self Light fallback, usually smaller)
+        if (!this.isDiscovered && playerEntity) {
+            const lightRadius = playerEntity.getLightRadius();
+
+            // Check cursor distance (Main Light)
+            if (cursorX !== null && cursorY !== null) {
+                const distToCursor = Math.sqrt((cursorX - this.x) ** 2 + (cursorY - this.y) ** 2);
+                if (distToCursor < lightRadius) {
+                    this.isDiscovered = true;
+                }
+            }
+
+            // Check player distance (Self Light - smaller radius backup)
+            if (!this.isDiscovered && dist < lightRadius * 0.6) {
+                this.isDiscovered = true;
+            }
+
+            if (this.isDiscovered && this.mesh && this.mesh.material) {
+                // Set emissive to 50% of base color to ensure minimum 50% brightness
+                this.mesh.material.emissive.setHex(this.color);
+                this.mesh.material.emissiveIntensity = 0.5;
+            }
+        }
+
+        // Fallback for logic without entity ref or cursor ref
+        if (!this.isDiscovered && !playerEntity && dist < 500) {
+            // Backward compat fallback
+            this.isDiscovered = true;
+            if (this.mesh && this.mesh.material) {
+                this.mesh.material.emissive.setHex(this.color);
+                this.mesh.material.emissiveIntensity = 0.5;
+            }
+        }
 
         // Magnet effect with bonus range
         const effectiveMagnetRange = this.magnetRange * (1 + playerMagnetBonus);
@@ -590,18 +658,15 @@ export class Item extends Entity {
     }
 
     createMesh() {
-        let color;
-        switch (this.type) {
-            case 'xp': color = 0x00ff00; break;
-            case 'health': color = 0xff0000; break;
-            case 'weapon': color = 0x0088ff; break;
-            default: color = 0xffffff;
-        }
-        const geometry = new THREE.BoxGeometry(this.width, this.width, this.width); // Cube
-        const material = new THREE.MeshLambertMaterial({ color: color });
+        // Use Cone with 3 segments for a pyramid/tetrahedron shape
+        // Radius, Height, RadialSegments
+        // Double size: 0.8 -> 1.6, 1.2 -> 2.4
+        const geometry = new THREE.ConeGeometry(this.width * 1.6, this.width * 2.4, 3);
+        const material = new THREE.MeshLambertMaterial({ color: this.color });
         const mesh = new THREE.Mesh(geometry, material);
 
-        mesh.userData = { rotationSpeed: Math.random() * 0.1 + 0.05 };
+        // Slow down spinning (3x slower)
+        mesh.userData = { rotationSpeed: (Math.random() * 0.1 + 0.05) / 3 };
         return mesh;
     }
 
@@ -609,7 +674,7 @@ export class Item extends Entity {
         if (this.mesh) {
             this.mesh.position.set(this.x + this.width / 2, 5, this.y + this.height / 2);
             this.mesh.rotation.y += this.mesh.userData.rotationSpeed;
-            this.mesh.rotation.x += this.mesh.userData.rotationSpeed;
+            // Removed X rotation to keep it spinning like a top
         }
     }
 }

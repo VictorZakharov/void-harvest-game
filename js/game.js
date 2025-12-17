@@ -277,8 +277,10 @@ export class Game {
             const hasShootInput = this.input.mouseDown;
 
             if (hasMovementInput || hasShootInput) {
-                this.state = 'playing';
-                this.lastTime = performance.now(); // Reset time to avoid jump
+                this.unfreeze(); // New helper method
+            } else {
+                // Ensure UI is visible (in case setFrozen wasn't used or UI needs refresh)
+                if (this.ui) this.ui.showFrozenMessage(true);
             }
         }
 
@@ -315,10 +317,17 @@ export class Game {
         this.raycaster.ray.intersectPlane(this.groundPlane, target);
 
         // Update cursor light
-        // Update cursor light
         if (this.cursorLight) {
-            this.cursorLight.position.set(target.x, 300, target.z);
+            const radiusMultiplier = this.player ? (1 + this.player.lightRadiusBonus) : 1;
+            const lightHeight = 300 * radiusMultiplier;
+            this.cursorLight.position.set(target.x, lightHeight, target.z);
             this.cursorLight.target.position.set(target.x, 0, target.z);
+
+            // Scale intensity to compensate for increased height (inverse square law approximation)
+            // Base intensity 5000. With decay=1, we need linear+ compensation. 
+            // Using power of 1.5 to ensure it stays punchy.
+            this.cursorLight.intensity = 5000 * Math.pow(radiusMultiplier, 1.5);
+            this.cursorLight.distance = 3000 * radiusMultiplier;
         }
         if (this.cursorGlow) {
             this.cursorGlow.position.set(target.x, 20, target.z);
@@ -456,7 +465,7 @@ export class Game {
         // Update items
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
-            item.update(playerBounds.centerX, playerBounds.centerY, this.player.magnetBonus, this.player.speed);
+            item.update(playerBounds.centerX, playerBounds.centerY, this.player.magnetBonus, this.player.speed, this.player, target.x, target.z);
 
             if (item.collidesWith(this.player)) {
                 this.collectItem(item);
@@ -775,6 +784,50 @@ export class Game {
             this.ui.showPauseScreen();
         } else if (this.state === 'paused') {
             this.ui.resumeGame();
+        } else if (this.state === 'frozen') {
+            // Can pause from frozen state
+            this.state = 'paused';
+            this.ui.showPauseScreen();
+            this.ui.showFrozenMessage(false);
+        }
+    }
+
+    setFrozen(frozen) {
+        if (frozen) {
+            this.state = 'frozen';
+            this.ui.showFrozenMessage(true);
+            this.lastTime = performance.now();
+        } else {
+            this.unfreeze();
+        }
+    }
+
+    unfreeze() {
+        this.state = 'playing';
+        this.ui.showFrozenMessage(false);
+        this.lastTime = performance.now();
+    }
+
+    updateGlobalLights() {
+        if (!this.player) return;
+
+        const radiusMultiplier = 1 + this.player.lightRadiusBonus;
+
+        // Update Cursor Light stats
+        if (this.cursorLight) {
+            // Update height (preserve X/Z - current position might be stale so we only set Y relative)
+            // Actually, we can't easily set Y without knowing X/Z if we want to be safe, 
+            // but cursorLight.position.y is what matters.
+            this.cursorLight.position.y = 300 * radiusMultiplier;
+
+            // Scale intensity and distance
+            this.cursorLight.intensity = 5000 * Math.pow(radiusMultiplier, 1.5);
+            this.cursorLight.distance = 3000 * radiusMultiplier;
+        }
+
+        // Update Cursor Glow
+        if (this.cursorGlow) {
+            this.cursorGlow.distance = 900 * radiusMultiplier;
         }
     }
 

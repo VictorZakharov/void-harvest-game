@@ -92,6 +92,7 @@ export const PLAYER_BASE_SPEED = 3;
 export const PLAYER_BASE_DAMAGE = 10;
 export const PLAYER_BASE_FIRE_RATE = 18; // frames between shots
 export const PLAYER_SIZE = 12; // radius
+export const PLAYER_BASE_LIGHT_RADIUS = 500;
 
 // ============================================
 // ITEM & PICKUP SYSTEM

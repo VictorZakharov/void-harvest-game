@@ -208,4 +208,12 @@ export class UIManager {
             this.renderCustomEnemySelection();
         });
     }
+
+    showFrozenMessage(show) {
+        const el = document.getElementById('frozen-message');
+        if (el) {
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    }
 }
