@@ -9,6 +9,7 @@ export class InputHandler {
         this.mouseY = 0;
 
         this.escapePressed = false;
+        this.spacePressed = false;
 
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
@@ -16,6 +17,10 @@ export class InputHandler {
             // Handle ESC separately for pause
             if (e.key === 'Escape') {
                 this.escapePressed = true;
+            }
+            // Handle Space for pause
+            if (e.key === ' ') {
+                this.spacePressed = true;
             }
         });
 

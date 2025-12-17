@@ -264,22 +264,47 @@ export class Game {
         const dt = now - this.lastTime;
         this.lastTime = now;
 
-        // Handle ESC key for pause/resume (check before state check)
+        // Handle ESC key for Pause Menu
         if (this.input.escapePressed) {
             this.input.escapePressed = false;
             this.togglePause();
         }
 
+        // Handle SPACE key for Frozen Pause (Quick Pause)
+        if (this.input.spacePressed) {
+            this.input.spacePressed = false;
+            this.toggleFreeze();
+        }
+
         // Handle frozen state - check for any input to unfreeze
         if (this.state === 'frozen') {
-            const hasMovementInput = this.input.keys['w'] || this.input.keys['a'] ||
-                this.input.keys['s'] || this.input.keys['d'];
-            const hasShootInput = this.input.mouseDown;
+            let hasResumeInput = false;
 
-            if (hasMovementInput || hasShootInput) {
-                this.unfreeze(); // New helper method
+            // Check Keys (W, A, S, D)
+            ['w', 'a', 's', 'd'].forEach(k => {
+                if (this.input.keys[k]) {
+                    // Key is currently pressed
+                    // If Manually Frozen, ignore keys that were ALREADY pressed when frozen
+                    const ignored = this.manualFreeze && this.ignoreKeys && this.ignoreKeys.has(k);
+                    if (!ignored) hasResumeInput = true;
+                } else {
+                    // Key released: Remove from ignore list so re-pressing it resumes game
+                    if (this.manualFreeze && this.ignoreKeys) this.ignoreKeys.delete(k);
+                }
+            });
+
+            // Check Mouse
+            if (this.input.mouseDown) {
+                const ignored = this.manualFreeze && this.ignoreMouse;
+                if (!ignored) hasResumeInput = true;
             } else {
-                // Ensure UI is visible (in case setFrozen wasn't used or UI needs refresh)
+                if (this.manualFreeze) this.ignoreMouse = false;
+            }
+
+            if (hasResumeInput) {
+                this.unfreeze();
+            } else {
+                // Ensure UI is visible
                 if (this.ui) this.ui.showFrozenMessage(true);
             }
         }
@@ -990,6 +1015,25 @@ export class Game {
         }
     }
 
+    toggleFreeze() {
+        if (this.state === 'playing') {
+            this.setFrozen(true);
+            this.manualFreeze = true;
+
+            // Snapshot active inputs to ignore them for auto-resume
+            // This allows the user to hold keys while freezing, but resume by pressing NEW keys
+            this.ignoreKeys = new Set();
+            ['w', 'a', 's', 'd'].forEach(k => {
+                if (this.input.keys[k]) this.ignoreKeys.add(k);
+            });
+            this.ignoreMouse = this.input.mouseDown;
+
+        } else if (this.state === 'frozen') {
+            this.setFrozen(false);
+            this.manualFreeze = false;
+        }
+    }
+
     setFrozen(frozen) {
         if (frozen) {
             this.state = 'frozen';
@@ -1002,6 +1046,7 @@ export class Game {
 
     unfreeze() {
         this.state = 'playing';
+        this.manualFreeze = false; // Always clear manual flag
         this.ui.showFrozenMessage(false);
         this.lastTime = performance.now();
     }
