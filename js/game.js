@@ -38,25 +38,72 @@ export class Game {
 
     init3D() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a2e);
+        this.scene.background = new THREE.Color(0x000000); // Pitch Black
+        this.scene.fog = new THREE.Fog(0x000000, 500, 2000); // Pitch Black Fog
+
+        // Cursor Light (Follows mouse)
+        // Cursor Light (Follows mouse)
+        // SUPER intensity to cut through bright ambient
+        this.cursorLight = new THREE.SpotLight(0xffffff, 5000.0); // Boosted to 5000
+        this.cursorLight.position.set(0, 200, 0); // Lowered height for intensity
+        this.cursorLight.angle = Math.PI / 3; // Widen angle to 60 deg (was 45) for +50% radius
+        this.cursorLight.penumbra = 0.5;
+        this.cursorLight.decay = 1.0; // Reduced decay for farther reach
+        this.cursorLight.distance = 3000;
+        this.cursorLight.castShadow = true;
+        this.cursorLight.shadow.mapSize.width = 1024;
+        this.cursorLight.shadow.mapSize.height = 1024;
+
+        // Cursor Glow (Bright point source) - kept white/bright
+        this.cursorGlow = new THREE.PointLight(0xffffff, 10.0, 900, 2); // Radius 600 -> 900 (+50%)
+        this.scene.add(this.cursorGlow);
+
+        // Target is dynamic, but we can just set target to (x, 0, z) in update
+        // We need to add the light and its target to the scene
+        this.scene.add(this.cursorLight);
+        this.cursorLight.target.position.set(0, 0, 0);
+        this.scene.add(this.cursorLight.target);
 
         // Camera (Adjusted for wider view)
-        this.camera3D = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 3000);
-        this.camera3D.position.set(0, 1200, 800); // Higher up to see more field
+        // Decouple aspect ratio from logical game size
+        const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+        this.camera3D = new THREE.PerspectiveCamera(60, aspect, 0.1, 5000);
+        this.camera3D.position.set(0, 800, 600); // Closer for better player focus
         this.camera3D.lookAt(0, 0, 0);
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
-        this.renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        // Set renderer size to match display size (prevents stretching)
+        this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight, false);
         this.renderer.shadowMap.enabled = true;
 
         // Lights
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // Soft white light
+        // High visibility setup
+        // Lights
+        // High Contrast / "Fog of War" setup
+        const ambientLight = new THREE.AmbientLight(0x000000, 0.0); // Pure darkness
         this.scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        // Removed HemisphereLight to ensure darkness
+        // const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5); 
+        // this.scene.add(hemiLight);
+
+        // Dim moonlight just for slight contour
+        // Dim moonlight just for slight contour
+        const dirLight = new THREE.DirectionalLight(0xaaccff, 0.05); // Barely visible rim light
         dirLight.position.set(500, 1000, 500);
         dirLight.castShadow = true;
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const width = this.canvas.clientWidth;
+            const height = this.canvas.clientHeight;
+
+            this.camera3D.aspect = width / height;
+            this.camera3D.updateProjectionMatrix();
+
+            this.renderer.setSize(width, height, false);
+        });
 
         // Optimize shadow map
         dirLight.shadow.mapSize.width = 2048;
@@ -267,6 +314,16 @@ export class Game {
         const target = new THREE.Vector3();
         this.raycaster.ray.intersectPlane(this.groundPlane, target);
 
+        // Update cursor light
+        // Update cursor light
+        if (this.cursorLight) {
+            this.cursorLight.position.set(target.x, 300, target.z);
+            this.cursorLight.target.position.set(target.x, 0, target.z);
+        }
+        if (this.cursorGlow) {
+            this.cursorGlow.position.set(target.x, 20, target.z);
+        }
+
         // Update player with world coordinates
         // target.z maps to 2D y
         this.player.update(this.input, target.x, target.z);
@@ -443,7 +500,7 @@ export class Game {
         const targetZ = this.player.y + this.player.height / 2;
 
         this.camera3D.position.x = targetX;
-        this.camera3D.position.z = targetZ + 700; // Increased offset z
+        this.camera3D.position.z = targetZ + 600;
         this.camera3D.lookAt(targetX, 0, targetZ);
 
         // Shake
@@ -524,15 +581,21 @@ export class Game {
     }
 
     spawnEnemy() {
-        const side = Math.floor(Math.random() * 4);
-        let x, y;
+        // Radial spawning: Spawn enemies in a circle around the player, just outside view
+        const spawnRadius = 1400; // Distance from player
+        const angle = Math.random() * Math.PI * 2;
 
-        switch (side) {
-            case 0: x = Math.random() * CANVAS_WIDTH; y = -20; break;
-            case 1: x = CANVAS_WIDTH + 20; y = Math.random() * CANVAS_HEIGHT; break;
-            case 2: x = Math.random() * CANVAS_WIDTH; y = CANVAS_HEIGHT + 20; break;
-            case 3: x = -20; y = Math.random() * CANVAS_HEIGHT; break;
-        }
+        let x = this.player.x + (this.player.width / 2) + Math.cos(angle) * spawnRadius;
+        let y = this.player.y + (this.player.height / 2) + Math.sin(angle) * spawnRadius;
+
+        // Clamp to map bounds + margin to treat as "entering from outside"
+        // Actually, for "outside visible circle", we don't strictly clamp to map bounds 
+        // if we want them to come from the void. But generally gameplay should be inside.
+        // Let's Clamp but adding a buffer so they don't pop in on screen if map is small.
+        // Since map is 3000, and view is ~1000, 1400 is fine.
+        // We clamp to keep them from drifting into infinity if player is at edge.
+        x = Math.max(-100, Math.min(CANVAS_WIDTH + 100, x));
+        y = Math.max(-100, Math.min(CANVAS_HEIGHT + 100, y));
 
         // Choose enemy type based on wave with increasing difficulty
         let type = 'basic';

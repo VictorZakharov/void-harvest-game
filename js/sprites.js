@@ -38,7 +38,7 @@ export class SpriteGenerator {
 
         const scale = size / 16; // Scale factor
 
-        switch(type) {
+        switch (type) {
             case 'basic':
                 // Red blob enemy
                 ctx.fillStyle = ENEMY_SPRITE_COLORS.basic.main;
@@ -125,7 +125,7 @@ export class SpriteGenerator {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
 
-        switch(type) {
+        switch (type) {
             case 'xp':
                 ctx.fillStyle = '#00ff00';
                 ctx.fillRect(3, 3, 6, 6);
@@ -145,6 +145,23 @@ export class SpriteGenerator {
                 ctx.fillRect(4, 4, 4, 4);
                 break;
         }
+
+        return canvas;
+    }
+
+    static createGradientTexture(size = 256, color = '#00ffff') {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, color); // Center color
+        gradient.addColorStop(0.3, color); // Solid core
+        gradient.addColorStop(1, 'rgba(0,0,0,0)'); // Fade to transparent
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
 
         return canvas;
     }

@@ -28,13 +28,14 @@ export class Entity {
     updateMesh() {
         if (this.mesh) {
             this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
-            // Height is y in 3D? No, standard 3D uses Y as up. Ground is XZ plane.
-            // So x -> x, y -> z.
-            // 2D y increases down. 3D z increases towards viewer.
-            // If camera is top down, looking -Y.
-            // Let's use XZ plane for ground.
-            // x -> x
-            // y -> z
+            // 2D angle is usually 0 = Right (+X), PI/2 = Down (+Y on screen, +Z in 3D logic here)
+            // So we rotate around Y axis (Up). 
+            // In 3D: +X is Right, +Z is Forward/Down.
+            // Angle corresponds to rotation around -Y (because 2D Y is down/inverted vs standard Cartesian)
+            // Actually, Math.atan2(y,x) expects y up. Canvas y is down. 
+            // So angle is inverted? 
+            // Let's just try negative angle first.
+            this.mesh.rotation.y = -this.angle;
         }
     }
 
@@ -240,19 +241,54 @@ export class Player extends Entity {
 
         // Body
         const bodyGeo = new THREE.BoxGeometry(this.width, 20, this.height);
-        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x00ffff });
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00ffff }); // Standard for lighting
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.castShadow = true;
         group.add(body);
 
         // Head
         const headGeo = new THREE.BoxGeometry(this.width * 0.6, 15, this.height * 0.4);
-        const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc99 });
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 }); // Standard for lighting
         const head = new THREE.Mesh(headGeo, headMat);
         head.position.y = 10;
         head.position.z = -5;
         head.castShadow = true;
         group.add(head);
+
+        // Weapon/Pointer (Visual direction indicator)
+        const gunGeo = new THREE.BoxGeometry(30, 10, 10);
+        const gunMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const gun = new THREE.Mesh(gunGeo, gunMat);
+        gun.position.set(25, 10, 10); // Offset to right/front
+        gun.castShadow = true;
+        group.add(gun);
+
+        // Player Self-Light (To ensure player is visible in the dark)
+        // 50% visibility feel relative to main light
+        const selfLight = new THREE.PointLight(0xffaa00, 100.0, 400, 2);
+        selfLight.position.set(0, 50, 0);
+        group.add(selfLight);
+
+        // Flashlight (Directional SpotLight)
+        // Pointing +X relative to player rotation
+        const spotLight = new THREE.SpotLight(0xffffff, 50.0); // High intensity
+        spotLight.position.set(0, 50, 0);
+        spotLight.angle = Math.PI / 3; // 60 degree cone (120 total) - Wide but directional
+        spotLight.penumbra = 0.2; // Sharper edges
+        spotLight.decay = 2;
+        spotLight.distance = 2500;
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+
+        // Target for Spotlight
+        const target = new THREE.Object3D();
+        target.position.set(100, 0, 0); // Ahead in X
+        group.add(target);
+        spotLight.target = target;
+        group.add(spotLight);
+
+
 
         return group;
     }
@@ -384,9 +420,43 @@ export class Enemy extends Entity {
         const color = ENEMY_SPRITE_COLORS[this.type].main;
         const geometry = new THREE.BoxGeometry(this.width, 20, this.height);
         const material = new THREE.MeshLambertMaterial({ color: color });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = true;
-        return mesh;
+        const body = new THREE.Mesh(geometry, material);
+        body.castShadow = true;
+
+        // Group for body + ui
+        const group = new THREE.Group();
+        group.add(body);
+
+        // Health Bar (Billboard Group)
+        const hpGroup = new THREE.Group();
+        hpGroup.position.set(0, 40, 0); // Lift higher for visibility
+
+        // BG
+        // BG (Large Dark Grey)
+        const bg = new THREE.Mesh(
+            new THREE.PlaneGeometry(54, 12),
+            new THREE.MeshBasicMaterial({ color: 0x444444 })
+        );
+        hpGroup.add(bg);
+
+        // FG (Large Red)
+        const fgGeo = new THREE.PlaneGeometry(50, 10);
+        fgGeo.translate(25, 0, 0);
+
+        const fg = new THREE.Mesh(
+            fgGeo,
+            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        fg.position.z = 1;
+        fg.position.x = -25;
+        hpGroup.add(fg);
+        hpGroup.foreground = fg;
+        hpGroup.visible = false;
+
+        group.add(hpGroup);
+        this.healthBar = hpGroup;
+
+        return group;
     }
 
     updateMesh() {
@@ -395,7 +465,23 @@ export class Enemy extends Entity {
             if (this.type === 'shooter' || this.type === 'ice') {
                 this.mesh.rotation.y = -this.angle;
             }
-            // Visual feedback for froze/damage could be added here
+
+            // Update Health Bar
+            if (this.healthBar) {
+                if (this.health < this.maxHealth && this.health > 0) {
+                    this.healthBar.visible = true;
+                    const pct = this.health / this.maxHealth;
+                    this.healthBar.foreground.scale.x = pct;
+
+                    // Billboard effect (Counter rotation + Tilt)
+                    // Reset Y rotation relative to parent
+                    this.healthBar.rotation.y = (this.type === 'shooter' || this.type === 'ice') ? this.angle : 0;
+                    // Tilt to face camera 
+                    this.healthBar.rotation.x = -Math.PI / 4;
+                } else {
+                    this.healthBar.visible = false;
+                }
+            }
         }
     }
 }
