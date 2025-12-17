@@ -633,22 +633,176 @@ export class Game {
     }
 
     spawnEnemy() {
-        // Radial spawning: Spawn enemies in a circle around the player
-        // User requested spawning just outside light radius (1.5x), even if on-screen (since it's dark)
-        const spawnRadius = this.player.getLightRadius() * 1.5;
-        const angle = Math.random() * Math.PI * 2;
+        // Radial spawning with "Smart Bounds"
+        // Calculate valid angular intervals where the spawn circle lies within map bounds
+        // to avoid spawning enemies in the "illuminated void" or having them snap to edge.
 
-        let x = this.player.x + (this.player.width / 2) + Math.cos(angle) * spawnRadius;
-        let y = this.player.y + (this.player.height / 2) + Math.sin(angle) * spawnRadius;
+        const originX = this.player.x + (this.player.width / 2);
+        const originY = this.player.y + (this.player.height / 2);
+        const lightRadius = this.player.getLightRadius();
+        const R = lightRadius * 1.5; // Spawn radius
 
-        // Clamp to map bounds + margin to treat as "entering from outside"
-        // Actually, for "outside visible circle", we don't strictly clamp to map bounds 
-        // if we want them to come from the void. But generally gameplay should be inside.
-        // Let's Clamp but adding a buffer so they don't pop in on screen if map is small.
-        // Since map is 3000, and view is ~1000, 1400 is fine.
-        // We clamp to keep them from drifting into infinity if player is at edge.
-        x = Math.max(-100, Math.min(CANVAS_WIDTH + 100, x));
-        y = Math.max(-100, Math.min(CANVAS_HEIGHT + 100, y));
+        // 1. Initialize valid intervals (0 to 2PI)
+        let intervals = [{ start: 0, end: Math.PI * 2 }];
+
+        // Helper to subtract an angular range from the valid set
+        const cut = (badStart, badEnd) => {
+            const newIntervals = [];
+            // Normalize inputs to 0..2PI
+            badStart = (badStart + Math.PI * 4) % (Math.PI * 2);
+            badEnd = (badEnd + Math.PI * 4) % (Math.PI * 2);
+
+            // If wrapping (e.g. 350 to 10), split into two cuts
+            if (badStart > badEnd) {
+                // Cut badStart..2PI AND 0..badEnd
+                // Recursive call is easiest, but let's handle manually to avoid stack
+                // Actually, let's just run logic twice for the split
+                // We'll create a temp list for first pass
+            }
+            // Wait, handling circular range subtraction generic is tricky.
+            // Simpler: Just intersect valid ranges!
+            // Valid Range X: [acos((0-ox)/R), acos((W-ox)/R)]? 
+            // This is easier.
+        };
+
+        // REVISED GEOMETRY APPROACH: INTERSECTION
+        // We need an angle theta such that:
+        // originX + R*cos(theta) is in [-50, W+50]
+        // originY + R*sin(theta) is in [-50, H+50]
+
+        // 1. Find Valid Arc for X
+        // cos(theta) must be in [minCos, maxCos]
+        const minCos = (-50 - originX) / R;
+        const maxCos = (CANVAS_WIDTH + 50 - originX) / R;
+        // cos is valid if angle is NOT in the "forbidden Left cone" or "forbidden Right cone"
+        // Valid Cos Range corresponds to arc around PI/2 and 3PI/2? No.
+        // Left Edge (cos < minCos): Forbidden Arc centered at PI.
+        // Right Edge (cos > maxCos): Forbidden Arc centered at 0.
+
+        // 2. Find Valid Arc for Y
+        const minSin = (-50 - originY) / R;
+        const maxSin = (CANVAS_HEIGHT + 50 - originY) / R;
+
+        // Subtraction list
+        const badRanges = []; // {start, end}
+
+        // Left Wall (PI)
+        if (minCos > -1) {
+            const span = Math.acos(Math.max(-1, Math.min(1, minCos))); // Half-width of bad cone
+            badRanges.push({ start: Math.PI - span, end: Math.PI + span });
+        }
+        // Right Wall (0)
+        if (maxCos < 1) {
+            const span = Math.acos(Math.max(-1, Math.min(1, maxCos))); // Half-width (acos is 0..PI)
+            // Range is -span to +span (wrapping)
+            badRanges.push({ start: 2 * Math.PI - span, end: span }); // Wrap handled simply?
+        }
+        // Top Wall (3PI/2 - Up in screen Y-check? No Y is down. 0 is Top.)
+        // sin < minSin. minSin is negative usually.
+        // Forbidden arc centered at 3PI/2 (270 deg)
+        if (minSin > -1) {
+            // asin gives -PI/2 to PI/2.
+            // value is sin(theta) < minSin.
+            // theta such that sin(theta) = minSin are intersections.
+            // Arc is the bottom part? No Top part of screen is y=0.
+            // y < -50 means "Above Top".
+            // sin(t) corresponds to Y change.
+            // t=3PI/2 -> sin=-1 -> y = oy - R. Correct.
+            // So centered at 3PI/2.
+            // Width? asin returns angle from X axis?
+            // Let's use span from vertical.
+            // cos(complement) = minSin?
+            const span = Math.acos(Math.max(-1, Math.min(1, minSin))); // Angle from 3PI/2 intersection?
+            // Actually: asin(minSin) gives angle near 3PI/2 (negative).
+            // Valid Y is sin > minSin.
+            // Bad Y is sin < minSin.
+            // Range is roughly [3PI/2 - delta, 3PI/2 + delta].
+            // To get width: Intersection is where sin(theta) = minSin.
+            // theta = asin(minSin). (e.g. -10 deg). And PI - asin(minSin) (190 deg).
+            // Bad range is between them: 190 to 350.
+            // Center is 270 (3PI/2).
+            const ang1 = Math.asin(Math.max(-1, Math.min(1, minSin))); // -PI/2..PI/2
+            // Two solutions to sin(t)=K: a, PI-a.
+            // Lower region is between PI-ang1 and 2PI+ang1.
+            // Since ang1 is negative, PI-ang1 is > PI.
+            // Start: PI - ang1. End: 2PI + ang1.
+            badRanges.push({ start: Math.PI - ang1, end: (2 * Math.PI + ang1) });
+        }
+        // Bottom Wall (PI/2)
+        // y > H+50. sin(t) > maxSin. center at PI/2.
+        if (maxSin < 1) {
+            const ang1 = Math.asin(Math.max(-1, Math.min(1, maxSin)));
+            // Solutions: ang1, PI-ang1.
+            // Region between ang1 and PI-ang1 is the "Hump" (positive sin).
+            // Start: ang1. End: PI - ang1.
+            badRanges.push({ start: ang1, end: Math.PI - ang1 });
+        }
+
+        // 3. Subtract all badRanges from [0, 2PI]
+        const flatten = (ranges) => {
+            // Sort by start
+            // Normalize to 0..2PI handling wraps by splitting
+            const clean = [];
+            ranges.forEach(r => {
+                let s = r.start % (2 * Math.PI);
+                let e = r.end % (2 * Math.PI);
+                if (s < 0) s += 2 * Math.PI;
+                if (e < 0) e += 2 * Math.PI;
+                if (e < s) {
+                    clean.push({ s: s, e: 2 * Math.PI });
+                    clean.push({ s: 0, e: e });
+                } else {
+                    clean.push({ s, e });
+                }
+            });
+            clean.sort((a, b) => a.s - b.s);
+            // Union
+            if (clean.length === 0) return [];
+            const union = [clean[0]];
+            for (let i = 1; i < clean.length; i++) {
+                let last = union[union.length - 1];
+                if (clean[i].s < last.e) {
+                    last.e = Math.max(last.e, clean[i].e);
+                } else {
+                    union.push(clean[i]);
+                }
+            }
+            return union;
+        };
+
+        const bad = flatten(badRanges);
+
+        // Invert to find Good Intervals
+        const good = [];
+        let cursor = 0;
+        bad.forEach(b => {
+            if (b.s > cursor) good.push({ s: cursor, e: b.s });
+            cursor = Math.max(cursor, b.e);
+        });
+        if (cursor < 2 * Math.PI) good.push({ s: cursor, e: 2 * Math.PI });
+
+        if (good.length === 0) return; // No valid spawn (e.g. map fully lit)
+
+        // 4. Pick Random
+        const totalLen = good.reduce((sum, g) => sum + (g.e - g.s), 0);
+        let pick = Math.random() * totalLen;
+        let angle = 0;
+        for (let g of good) {
+            const len = g.e - g.s;
+            if (pick <= len) {
+                angle = g.s + pick;
+                break;
+            }
+            pick -= len;
+        }
+
+        let x = originX + Math.cos(angle) * R;
+        let y = originY + Math.sin(angle) * R;
+
+        // No clamping needed (we ensured it's inside bounds via angle)
+        // Except maybe float errors?
+
+
 
         // Choose enemy type based on wave with increasing difficulty
         let type = 'basic';
