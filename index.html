@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Void Harvest - Roguelite</title>
 </head>
+
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
@@ -26,14 +28,14 @@
                     <span id="level-text">Lv 1</span>
                 </div>
                 <div id="active-skills"></div>
-            <div id="game-stats">
+                <div id="game-stats">
                     <div>
                         <span id="time-text">Time: 0:00</span>
                         <span id="wave-text">Wave: 1</span>
                     </div>
                     <span id="kills-text">Kills: 0</span>
                 </div>
-                
+
                 <!-- Frozen State Message -->
                 <div id="frozen-message" class="hidden">
                     <div class="frozen-text">GAME FROZEN</div>
@@ -91,7 +93,8 @@
                 <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;"></p>
                 <p style="color: #aaa; margin-bottom: 30px;">This action cannot be undone.</p>
                 <div style="display: flex; gap: 20px; justify-content: center;">
-                    <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes, Reset</button>
+                    <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes,
+                        Reset</button>
                     <button id="cancel-reset-btn" class="btn" style="min-width: 120px;">Cancel</button>
                 </div>
             </div>
@@ -109,7 +112,13 @@
                             <div class="keyboard-row">
                                 <div class="key esc">ESC</div>
                             </div>
-                            <div class="key-label" style="margin-top: 3px;">Pause/Unpause</div>
+                            <div class="key-label" style="margin-top: 3px;">Pause</div>
+                        </div>
+                        <div class="keyboard-section">
+                            <div class="keyboard-row">
+                                <div class="key space">SPACE</div>
+                            </div>
+                            <div class="key-label" style="margin-top: 3px;">Freeze</div>
                         </div>
                         <div class="keyboard-section">
                             <div class="keyboard-row">
@@ -137,30 +146,35 @@
                     </div>
                 </div>
                 <button id="start-btn" class="btn btn-large">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                        <path d="M20 7h-7L10 2 7 7H0l6 5-2 7 6-4 6 4-2-7z"/>
-                        <path d="M14 7h7l-6 5 2 7-6-4"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M20 7h-7L10 2 7 7H0l6 5-2 7 6-4 6 4-2-7z" />
+                        <path d="M14 7h7l-6 5 2 7-6-4" />
                     </svg>
                     Start Game
                 </button>
                 <button id="custom-btn" class="btn btn-large" style="margin-top: 10px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.4 4.4l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.4-4.4l4.2-4.2"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.4 4.4l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.4-4.4l4.2-4.2" />
                     </svg>
                     Custom Game
                 </button>
                 <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
                     <button id="meta-btn" class="btn" style="flex: 1;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M12 19V5M5 12l7-7 7 7"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M12 19V5M5 12l7-7 7 7" />
                         </svg>
                         Upgrades
                     </button>
                     <button id="guide-btn" class="btn" style="flex: 1;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                         </svg>
                         Guide
                     </button>
@@ -170,7 +184,8 @@
 
         <!-- Guide Modal -->
         <div id="guide-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
+            <div class="modal-content"
+                style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
                 <button id="close-guide-x" class="close-x" aria-label="Close">&times;</button>
                 <h2>Survivor's Guide</h2>
                 <div id="guide-content"></div>
@@ -188,7 +203,8 @@
                 <div id="enemy-type-config"></div>
 
                 <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>
-                <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease. Click at max level to reset.</p>
+                <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease. Click
+                    at max level to reset.</p>
                 <div id="custom-skill-config"></div>
 
                 <button id="start-custom-btn" class="btn btn-large" style="margin-top: 20px;">Start Custom Game</button>
@@ -197,4 +213,5 @@
         </div>
     </div>
 </body>
+
 </html>

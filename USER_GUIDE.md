@@ -77,7 +77,8 @@ Welcome to Void Harvest, a fast-paced twin-stick roguelite where you fight waves
 | **D** | Move Right |
 | **Mouse Movement** | Aim weapon |
 | **Mouse Button** | Hold to shoot |
-| **ESC** | Pause/Resume game |
+| **ESC** | Open Pause Menu |
+| **SPACE** | Quick Freeze (Toggle) |
 
 **Note:** Diagonal movement is normalized (same speed as cardinal directions)
 
@@ -88,6 +89,12 @@ When you press ESC, the game pauses and shows:
   - Normal game: Immediately restarts with same settings
   - Custom game: Returns to enemy selection screen
 - **Exit to Main Menu:** Return to start screen (game is reset)
+
+### Quick Freeze (Spacebar)
+Pressing **SPACE** toggles a tactical "frozen" state overlay:
+- The game pauses instantly, but keeps the action visible.
+- Press **SPACE** again to resume.
+- **Smart Resume:** You can also resume by pressing any *new* movement or attack key. Keys that were already held when you froze are ignored to prevent accidental resumption.
 
 ## Game Mechanics
 
@@ -207,7 +214,7 @@ When you press ESC, the game pauses and shows:
 
 ## Skills & Upgrades
 
-### Available Skills (16 Total)
+### Available Skills (17 Total)
 
 #### 1. Increased Damage
 - **Effect:** +20% damage per level
@@ -319,6 +326,12 @@ When you press ESC, the game pauses and shows:
 - **Example:** 5% → 7% → 9% → 11%
 - **Max Level:** 3
 - **Best For:** Sustainability, reduced reliance on health regen
+
+#### 17. Light Radius
+- **Effect:** +50% light radius per level
+- **Stacks:** Additive (+0.5 per level)
+- **Example:** +50% → +100% → +150% visible area diameter
+- **Best For:** Scouting enemies early, spotting XP from afar
 
 ## Meta Progression
 

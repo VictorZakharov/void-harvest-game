@@ -285,7 +285,7 @@ Add to `js/skills.js` META_UPGRADES array:
 }
 ```
 
-### Current Skills (16 Total)
+### Current Skills (17 Total)
 
 All skills have a max level of 3, except Extra Choice which has max level 1.
 
@@ -308,10 +308,11 @@ All skills have a max level of 3, except Extra Choice which has max level 1.
 12. **Movement Speed** - Multiplicative +8% speed per level
 13. **Magnet Range** - Multiplicative +50% pickup range per level (base 80px)
 14. **Lucky Drops** - Additive +2% health drop rate per level (base 5%)
+15. **Light Radius** - Additive +50% light radius per level
 
 **Special Skills:**
-15. **Extra Choice** - Adds 4th skill option during level-up (max level 1, no stacking)
-16. **Berserk Mode** - Additive +50% damage per level when health below threshold
+16. **Extra Choice** - Adds 4th skill option during level-up (max level 1, no stacking)
+17. **Berserk Mode** - Additive +50% damage per level when health below threshold
    - Level 1: +50% at ≤10% HP
    - Level 2: +100% at ≤15% HP
    - Level 3: +150% at ≤20% HP
@@ -486,7 +487,10 @@ When making changes, verify:
 - [ ] Collision detection works
 - [ ] Level-up screen appears and skills apply
 - [ ] Pause (ESC) works and resumes correctly
+- [ ] Spacebar toggles "Quick Freeze", ignores held keys
 - [ ] Pause menu has "Exit to Main Menu" option
+- [ ] Enemies spawn off-screen (smart bounds checking)
+- [ ] Camera shake stops on Game Over
 - [ ] Custom game mode config screen appears with visual cards
 - [ ] Enemy selection cards show colored circles and toggle properly
 - [ ] Skill selection shows +X/Y/Z values and level badges

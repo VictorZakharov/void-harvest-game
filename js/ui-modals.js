@@ -34,6 +34,14 @@ export function showGuide() {
             </p>
         </div>
 
+        <h3>⌨️ Controls</h3>
+        <div class="guide-section">
+            <p><span class="stat-highlight">WASD:</span> Move</p>
+            <p><span class="stat-highlight">Mouse:</span> Aim & Shoot</p>
+            <p><span class="stat-highlight">ESC:</span> Pause Menu</p>
+            <p><span class="stat-highlight">SPACE:</span> Quick Freeze (Tactical Pause)</p>
+        </div>
+
         <h3>🎮 Game Modes</h3>
         <div class="guide-section">
             <p><span class="stat-highlight">Normal Game:</span> The standard roguelite experience. All enemy types spawn according to wave progression.</p>
@@ -183,8 +191,8 @@ export function showGuide() {
         </div>
 
         <div class="tip-box">
-            <p><strong>Tip:</strong> Press ESC to pause. From the pause menu, you can restart or exit to main menu without finishing your run.
-            Perfect for when you want to test a different build or enemy configuration!</p>
+            <p><strong>Tip:</strong> Press <strong>ESC</strong> for the Pause Menu (Restart/Exit).
+            Press <strong>SPACE</strong> for "Quick Freeze" to tactically pause the action while keeping the battlefield visible.</p>
         </div>
 
         <h3>🎮 Build Archetypes</h3>

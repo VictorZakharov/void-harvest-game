@@ -11,13 +11,16 @@ A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
 
 - Twin-stick shooter mechanics (WASD + Mouse)
 - 5 enemy types with unique behaviors (Basic, Fast, Tank, Shooter, Ice)
-- 16 different skill upgrades with max levels
+- 17 different skill upgrades with max levels
 - Custom game mode with visual enemy and skill selection
 - Status effects display for passive skills and debuffs
 - Active skills HUD showing equipped abilities
 - Meta-progression system with permanent unlocks
 - Comprehensive stats tracking with run comparisons
 - Wave-based difficulty scaling
+- IMMERSIVE 3D VISUALS with dynamic lighting
+- Tactical QUICK FREEZE mode (Spacebar)
+- Smart enemy spawning (off-screen guaranteed)
 - Procedurally generated pixel art sprites
 
 ## Controls
@@ -25,6 +28,7 @@ A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
 - **WASD** - Move
 - **Mouse** - Aim and shoot
 - **ESC** - Pause/Resume
+- **SPACE** - Quick Freeze
 
 ## Development
 
@@ -99,7 +103,7 @@ arpg-shooter/
 - Max Health, Passive Heal, Vampiric Touch, Armor
 
 **Utility Skills:**
-- Movement Speed, Magnet Range, Lucky Drops
+- Movement Speed, Magnet Range, Lucky Drops, Light Radius
 
 **Special Skills:**
 - Extra Choice, Berserk Mode

@@ -22,6 +22,15 @@ The Pause Screen logic has been extracted from the generic modals file to improv
 | **Level Up** | `js/ui-levelup.js` | `styles/_skills.scss` | Skill selection cards |
 | **Game Over** | `js/ui-gameover.js` | `styles/_modals.scss` | End stats |
 | **Settings** | `js/ui-custom.js` | `styles/_custom-game.scss` | Custom run config |
+| **Input** | `js/input.js` | N/A | Tracks manual freeze keys |
+
+### 3. Smart Spawning & Pause Logic
+- **Spawning**: `game.js` uses **geometric interval subtraction** (not retries) to guarantee valid spawn points.
+  - Subtracts "dark" or "off-map" angles from the full circle.
+  - GUARANTEES 100% valid spawns with O(1) cost.
+- **Quick Freeze**: Spacebar triggers `manualFreeze` mode.
+  - **Inputs held during freeze** are ignored to prevent accidental unpausing.
+  - **New inputs** (pressed after freeze) trigger instant resume.
 
 ## ⚖️ Critical Game Logic (DO NOT BREAK)
 

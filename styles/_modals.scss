@@ -72,7 +72,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 60px;
+    gap: 30px;
     margin: v.$spacing-xl 0;
 }
 
@@ -108,6 +108,11 @@
 
     &.esc {
         width: 60px;
+        font-size: v.$font-size-base;
+    }
+
+    &.space {
+        width: 120px;
         font-size: v.$font-size-base;
     }
 }
