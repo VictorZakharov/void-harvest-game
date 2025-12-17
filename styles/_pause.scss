@@ -31,16 +31,166 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    white-space: nowrap; // Prevent wrapping like "Atk \n Speed"
+    white-space: nowrap; // Prevent wrapping like "Atk \n Speed"
 
     .stat-label {
         color: v.$color-light-gray;
-        font-size: v.$font-size-sm;
+        font-size: 13px; // Slightly smaller to fit "Atk Speed"
+        flex-shrink: 0; // Don't shrink label
+        margin-right: 10px;
+    }
+
+    .stat-val-wrapper {
+        text-align: right;
     }
 
     .stat-value {
         font-weight: bold;
         color: v.$color-white;
         font-size: v.$font-size-md;
+    }
+
+    .stat-bonus {
+        color: v.$color-success;
+        font-size: v.$font-size-md;
+        font-weight: bold;
+        margin-left: 4px;
+        text-shadow: 0 0 5px rgba(v.$color-success, 0.5);
+    }
+
+    // Stat Item Tooltip
+    &.tooltip-container {
+        position: relative;
+        cursor: help; // Indicate interactivity
+
+        &:hover {
+            background: rgba(v.$color-bg-dark, 0.8);
+
+            .stat-tooltip {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+    }
+
+    .stat-tooltip {
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(v.$color-bg-darker, 0.98); // Matches skill tooltip
+        border: 1px solid v.$color-primary;
+        border-radius: v.$border-radius-md;
+
+        // Base tooltip styles
+        color: v.$color-white;
+        font-size: v.$font-size-sm;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1); // Specific fancier easing
+        pointer-events: none;
+        z-index: 1000;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(v.$color-primary, 0.2);
+
+        // Fancy override
+        &.fancy-tooltip {
+            padding: 0; // Header/content handle padding
+            width: 260px; // Wider for text
+            text-align: left; // Reset text align
+            white-space: normal; // Allow text wrapping
+        }
+
+        // Inner elements for detailed breakdown
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: v.$color-light-gray;
+
+            &.total-row {
+                margin-top: 8px;
+                font-size: 13px;
+                font-weight: bold;
+                align-items: center;
+            }
+        }
+
+        .stat-total {
+            color: #ffaa44; // Orange for total
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(255, 170, 68, 0.4);
+        }
+
+        .tooltip-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 6px 0;
+        }
+
+        .tooltip-header-icon {
+            width: 18px;
+            height: 18px;
+            margin-left: 8px;
+            color: v.$color-primary;
+            display: inline-block;
+            vertical-align: middle;
+            opacity: 0.8;
+        }
+
+        // Tooltip Arrow
+        &::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px; // Slightly larger
+            border-width: 6px;
+            border-style: solid;
+            border-color: v.$color-primary transparent transparent transparent;
+        }
+
+        // Shared inner styles work automatically because they are global classes:
+        // .tooltip-header, .tooltip-title, .tooltip-content, .tooltip-desc
+
+        // Modifier for Bottom Tooltips (rendered below the item)
+        &.tooltip-bottom {
+            bottom: auto;
+            top: 115%;
+
+            // Hover state needs to push DOWN, not UP
+            // The parent .stat-item:hover triggers the visibility, but we need to override the transform
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px; // Slightly larger
+            border-width: 6px;
+            border-style: solid;
+            border-color: v.$color-primary transparent transparent transparent;
+        }
+
+        // Logic for Bottom Tooltip Arrow and Hover Effect
+        &.tooltip-bottom {
+            &::after {
+                top: auto;
+                bottom: 100%;
+                border-color: transparent transparent v.$color-primary transparent;
+            }
+        }
+    }
+
+    // Hover effect override for bottom tooltips
+    // Since the hover is on the parent (.stat-item), we handle it there
+    &:hover {
+        .stat-tooltip.tooltip-bottom {
+            transform: translateX(-50%) translateY(5px);
+        }
     }
 }
 
@@ -81,7 +231,6 @@
 .tooltip-header {
     background: rgba(v.$color-primary, 0.15);
     padding: 10px 12px;
-    border-bottom: 1px solid rgba(v.$color-primary, 0.3);
     border-radius: v.$border-radius-md v.$border-radius-md 0 0;
 }
 
@@ -132,10 +281,14 @@
         color: v.$color-light-gray;
         font-size: 12px;
         line-height: 1.4;
+        font-style: italic;
+    }
+
+    // Restore separator only if description follows a stat row (like in Skills)
+    .tooltip-stat+.tooltip-desc {
         margin-top: 8px;
         padding-top: 8px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
-        font-style: italic;
     }
 }
 
