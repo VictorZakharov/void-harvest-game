@@ -31,6 +31,10 @@ export const SKILLS = [
         maxLevel: MAX_SKILL_LEVEL,
         icon: ICONS.damage,
         apply: (player) => {
+            // Compounding damage (Multiplicative) is REQUIRED to keep up with enemy scaling.
+            // Enemies scale to ~5x HP by Wave 30.
+            // Compounding (1.2^10 = 6.2x) keeps pace.
+            // Additive (1 + 0.2*10 = 3.0x) would fall behind drastically in late game.
             player.damage *= 1.2;
             player.skills.damage = (player.skills.damage || 0) + 1;
         }
@@ -260,6 +264,6 @@ export const META_UPGRADES = [
         cost: 20,
         maxLevel: 3,
         icon: ICONS.xp,
-        apply: () => {} // Applied when gaining XP
+        apply: () => { } // Applied when gaining XP
     }
 ];

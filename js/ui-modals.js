@@ -1,44 +1,7 @@
 // ==================== MODAL SCREENS ====================
 import { SKILLS } from './skills.js';
 
-export function showPauseScreen(game) {
-    const modal = document.getElementById('pause-modal');
-    const statsDiv = document.getElementById('pause-stats');
 
-    const seconds = Math.floor(game.gameTime / 60);
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-
-    let html = `
-        <div style="text-align: left; margin: 20px 0;">
-            <h4 style="color: #00ffff; margin-bottom: 10px;">Current Run</h4>
-            <p><strong>Time:</strong> ${minutes}:${secs.toString().padStart(2, '0')}</p>
-            <p><strong>Wave:</strong> ${game.wave}</p>
-            <p><strong>Level:</strong> ${game.player.level}</p>
-            <p><strong>Kills:</strong> ${game.kills}</p>
-        </div>
-    `;
-
-    if (game.stats.skillsPicked.length > 0) {
-        html += `
-            <div style="margin-top: 15px; text-align: left;">
-                <h4 style="color: #00ffff; margin-bottom: 10px;">Skills Picked This Run</h4>
-                <div style="max-height: 150px; overflow-y: auto; font-size: 13px;">
-                    ${game.stats.skillsPicked.map(s => `<p>Lv${s.level}: ${s.skill}</p>`).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    statsDiv.innerHTML = html;
-    modal.classList.remove('hidden');
-}
-
-export function resumeGame(game) {
-    document.getElementById('pause-modal').classList.add('hidden');
-    game.state = 'playing';
-    game.lastTime = performance.now(); // Reset time to avoid jump
-}
 
 export function showGuide() {
     document.getElementById('start-screen').classList.add('hidden');
@@ -145,16 +108,16 @@ export function showGuide() {
 
         <div class="guide-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
             ${SKILLS.map(skill => {
-                let description;
-                if (skill.id === 'berserk') {
-                    description = '+50% damage/level when health below 10% HP + 5%/level';
-                } else if (skill.id === 'luck') {
-                    description = '+2% health pickup drop rate per level (5% without skill)';
-                } else {
-                    const space = skill.unit === '%' ? '' : ' ';
-                    description = `+${skill.baseValue}${space}${skill.unit}${skill.maxLevel > 1 ? ' per level' : ''}`;
-                }
-                return `
+        let description;
+        if (skill.id === 'berserk') {
+            description = '+50% damage/level when health below 10% HP + 5%/level';
+        } else if (skill.id === 'luck') {
+            description = '+2% health pickup drop rate per level (5% without skill)';
+        } else {
+            const space = skill.unit === '%' ? '' : ' ';
+            description = `+${skill.baseValue}${space}${skill.unit}${skill.maxLevel > 1 ? ' per level' : ''}`;
+        }
+        return `
                 <div style="background: rgba(0, 255, 255, 0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #00ffff; display: flex; align-items: start; gap: 12px; position: relative;">
                     <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 3px;">
                         ${Array(skill.maxLevel || 3).fill(0).map(() => '<div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(0, 255, 255, 0.6);"></div>').join('')}

@@ -3,7 +3,8 @@ import { updateHUD } from './ui-hud.js';
 import { showLevelUpScreen } from './ui-levelup.js';
 import { showGameOverStats } from './ui-gameover.js';
 import { showMetaUpgrades, showResetConfirmation, performMetaReset } from './ui-meta.js';
-import { showPauseScreen, resumeGame, showGuide } from './ui-modals.js';
+import { showGuide } from './ui-modals.js';
+import { showPauseScreen, resumeGame } from './ui-pause.js';
 import { renderCustomSkillSelection, renderCustomEnemySelection } from './ui-custom.js';
 
 export class UIManager {
