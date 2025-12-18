@@ -44,6 +44,14 @@ export class InputHandler {
         canvas.addEventListener('mouseleave', () => {
             this.mouseDown = false;
         });
+
+        this.zoomDelta = 0;
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            // Just capture direction: -1 (up/in), 1 (down/out)
+            // But checking deltaY magnitude is safer
+            this.zoomDelta += Math.sign(e.deltaY);
+        });
     }
 
     updateMousePosition(e, canvas) {

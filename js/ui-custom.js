@@ -1,5 +1,6 @@
 // ==================== CUSTOM GAME MODE ====================
 import { SKILLS } from './skills.js';
+import { BIOMES } from './biomes.js';
 
 export function renderCustomSkillSelection(game, customSkills, callback) {
     const container = document.getElementById('custom-skill-config');
@@ -116,5 +117,67 @@ export function renderCustomEnemySelection(game, customEnemies, callback) {
         });
 
         container.appendChild(enemyDiv);
+    });
+}
+
+export function renderCustomBiomeSelection(game, currentRef, callback) {
+    // currentRef is an object { value: 'biomeId' or null } to allow mutation
+    const container = document.getElementById('custom-biome-config');
+    if (!container) return; // Should exist, but safety check
+
+    container.innerHTML = '';
+
+    // Add "Random" option
+    const randomDiv = document.createElement('div');
+    randomDiv.className = 'custom-enemy-item'; // Reuse styling for consistency
+    const isRandom = !currentRef.value;
+    if (isRandom) randomDiv.classList.add('active');
+
+    randomDiv.innerHTML = `
+        <div class="enemy-icon" style="color: #ffffff;">
+            <div class="enemy-emoji">?</div>
+        </div>
+        <div class="custom-enemy-info">
+            <div class="custom-enemy-name" style="color: #ffffff;">Random</div>
+            <div class="custom-enemy-desc">Random biome each game</div>
+        </div>
+        <div class="custom-enemy-status">${isRandom ? '✓' : ''}</div>
+    `;
+
+    randomDiv.onclick = () => {
+        currentRef.value = null;
+        callback();
+    };
+    container.appendChild(randomDiv);
+
+
+    Object.values(BIOMES).forEach(biome => {
+        const isSelected = currentRef.value === biome.id;
+        const colorHex = '#' + biome.groundColor.toString(16).padStart(6, '0');
+
+        const div = document.createElement('div');
+        div.className = 'custom-enemy-item';
+        if (isSelected) div.classList.add('active');
+
+        // Human readable weather
+        const weatherName = biome.weather.charAt(0).toUpperCase() + biome.weather.slice(1);
+
+        div.innerHTML = `
+             <div class="enemy-icon" style="color: ${colorHex};">
+                <div class="enemy-emoji">■</div>
+            </div>
+             <div class="custom-enemy-info">
+                <div class="custom-enemy-name" style="color: ${colorHex};">${biome.name}</div>
+                <div class="custom-enemy-desc">Weather: ${weatherName}</div>
+            </div>
+            <div class="custom-enemy-status">${isSelected ? '✓' : ''}</div>
+        `;
+
+        div.onclick = () => {
+            currentRef.value = biome.id;
+            callback();
+        };
+
+        container.appendChild(div);
     });
 }

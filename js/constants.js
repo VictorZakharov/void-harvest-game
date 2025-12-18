@@ -130,3 +130,13 @@ export const ENEMY_SCALING_PER_WAVE = 0.1; // 10% increase per wave
 
 // Note: Skill-specific balance values (damage bonus, fire rate, etc.)
 // are defined directly in skills.js alongside their implementation.
+
+// ============================================
+// WEATHER SYSTEM
+// ============================================
+
+export const WEATHER_DURATION = 900; // frames (15 seconds)
+export const WEATHER_INTERVAL_MIN = 3600; // frames (60 seconds)
+export const WEATHER_INTERVAL_MAX = 5400; // frames (90 seconds)
+export const WEATHER_SLOW_AMOUNT = 0.15; // 15% slow
+

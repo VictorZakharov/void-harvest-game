@@ -5,7 +5,7 @@ import { showGameOverStats } from './ui-gameover.js';
 import { showMetaUpgrades, showResetConfirmation, performMetaReset } from './ui-meta.js';
 import { showGuide } from './ui-modals.js';
 import { showPauseScreen, resumeGame } from './ui-pause.js';
-import { renderCustomSkillSelection, renderCustomEnemySelection } from './ui-custom.js';
+import { renderCustomSkillSelection, renderCustomEnemySelection, renderCustomBiomeSelection } from './ui-custom.js';
 
 export class UIManager {
     constructor(game) {
@@ -18,6 +18,7 @@ export class UIManager {
             shooter: true,
             ice: true
         };
+        this.customBiome = { value: null }; // {value: 'id'} or null for random. Use object for ref passing.
         this.setupEventHandlers();
         this.setupMainMenuEffects();
     }
@@ -25,6 +26,11 @@ export class UIManager {
     setupEventHandlers() {
         document.getElementById('start-btn').onclick = () => {
             document.getElementById('start-screen').classList.add('hidden');
+            this.game.debugWeather = false;
+            // Clear any previous custom settings so we get a pure random start
+            this.game.customEnemies = null;
+            this.game.customSkills = null;
+            this.game.customBiome = null;
             this.game.start();
         };
 
@@ -58,6 +64,7 @@ export class UIManager {
             document.getElementById('start-screen').classList.add('hidden');
             this.renderCustomEnemySelection();
             this.renderCustomSkillSelection();
+            this.renderCustomBiomeSelection();
             document.getElementById('custom-modal').classList.remove('hidden');
         };
 
@@ -71,6 +78,8 @@ export class UIManager {
             document.getElementById('custom-modal').classList.add('hidden');
             this.game.customEnemies = { ...this.customEnemies };
             this.game.customSkills = { ...this.customSkills }; // Pass selected skills
+            this.game.customBiome = this.customBiome.value; // Pass selected biome
+            this.game.debugWeather = document.getElementById('debug-weather-check').checked;
             this.game.start();
         };
 
@@ -94,6 +103,7 @@ export class UIManager {
 
                 document.getElementById('custom-modal').classList.remove('hidden');
             } else {
+                this.game.debugWeather = false;
                 this.game.reset();
                 this.game.start();
             }
@@ -139,12 +149,15 @@ export class UIManager {
             // If custom game, return to custom config screen
             if (this.game.customEnemies) {
                 const wasCustom = this.game.customEnemies;
+                const wasBiome = this.game.customBiome;
                 this.game.reset();
 
                 // Restore enemy selection
                 this.customEnemies = { ...wasCustom };
+                this.customBiome = { value: wasBiome };
                 this.renderCustomEnemySelection();
                 this.renderCustomSkillSelection();
+                this.renderCustomBiomeSelection();
 
                 document.getElementById('custom-modal').classList.remove('hidden');
             } else {
@@ -207,6 +220,12 @@ export class UIManager {
     renderCustomEnemySelection() {
         renderCustomEnemySelection(this.game, this.customEnemies, () => {
             this.renderCustomEnemySelection();
+        });
+    }
+
+    renderCustomBiomeSelection() {
+        renderCustomBiomeSelection(this.game, this.customBiome, () => {
+            this.renderCustomBiomeSelection();
         });
     }
 

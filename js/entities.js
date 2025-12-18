@@ -123,6 +123,13 @@ export class Player extends Entity {
 
         // Light Radius
         this.lightRadiusBonus = 0; // Increases light radius (+50% per level)
+
+        // Weapon Spread / Recoil
+        this.currentSpread = 0; // Current spread angle in radians
+        this.maxSpread = 0.35; // ~20 degrees max spread (Wide)
+        this.minSpread = 0.02; // Tiny base spread for "human" feel
+        this.spreadPerShot = 0.08; // Jump per shot
+        this.spreadRecovery = 0.005; // Recovery per frame
     }
 
     update(input, mouseX, mouseY) {
@@ -183,6 +190,17 @@ export class Player extends Entity {
 
         // Vampire cooldown
         if (this.vampireTimer > 0) this.vampireTimer--;
+
+        // Recover Spread (Recoil Decay)
+        if (this.fireTimer <= 0) {
+            // Only recover when NOT firing (or fireTimer acts as cooldown)
+            // Actually, recover constantly but shooting adds jumps
+            this.currentSpread = Math.max(this.minSpread, this.currentSpread - this.spreadRecovery);
+        } else {
+            // Slower recovery while actively firing?
+            this.currentSpread = Math.max(this.minSpread, this.currentSpread - (this.spreadRecovery * 0.5));
+        }
+
     }
 
     shoot(mouseDown) {
@@ -286,13 +304,13 @@ export class Player extends Entity {
 
         // Player Self-Light (To ensure player is visible in the dark)
         // 50% visibility feel relative to main light
-        this.selfLight = new THREE.PointLight(0xffaa00, 100.0, 400, 2);
+        this.selfLight = new THREE.PointLight(0xffaa00, 1.0, 400, 2);
         this.selfLight.position.set(0, 50, 0);
         group.add(this.selfLight);
 
         // Flashlight (Directional SpotLight)
         // Pointing +X relative to player rotation
-        this.spotLight = new THREE.SpotLight(0xffffff, 50.0); // High intensity
+        this.spotLight = new THREE.SpotLight(0xffffff, 1.5); // Reduced intensity (1.5)
         this.spotLight.position.set(0, 50, 0);
         this.spotLight.angle = Math.PI / 3; // 60 degree cone (120 total) - Wide but directional
         this.spotLight.penumbra = 0.2; // Sharper edges
@@ -384,7 +402,7 @@ export class Enemy extends Entity {
         this.mesh = this.createMesh();
     }
 
-    update(playerX, playerY) {
+    update(playerX, playerY, speedModifier = 1) {
         // Update freeze timer
         if (this.freezeTimer > 0) {
             this.freezeTimer--;
@@ -407,8 +425,10 @@ export class Enemy extends Entity {
         this.angle = Math.atan2(dy, dx);
 
         if (dist > 0) {
-            this.vx = (dx / dist) * this.speed;
-            this.vy = (dy / dist) * this.speed;
+            // Apply speed modifier (e.g. weather slow)
+            const currentSpeed = this.speed * speedModifier;
+            this.vx = (dx / dist) * currentSpeed;
+            this.vy = (dy / dist) * currentSpeed;
         }
 
         this.x += this.vx;
@@ -440,9 +460,17 @@ export class Enemy extends Entity {
     createMesh() {
         const color = ENEMY_SPRITE_COLORS[this.type].main;
         const geometry = new THREE.BoxGeometry(this.width, 20, this.height);
-        const material = new THREE.MeshLambertMaterial({ color: color });
+        const material = new THREE.MeshLambertMaterial({
+            color: color,
+            transparent: true, // Re-enable transparency for blending
+            opacity: 1.0
+        });
         const body = new THREE.Mesh(geometry, material);
         body.castShadow = true;
+        body.receiveShadow = false; // Prevent self-shadowing acne (horizontal lines)
+
+        this.bodyMesh = body; // Store reference for color updates
+        this.baseColor = color; // Store original color
 
         // Group for body + ui
         const group = new THREE.Group();
@@ -451,13 +479,13 @@ export class Enemy extends Entity {
         // Add "Face/Eyes" to indicate direction
         // Front is +X direction based on atan2(dy, dx) and rotation logic
         const eyeGeo = new THREE.BoxGeometry(4, 4, 4);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 1.0 });
 
         const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-        leftEye.position.set(this.width / 2, 5, -this.height / 4); // Front (+X), Up (+Y), Left (-Z)
+        leftEye.position.set(this.width / 2 + 0.2, 5, -this.height / 4); // Offset +0.2 to avoid z-fighting
 
         const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-        rightEye.position.set(this.width / 2, 5, this.height / 4); // Front (+X), Up (+Y), Right (+Z)
+        rightEye.position.set(this.width / 2 + 0.2, 5, this.height / 4); // Offset +0.2 to avoid z-fighting
 
         group.add(leftEye);
         group.add(rightEye);
@@ -467,7 +495,7 @@ export class Enemy extends Entity {
             const gunLength = 20;
             const gunGeo = new THREE.BoxGeometry(gunLength, 6, 6);
             const gunColor = this.type === 'ice' ? 0x88ccff : 0x333333; // Icy gun for ice enemy
-            const gunMat = new THREE.MeshLambertMaterial({ color: gunColor });
+            const gunMat = new THREE.MeshLambertMaterial({ color: gunColor, transparent: true, opacity: 1.0 });
             const gun = new THREE.Mesh(gunGeo, gunMat);
 
             // Mount on right side, pointing forward
@@ -487,6 +515,7 @@ export class Enemy extends Entity {
             new THREE.PlaneGeometry(54, 12),
             bgMat
         );
+        bg.userData.isHealthBar = true; // Critical: Prevent Stealth logic from recoloring this black
         hpGroup.add(bg);
         hpGroup.bg = bg; // Store Ref
 
@@ -496,6 +525,7 @@ export class Enemy extends Entity {
 
         const fgMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
         const fg = new THREE.Mesh(fgGeo, fgMat);
+        fg.userData.isHealthBar = true; // Critical: Prevent Stealth logic from recoloring this black
         fg.position.z = 1;
         fg.position.x = -25;
         hpGroup.add(fg);
@@ -513,29 +543,65 @@ export class Enemy extends Entity {
         return group;
     }
 
-    updateMesh(isVisible = true) {
+    updateMesh(visibility = 1.0, fogColor = 0x333333) {
         if (this.mesh) {
             this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
 
             // Rotate all enemies to face player
-            // angle is atan2(dy, dx) so 0 is +X. 
-            // We rotate around Y. -angle usually works for standard orientation
             this.mesh.rotation.y = -this.angle;
+
+            // Visual Stealth Handling
+            // Interpolate between "Hidden Shadow" and "Visible Solid"
+            // Hidden: Color=Black, Opacity=0.05 (Barely visible)
+            // Visible: Color=Base, Opacity=1.0
+
+            // Clamp visibility 0-1
+            const v = Math.max(0, Math.min(1, visibility));
+
+            if (this.bodyMesh) {
+                // Recursively update opacity and color for ALL meshes in the group (Body, Eyes, Gun)
+                this.mesh.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        // Skip Health Bar (it handles its own opacity)
+                        if (child.userData.isHealthBar) return;
+
+                        // Interpolate Opacity
+                        // From 0.05 (Hidden) to 1.0 (Visible)
+                        const targetOpacity = 0.05 + (0.95 * v);
+                        child.material.transparent = true;
+                        child.material.opacity = targetOpacity;
+
+                        // Interpolate Color
+                        let targetColor = new THREE.Color(0x000000); // Shadow Base
+
+                        if (child === this.bodyMesh) {
+                            targetColor.lerp(new THREE.Color(this.baseColor), v);
+                        } else if (child.geometry && child.geometry.type === 'BoxGeometry' && child.geometry.parameters.width === 4) {
+                            // Eyes
+                            targetColor.setHex(0x000000);
+                        } else if (child.geometry && child.geometry.parameters.width === 20) {
+                            // Gun
+                            const gunColor = this.type === 'ice' ? 0x88ccff : 0x333333;
+                            targetColor.lerp(new THREE.Color(gunColor), v);
+                        }
+
+                        child.material.color.copy(targetColor);
+                    }
+                });
+            }
 
             // Update Health Bar
             if (this.healthBar) {
                 // Determine target visibility/opacity
                 const isDamaged = this.health < this.maxHealth;
-                const shouldBeVisible = (isVisible && isDamaged && this.health > 0);
+                const shouldBeVisible = (v > 0.5 && isDamaged && this.health > 0);
                 const targetOpacity = shouldBeVisible ? 1.0 : 0.0;
 
                 // Initialize if missing
                 if (this.hbOpacity === undefined) this.hbOpacity = 0;
 
                 // Check for "First Hit" while visible -> Snap to 1.0
-                // If I am visible, damage occurred, and I wasn't damaged before (or opacity is low), snap it.
-                // Using wasDamaged flag to track state change.
-                if (isVisible && isDamaged && !this.wasDamaged) {
+                if (shouldBeVisible && !this.wasDamaged) {
                     this.hbOpacity = 1.0;
                 }
                 // Regular Lerp
@@ -556,8 +622,6 @@ export class Enemy extends Entity {
                     this.healthBar.foreground.scale.x = pct;
 
                     // Billboard effect (Counter rotation + Tilt)
-                    // Important: Change rotation order so we rotate around vertical Y *first* (to face screen),
-                    // THEN tilt back X. Otherwise we rotate around a tilted axis!
                     this.healthBar.rotation.order = 'YXZ';
                     this.healthBar.rotation.y = this.angle;
                     this.healthBar.rotation.x = -Math.PI / 4;
@@ -617,22 +681,49 @@ export class Bullet extends Entity {
 
     createMesh() {
         const color = this.isPlayer ? 0xffff00 : (this.enemyType === 'ice' ? 0x66ccff : 0xff0000);
-        // Use Sphere for bullets
-        const geometry = new THREE.SphereGeometry(this.width / 2, 8, 8);
-        const material = new THREE.MeshBasicMaterial({ color: color });
-        const mesh = new THREE.Mesh(geometry, material);
+        const colorStr = this.isPlayer ? '#ffff00' : (this.enemyType === 'ice' ? '#66ccff' : '#ff0000');
 
-        // Add fake glow (transparent larger sphere)
-        const glowGeo = new THREE.SphereGeometry(this.width, 8, 8);
-        const glowMat = new THREE.MeshBasicMaterial({
-            color: color,
+        // Use Sprite with Additive Blending for "Light" look
+        // We use the gradient texture to create a soft glow orb
+        const map = SpriteGenerator.createGradientTexture(64, colorStr);
+        const material = new THREE.SpriteMaterial({
+            map: new THREE.CanvasTexture(map),
+            color: color, // Tint is in the texture but this ensures saturation
             transparent: true,
-            opacity: 0.3
+            blending: THREE.AdditiveBlending,
+            depthWrite: false // Don't block other glows
         });
-        const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-        mesh.add(glowMesh);
 
-        return mesh;
+        const sprite = new THREE.Sprite(material);
+        // Scale sprite reduced from 40 to 16 to look like a tight energy ball, not a snowball
+        sprite.scale.set(16, 16, 1);
+
+        // Add Fake Floor Light (Horizontal Plane) to illuminate ground cheaply
+        // Real PointLights caused massive lag. This Additive Plane mimics light on the floor.
+        if (this.isPlayer) {
+            // Horizontal plane, lying flat on the ground
+            const glowGeo = new THREE.PlaneGeometry(1, 1);
+            const glowMat = new THREE.MeshBasicMaterial({
+                map: new THREE.CanvasTexture(map), // Reuse the gradient
+                color: color,
+                transparent: true,
+                opacity: 0.5, // Brighter floor spot
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const floorGlow = new THREE.Mesh(glowGeo, glowMat);
+
+            // Bullet is at Y=10. Ground is at Y=0.
+            // Place closer to ground (relative Y = -9.5 puts it at Abs Y = 0.5)
+            // Scale up to 150 for large light radius
+            floorGlow.position.set(0, -9.5, 0);
+            floorGlow.rotation.x = -Math.PI / 2;
+            floorGlow.scale.set(150, 150, 1);
+
+            sprite.add(floorGlow);
+        }
+
+        return sprite;
     }
 
     updateMesh() {

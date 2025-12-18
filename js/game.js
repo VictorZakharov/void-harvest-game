@@ -4,10 +4,14 @@ import {
     WAVE_DURATION, INITIAL_SPAWN_RATE, MIN_SPAWN_RATE, SPAWN_RATE_DECREASE,
     WAVE_UNLOCK_FAST, WAVE_UNLOCK_SHOOTER, WAVE_UNLOCK_TANK, WAVE_UNLOCK_ICE,
     WAVE_SCALING_BOOST_1, WAVE_SCALING_BOOST_2, ENEMY_SCALING_PER_WAVE,
-    HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT, PARTICLE_COUNT_HIT, PARTICLE_COUNT_DEATH
+    HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT, PARTICLE_COUNT_HIT, PARTICLE_COUNT_DEATH,
+    WEATHER_DURATION, WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, WEATHER_SLOW_AMOUNT
 } from './constants.js';
+import { BIOMES, WEATHER_TYPES, DEFAULT_FOG_DENSITY } from './biomes.js';
 import { Player, Enemy, Bullet, Item } from './entities.js';
 import { Particle } from './particles.js';
+import { TextureGenerator } from './texture-generator.js';
+import { WeatherSystem } from './weather-system.js';
 import { InputHandler } from './input.js';
 import { META_UPGRADES, SKILLS } from './skills.js';
 import { UIManager } from './ui.js';
@@ -38,25 +42,65 @@ export class Game {
 
     init3D() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x000000); // Pitch Black
-        this.scene.fog = new THREE.Fog(0x000000, 500, 2000); // Pitch Black Fog
+        this.scene.background = new THREE.Color(0x000000);
+        this.scene.fog = new THREE.FogExp2(0x000000, DEFAULT_FOG_DENSITY); // Using Exp2 fog for better atmospheric density control
 
         // Cursor Light (Follows mouse)
         // Cursor Light (Follows mouse)
-        // SUPER intensity to cut through bright ambient
-        this.cursorLight = new THREE.SpotLight(0xffffff, 5000.0); // Boosted to 5000
+        // Intensity reduced to prevent washout
+        this.cursorLight = new THREE.SpotLight(0xffffff, 2.0); // Reduced from 2.5
         this.cursorLight.position.set(0, 200, 0); // Lowered height for intensity
         this.cursorLight.angle = Math.PI / 3; // Widen angle to 60 deg (was 45) for +50% radius
         this.cursorLight.penumbra = 0.5;
         this.cursorLight.decay = 1.0; // Reduced decay for farther reach
         this.cursorLight.distance = 3000;
         this.cursorLight.castShadow = true;
-        this.cursorLight.shadow.mapSize.width = 1024;
-        this.cursorLight.shadow.mapSize.height = 1024;
+        this.cursorLight.shadow.mapSize.width = 2048; // Increased from 1024 for cleaner edges
+        this.cursorLight.shadow.mapSize.height = 2048;
+        this.cursorLight.shadow.bias = -0.0005; // Fix shadow acne/striping
+        this.cursorLight.shadow.normalBias = 0.02; // Improve self-shadowing accuracy
 
         // Cursor Glow (Bright point source) - kept white/bright
-        this.cursorGlow = new THREE.PointLight(0xffffff, 10.0, 900, 2); // Radius 600 -> 900 (+50%)
+        this.cursorGlow = new THREE.PointLight(0xffffff, 1.5, 900, 2); // Radius 600 -> 900 (+50%)
         this.scene.add(this.cursorGlow);
+
+        this.scene.add(this.cursorGlow);
+
+        // Reticle (Spread Indicator)
+        // 1. Shadow/Outline (Black, thick, solid)
+        // RingGeometry(inner, outer, segments)
+        // Background Ring: 0.75 to 1.05 (Thickness 0.3)
+        const reticleShadowGeo = new THREE.RingGeometry(0.75, 1.05, 32);
+        const reticleShadowMat = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide,
+            blending: THREE.NormalBlending, // Solid occlusion
+            depthTest: true, // Allow occlusion by enemies
+            depthWrite: false // Prevent Z-fighting with ground/self
+        });
+        this.reticleShadow = new THREE.Mesh(reticleShadowGeo, reticleShadowMat);
+        this.reticleShadow.rotation.x = -Math.PI / 2;
+        this.scene.add(this.reticleShadow);
+
+        // 2. Main Glow (Cyan, thinner, additive)
+        // Foreground Ring: 0.8 to 1.0 (Thickness 0.2)
+        // Sits inside the black ring, but thicker than before
+        const reticleGeo = new THREE.RingGeometry(0.8, 1.0, 32);
+        const reticleMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 1.0,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending, // Glow
+            depthTest: true, // Allow occlusion by enemies
+            depthWrite: false // Prevent Z-fighting
+        });
+        this.reticle = new THREE.Mesh(reticleGeo, reticleMat);
+        this.reticle.rotation.x = -Math.PI / 2;
+        this.reticle.position.y = 0.5; // Lift higher above shadow to prevent z-fighting flicker
+        this.scene.add(this.reticle);
 
         // Target is dynamic, but we can just set target to (x, 0, z) in update
         // We need to add the light and its target to the scene
@@ -76,9 +120,8 @@ export class Game {
         // Set renderer size to match display size (prevents stretching)
         this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight, false);
         this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows, reduces hard aliasing
 
-        // Lights
-        // High visibility setup
         // Lights
         // High Contrast / "Fog of War" setup
         const ambientLight = new THREE.AmbientLight(0x000000, 0.0); // Pure darkness
@@ -89,10 +132,10 @@ export class Game {
         // this.scene.add(hemiLight);
 
         // Dim moonlight just for slight contour
-        // Dim moonlight just for slight contour
         const dirLight = new THREE.DirectionalLight(0xaaccff, 0.05); // Barely visible rim light
         dirLight.position.set(500, 1000, 500);
         dirLight.castShadow = true;
+        dirLight.shadow.bias = -0.0005; // Fix acne here too
 
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -117,18 +160,24 @@ export class Game {
 
         this.scene.add(dirLight);
 
-        // Ground
-        const groundGeo = new THREE.PlaneGeometry(CANVAS_WIDTH * 2, CANVAS_HEIGHT * 2);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x222233 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
+        // Create Ground
+        // Procedural Texture loaded later in applyBiomeVisuals
+        const groundGeometry = new THREE.PlaneGeometry(10000, 10000);
+        this.groundMaterial = new THREE.MeshStandardMaterial({
+            color: 0x224422,
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const ground = new THREE.Mesh(groundGeometry, this.groundMaterial);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add(ground);
 
-        // Grid helper
-        const gridHelper = new THREE.GridHelper(CANVAS_WIDTH * 2, 40, 0x444455, 0x222233);
-        gridHelper.position.y = 1;
-        this.scene.add(gridHelper);
+        // Initialize Weather System
+        this.weatherSystem = new WeatherSystem(this.scene);
+
+        // GridHelper removed per user request
+
 
         // Field Boundaries
         const boundaryGeo = new THREE.BufferGeometry().setFromPoints([
@@ -148,7 +197,7 @@ export class Game {
         this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -5); // Intersect at y=5 (mid-height of player/items)
     }
 
-    reset() {
+    reset(commitHistory = false) {
         // Clear all game state completely
         if (this.scene) {
             // Remove existing meshes
@@ -164,10 +213,47 @@ export class Game {
         this.items = [];
         this.particles = [];
 
-        // Clear custom game mode
-        this.customEnemies = null;
-        this.customSkills = null;
-        this.customSkillIds = null;
+        // Do NOT clear custom settings here. 
+        // They are managed by the UI (Start vs Custom Start).
+        // If we clear them, Restarting a custom game loses the config.
+
+        // Select Biome
+        if (this.customBiome) {
+            this.currentBiome = BIOMES[this.customBiome.toUpperCase()] || BIOMES.NEUTRAL;
+        } else {
+            let keys = Object.keys(BIOMES);
+
+            // Exclude last played biome (PERSISTENT CHECK)
+            // We use metaProgress so this works even if the user refreshes the page
+            const lastId = this.metaProgress.lastBiomeId;
+
+            if (lastId) {
+                const filtered = keys.filter(k => BIOMES[k].id !== lastId);
+                if (filtered.length > 0) keys = filtered;
+            }
+
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            this.currentBiome = BIOMES[randomKey];
+        }
+
+        // Only save history if this is a REAL game start (not just the background reset)
+        if (commitHistory && !this.customBiome) {
+            this.metaProgress.lastBiomeId = this.currentBiome.id;
+            this.saveMetaProgress();
+        }
+
+        this.applyBiomeVisuals();
+
+        // Weather System
+        // Weather System
+        this.weatherState = 'none'; // 'none', 'active'
+        this.weatherTimer = 0;
+        this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
+
+        // Fix: Explicitly stop any active weather visuals
+        if (this.weatherSystem) {
+            this.weatherSystem.startWeather('none');
+        }
 
         // Clear any old player reference
         this.player = null;
@@ -198,6 +284,11 @@ export class Game {
 
         // Initialize stats
         this.stats = StatsManager.createEmptyStats();
+
+        // Trigger debug weather
+        if (this.debugWeather) {
+            this.triggerWeather();
+        }
     }
 
     applyMetaUpgrades() {
@@ -233,17 +324,76 @@ export class Game {
         }
     }
 
+    applyBiomeVisuals() {
+        if (!this.currentBiome) return;
+
+        // Generate Procedural Ground Texture
+        const texture = TextureGenerator.generateGround(this.currentBiome.id);
+
+        if (this.groundMaterial) {
+            this.groundMaterial.map = texture;
+            this.groundMaterial.color.setHex(0xffffff); // Set to white to show texture colors
+            this.groundMaterial.needsUpdate = true;
+        }
+
+        // Update Fog Color
+        if (this.scene && this.scene.fog) {
+            this.scene.fog.color.setHex(this.currentBiome.fogColor);
+            this.scene.fog.density = DEFAULT_FOG_DENSITY;
+        }
+
+        // Update Background Color (matches fog usually)
+        if (this.scene) {
+            this.scene.background.setHex(this.currentBiome.fogColor);
+        }
+
+        // Force Weather Sync:
+        // If weather is currently active, restart it with the new biome's type.
+        // If not active, ensure the next trigger will use correct type.
+        if (this.weatherState === 'active' && this.weatherSystem) {
+            this.weatherSystem.startWeather(this.currentBiome.weather);
+        }
+        // Also update fog density target for immediate feedback if needed? 
+        // No, triggerWeather handles density.
+
+        // Dynamic High Contrast Reticle Color removed.
+        // We now use a static Cyan Reticle + Black Shadow Outline.
+    }
+
     start() {
         // Preserve custom game settings before reset
         const savedCustomEnemies = this.customEnemies;
         const savedCustomSkills = this.customSkills;
+        const savedCustomBiome = this.customBiome;
+        const savedDebugWeather = this.debugWeather;
 
         // Reset game state and apply meta upgrades (important for newly purchased upgrades!)
-        this.reset();
+        // Commit this biome selection to history (true)
+        this.reset(true);
 
         // Restore custom game settings after reset
         this.customEnemies = savedCustomEnemies;
         this.customSkills = savedCustomSkills;
+        this.customBiome = savedCustomBiome;
+        this.debugWeather = savedDebugWeather;
+
+        // Re-apply biome selection directly if custom was set
+        if (this.customBiome) {
+            this.currentBiome = BIOMES[this.customBiome.toUpperCase()] || BIOMES.NEUTRAL;
+        } else {
+            // If no custom biome, pick random again because reset() picks random, 
+            // but we want to ensure fresh random if this is a new "Start" call?
+            // Actually, reset() picks random.
+            // But if we just came from a game where customBiome WAS set,
+            // reset() would have seen customBiome=null (because we cleared it in reset? No we saved it).
+            // Wait, reset() clears customBiome.
+        }
+
+        // ALWAYS re-apply biome visuals at start to ensure Ground + Weather sync
+        this.applyBiomeVisuals();
+
+        // Ensure clean start
+        this.state = 'playing';
 
         // Ensure clean start
         this.state = 'playing';
@@ -322,9 +472,98 @@ export class Game {
         requestAnimationFrame(() => this.gameLoop());
     }
 
+    updateWeather() {
+        if (!this.currentBiome || this.currentBiome.weather === WEATHER_TYPES.NONE) return;
+
+        // Update weather system particles (wrap around player)
+        if (this.player && this.weatherSystem) {
+            this.weatherSystem.update(this.player.x, this.player.y);
+        }
+
+        if (this.weatherState === 'none') {
+            this.nextWeatherTimer--;
+            if (this.nextWeatherTimer <= 0) {
+                this.triggerWeather();
+            }
+        } else if (this.weatherState === 'active') {
+            this.weatherTimer--;
+
+            // Visuals handled by weatherSystem.update()
+
+            // Apply player slow (1 frame duration, continually re-applied)
+            this.player.slowEffects.push({
+                amount: WEATHER_SLOW_AMOUNT,
+                timer: 1
+            });
+
+            if (this.weatherTimer <= 0) {
+                this.endWeather();
+            }
+        }
+    }
+
+    triggerWeather() {
+        this.weatherState = 'active';
+        this.weatherTimer = WEATHER_DURATION;
+        console.log(`Weather started: ${this.currentBiome.weather}`);
+
+        if (this.weatherSystem) {
+            this.weatherSystem.startWeather(this.currentBiome.weather);
+        }
+
+        // Increase Fog Density
+        if (this.scene && this.scene.fog) {
+            // target density
+            const targetDensity = this.currentBiome.weatherFogDensity || DEFAULT_FOG_DENSITY * 3;
+            // Immediate switch for now, or lerp in update if desired. 
+            // Let's do a simple lerp in update if we wanted smoother transition, 
+            // but immediate change is clear feedback.
+            this.scene.fog.density = targetDensity;
+        }
+    }
+
+    endWeather() {
+        this.weatherState = 'none';
+        this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
+        console.log("Weather ended");
+
+        if (this.weatherSystem) {
+            this.weatherSystem.stopWeather();
+        }
+
+        // Reset Fog Density
+        if (this.scene && this.scene.fog) {
+            this.scene.fog.density = DEFAULT_FOG_DENSITY;
+        }
+    }
+
+
+
     update() {
+        // Handle Camera Zoom
+        if (this.input.zoomDelta !== 0) {
+            const zoomSpeed = 50;
+            const newY = this.camera3D.position.y + this.input.zoomDelta * zoomSpeed;
+            // Clamp Zoom (Height): 400 (Close) to 1200 (Far)
+            // Default is 800
+            const clampedY = Math.max(400, Math.min(1200, newY));
+
+            // Adjust Z proportional to Y to maintain roughly same angle (if desired)
+            // Or just move Y? Moving Y changes angle if target is 0,0,0.
+            // Let's modify both to zoom along the "view axis".
+            // Camera start: (0, 800, 600) -> Ratio Z/Y = 0.75
+
+            this.camera3D.position.y = clampedY;
+            this.camera3D.position.z = clampedY * 0.75;
+            this.camera3D.lookAt(0, 0, 0);
+
+            // Reset delta after processing
+            this.input.zoomDelta = 0;
+        }
 
         this.gameTime++;
+
+        this.updateWeather();
 
         // Check win condition (10 minutes)
         if (this.gameTime >= GAME_DURATION * 60) {
@@ -384,9 +623,11 @@ export class Game {
 
         // Update enemies
         const playerBounds = this.player.getBounds();
+        const speedMod = (this.weatherState === 'active') ? (1 - WEATHER_SLOW_AMOUNT) : 1;
+
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
-            enemy.update(playerBounds.centerX, playerBounds.centerY);
+            enemy.update(playerBounds.centerX, playerBounds.centerY, speedMod);
 
             // Enemy shooting
             if (enemy.canShoot()) {
@@ -522,23 +763,93 @@ export class Game {
         const lightRadius = this.player.getLightRadius();
         const cursorTarget = this.cursorLight ? this.cursorLight.target.position : null;
 
+        // Update Reticle
+        if (this.reticle && cursorTarget && this.player) {
+            this.reticle.position.set(cursorTarget.x, 2, cursorTarget.z); // Slightly above ground
+
+            // Calculate distance to player
+            const dx = cursorTarget.x - (this.player.x + this.player.width / 2);
+            const dz = cursorTarget.z - (this.player.y + this.player.height / 2);
+            const dist = Math.sqrt(dx * dx + dz * dz);
+
+            // Radius = dist * tan(spread/2) roughly, or just proportional
+            // Spread is total angle or half angle? currentSpread is likely half-angle deviation (radius)
+            // Let's assume currentSpread is the +/- max deviation
+            const spreadRadius = Math.max(10, dist * Math.tan(this.player.currentSpread));
+
+            this.reticle.scale.set(spreadRadius, spreadRadius, 1);
+
+            // Sync Shadow
+            if (this.reticleShadow) {
+                // Position slightly lower? Actually depthTest: false means draw order matters.
+                // We added Shadow FIRST, so it draws underneath. 
+                // We'll set it to same position.
+                this.reticleShadow.position.copy(this.reticle.position);
+                this.reticleShadow.scale.set(spreadRadius, spreadRadius, 1);
+            }
+        }
+
         this.player.updateMesh();
 
         this.enemies.forEach(e => {
-            let isVisible = false;
+            // Visibility Factor (0.0 = Hidden/Shadow, 1.0 = Fully Visible)
+            let visibility = 0.0;
 
-            // Check Player Light (Self)
-            const dPlayer = Math.sqrt((e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2);
-            if (dPlayer < lightRadius * 0.7) isVisible = true;
+            // Check Player Light (Self) -> REMOVED per request. Player emits 0 light.
+            // Enemies only visible via Cursor Light.
+            // const dPlayer = ... (Deleted)
 
             // Check Cursor Light
-            if (!isVisible && cursorTarget) {
-                // cursorTarget.z is mapped to game Y
+            if (cursorTarget) {
                 const dCursor = Math.sqrt((e.x - cursorTarget.x) ** 2 + (e.y - cursorTarget.z) ** 2);
-                if (dCursor < lightRadius) isVisible = true;
+
+                // Calculate geometry-based limits to match Visual Spotlight PERFECTLY
+                // Spotlight: Height ~300, Angle PI/3, Penumbra 0.5
+                const radiusMultiplier = this.player ? (1 + this.player.lightRadiusBonus) : 1;
+                const lightHeight = 300 * radiusMultiplier;
+                const halfAngle = Math.PI / 3;
+
+                // Visual Outer Radius (Zero Light)
+                const cEnd = lightHeight * Math.tan(halfAngle); // ~520 * multiplier
+
+                // Visual Inner Radius (Full Light)
+                // Penumbra 0.5 implies light starts fading at 50% of angle? 
+                // Approx: innerAngle = halfAngle * (1 - penumbra)
+                const innerAngle = halfAngle * 0.5;
+                const cStart = lightHeight * Math.tan(innerAngle); // ~173 * multiplier
+
+                if (dCursor < cEnd) {
+                    if (dCursor < cStart) {
+                        visibility = Math.max(visibility, 1.0);
+                    } else {
+                        const factor = 1.0 - ((dCursor - cStart) / (cEnd - cStart));
+                        visibility = Math.max(visibility, factor);
+                    }
+                }
             }
 
-            e.updateMesh(isVisible);
+            // Check Player Bullets (Light Sources)
+            // Reveal enemies near bullets (Radius 150)
+            const BULLET_LIGHT_RADIUS = 150;
+            // Optimization: Only check if not already fully visible
+            if (visibility < 1.0) {
+                for (let j = 0; j < this.bullets.length; j++) {
+                    const b = this.bullets[j];
+                    if (!b.isPlayer) continue; // Only player bullets emit light
+
+                    const dB = Math.sqrt((e.x - b.x) ** 2 + (e.y - b.y) ** 2);
+                    if (dB < BULLET_LIGHT_RADIUS) {
+                        // Simple linear fade for bullet light
+                        const factor = 1.0 - (dB / BULLET_LIGHT_RADIUS);
+                        visibility = Math.max(visibility, factor);
+                        if (visibility >= 1.0) break; // Fully lit, stop checking
+                    }
+                }
+            }
+
+            // Pass current biome fog color for camouflage blending (used for tinting if needed)
+            const fogColor = this.currentBiome ? this.currentBiome.fogColor : 0x000000;
+            e.updateMesh(visibility, fogColor);
         });
 
         this.bullets.forEach(b => b.updateMesh());
@@ -602,25 +913,36 @@ export class Game {
         }
 
         if (this.player.projectileCount === 1) {
+            // Apply Spread
+            const spreadOffset = (Math.random() - 0.5) * 2 * this.player.currentSpread;
             const bullet = new Bullet(
-                startX, startY, this.player.angle, this.player.bulletSpeed,
+                startX, startY, this.player.angle + spreadOffset, this.player.bulletSpeed,
                 effectiveDamage, true, this.player.piercing, this.player.range
             );
             this.bullets.push(bullet);
             this.scene.add(bullet.mesh);
             this.stats.shotsFired++;
+
+            // Increase Recoil
+            this.player.currentSpread = Math.min(this.player.maxSpread, this.player.currentSpread + this.player.spreadPerShot);
         } else {
-            const spread = 0.3;
+            // Multishot logic - Add recoil to the base spread
+            // Basic spread for multishot is Fixed (0.3). We add random jitter from recoil.
+            const spreadStep = 0.3;
             for (let i = 0; i < this.player.projectileCount; i++) {
-                const offset = (i - (this.player.projectileCount - 1) / 2) * spread;
+                const baseOffset = (i - (this.player.projectileCount - 1) / 2) * spreadStep;
+                const jitter = (Math.random() - 0.5) * 2 * this.player.currentSpread;
+
                 const bullet = new Bullet(
-                    startX, startY, this.player.angle + offset, this.player.bulletSpeed,
+                    startX, startY, this.player.angle + baseOffset + jitter, this.player.bulletSpeed,
                     effectiveDamage, true, this.player.piercing, this.player.range
                 );
                 this.bullets.push(bullet);
                 this.scene.add(bullet.mesh);
                 this.stats.shotsFired++;
             }
+            // Increase Recoil
+            this.player.currentSpread = Math.min(this.player.maxSpread, this.player.currentSpread + this.player.spreadPerShot);
         }
     }
 
