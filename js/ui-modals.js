@@ -37,7 +37,9 @@ export function showGuide() {
         <h3>⌨️ Controls</h3>
         <div class="guide-section">
             <p><span class="stat-highlight">WASD:</span> Move</p>
-            <p><span class="stat-highlight">Mouse:</span> Aim & Shoot</p>
+            <p><span class="stat-highlight">Mouse Left:</span> Aim & Shoot</p>
+            <p><span class="stat-highlight">Mouse Right:</span> Rotate Camera</p>
+            <p><span class="stat-highlight">Scroll:</span> Zoom In/Out</p>
             <p><span class="stat-highlight">ESC:</span> Pause Menu</p>
             <p><span class="stat-highlight">SPACE:</span> Quick Freeze (Tactical Pause)</p>
         </div>

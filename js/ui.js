@@ -273,13 +273,6 @@ export class UIManager {
                 // Apply to Container
                 card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
 
-                // Counter-Rotate Children (Keep them flat relative to screen)
-                const children = Array.from(card.children);
-                children.forEach(child => {
-                    // Reduce clipping by lifting Z high enough to clear the tilted background at edges
-                    child.style.transform = `translateZ(50px) rotateY(${-ry}deg) rotateX(${-rx}deg)`;
-                });
-
                 rafId = null;
             });
         });

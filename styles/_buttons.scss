@@ -20,6 +20,17 @@
     box-shadow: v.$shadow-md, v.$glow-cyan;
     position: relative;
     overflow: hidden;
+    transform: translateZ(2px); // Lift slightly for better hit-testing in 3D
+    transform-style: preserve-3d;
+
+    // Ensure icons and text never intercept clicks
+    * {
+        pointer-events: none;
+    }
+
+    svg {
+        pointer-events: none;
+    }
 
     &::before {
         content: '';
@@ -30,6 +41,7 @@
         height: 100%;
         background: linear-gradient(90deg, transparent, rgba(v.$color-primary, 0.2), transparent);
         transition: left v.$transition-slow;
+        pointer-events: none; // Ensure glow doesn't block clicks
     }
 
     &:hover::before {
@@ -37,7 +49,7 @@
     }
 
     &:hover {
-        transform: translateY(-2px);
+        transform: translateZ(2px) translateY(-2px); // Maintain Z-lift while hovering
         box-shadow: v.$shadow-lg, v.$glow-cyan-md;
         background: linear-gradient(135deg, #0f3460, #1a1a2e);
         border-color: v.$color-primary;
@@ -45,7 +57,7 @@
     }
 
     &:active {
-        transform: translateY(0);
+        transform: translateZ(2px) translateY(0); // Maintain Z-lift while active
         box-shadow: v.$shadow-sm, 0 0 15px rgba(v.$color-primary, 0.4);
     }
 }

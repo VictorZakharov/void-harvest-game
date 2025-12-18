@@ -77,10 +77,14 @@ Welcome to Void Harvest, a fast-paced twin-stick roguelite where you fight waves
 | **D** | Move Right |
 | **Mouse Movement** | Aim weapon |
 | **Mouse Button** | Hold to shoot |
+| **Right Mouse (Hold)** | Orbit Camera (Rotate View) |
+| **Mouse Wheel** | Zoom In / Out |
 | **ESC** | Open Pause Menu |
 | **SPACE** | Quick Freeze (Toggle) |
 
-**Note:** Diagonal movement is normalized (same speed as cardinal directions)
+**Notes:**
+*   **Camera-Relative Movement:** "Forward" (W) always moves your character away from the camera view.
+*   **Diagonal Movement:** Normalized for consistent speed.
 
 ### Pause Menu Options
 When you press ESC, the game pauses and shows:

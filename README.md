@@ -18,15 +18,19 @@ A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
 - Meta-progression system with permanent unlocks
 - Comprehensive stats tracking with run comparisons
 - Wave-based difficulty scaling
-- IMMERSIVE 3D VISUALS with dynamic lighting
+- IMMERSIVE 3D VISUALS with dynamic lighting and matte aesthetic
+- FREE ORBITAL CAMERA (Rotate & Zoom) with camera-relative movement
+- PLANAR HEALTH BILLBOARDS for perfect readability
 - Tactical QUICK FREEZE mode (Spacebar)
 - Smart enemy spawning (off-screen guaranteed)
 - Procedurally generated pixel art sprites
 
 ## Controls
 
-- **WASD** - Move
-- **Mouse** - Aim and shoot
+- **WASD** - Move (Camera Relative)
+- **Mouse Left** - Aim and shoot
+- **Mouse Right (Hold)** - Rotate Camera
+- **Scroll Wheel** - Zoom In/Out
 - **ESC** - Pause/Resume
 - **SPACE** - Quick Freeze
 

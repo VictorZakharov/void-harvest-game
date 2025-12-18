@@ -43,7 +43,8 @@ export class Game {
     init3D() {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x000000);
-        this.scene.fog = new THREE.FogExp2(0x000000, DEFAULT_FOG_DENSITY); // Using Exp2 fog for better atmospheric density control
+        this.scene.background = new THREE.Color(0x000000);
+        // this.scene.fog = new THREE.FogExp2(0x000000, DEFAULT_FOG_DENSITY); // Disable Fog per user request for "0 atmosphere"
 
         // Cursor Light (Follows mouse)
         // Cursor Light (Follows mouse)
@@ -112,8 +113,17 @@ export class Game {
         // Decouple aspect ratio from logical game size
         const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
         this.camera3D = new THREE.PerspectiveCamera(60, aspect, 0.1, 5000);
-        this.camera3D.position.set(0, 800, 600); // Closer for better player focus
-        this.camera3D.lookAt(0, 0, 0);
+
+        // Camera Orbital State
+        this.camYaw = 0; // Angle around Vertical Axis
+        this.camPitch = Math.PI / 4; // 45 degrees Down
+        this.camDist = 1000;
+
+        // Initial Position calculation (Cartesian from Spherical)
+        this.updateCameraTransform();
+
+        // this.camera3D.position.set(0, 800, 600); // REPLACED by updateCameraTransform
+        // this.camera3D.lookAt(0, 0, 0);
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
@@ -333,6 +343,8 @@ export class Game {
         if (this.groundMaterial) {
             this.groundMaterial.map = texture;
             this.groundMaterial.color.setHex(0xffffff); // Set to white to show texture colors
+            this.groundMaterial.roughness = 1.0; // Fully matte to prevent shiny cursor spot
+            this.groundMaterial.metalness = 0.0; // Non-metallic
             this.groundMaterial.needsUpdate = true;
         }
 
@@ -540,26 +552,8 @@ export class Game {
 
 
     update() {
-        // Handle Camera Zoom
-        if (this.input.zoomDelta !== 0) {
-            const zoomSpeed = 50;
-            const newY = this.camera3D.position.y + this.input.zoomDelta * zoomSpeed;
-            // Clamp Zoom (Height): 400 (Close) to 1200 (Far)
-            // Default is 800
-            const clampedY = Math.max(400, Math.min(1200, newY));
+        // Zoom handled in render3D
 
-            // Adjust Z proportional to Y to maintain roughly same angle (if desired)
-            // Or just move Y? Moving Y changes angle if target is 0,0,0.
-            // Let's modify both to zoom along the "view axis".
-            // Camera start: (0, 800, 600) -> Ratio Z/Y = 0.75
-
-            this.camera3D.position.y = clampedY;
-            this.camera3D.position.z = clampedY * 0.75;
-            this.camera3D.lookAt(0, 0, 0);
-
-            // Reset delta after processing
-            this.input.zoomDelta = 0;
-        }
 
         this.gameTime++;
 
@@ -587,10 +581,10 @@ export class Game {
             this.cursorLight.position.set(target.x, lightHeight, target.z);
             this.cursorLight.target.position.set(target.x, 0, target.z);
 
-            // Scale intensity to compensate for increased height (inverse square law approximation)
-            // Base intensity 5000. With decay=1, we need linear+ compensation. 
-            // Using power of 1.5 to ensure it stays punchy.
-            this.cursorLight.intensity = 5000 * Math.pow(radiusMultiplier, 1.5);
+            // Scale intensity slightly with radius
+            // Base intensity ~800. Scale linearly to keep consistent brightness.
+            // 5000 was clipping (White), 2 was invisible.
+            this.cursorLight.intensity = 800 * radiusMultiplier;
             this.cursorLight.distance = 3000 * radiusMultiplier;
         }
         if (this.cursorGlow) {
@@ -599,7 +593,7 @@ export class Game {
 
         // Update player with world coordinates
         // target.z maps to 2D y
-        this.player.update(this.input, target.x, target.z);
+        this.player.update(this.input, target.x, target.z, this.camYaw || 0);
 
         // Player shooting
         if (this.player.shoot(this.input.mouseDown)) {
@@ -763,6 +757,43 @@ export class Game {
         const lightRadius = this.player.getLightRadius();
         const cursorTarget = this.cursorLight ? this.cursorLight.target.position : null;
 
+        // ---------- CAMERA CONTROL ----------
+        // Handle Camera Rotation
+        if (this.input.rightMouseDown) {
+            const deltas = this.input.getDeltas();
+            const sensitivity = 0.01;
+
+            // Yaw (Left/Right) - Rotate around player
+            this.camYaw -= deltas.x * sensitivity;
+
+            // Pitch (Up/Down)
+            this.camPitch -= deltas.y * sensitivity;
+
+            // Clamp Pitch to avoid flipping or extreme angles
+            // Min: 0.5 (Higher angle, prevents looking too flat along ground)
+            // Max: PI/2 - 0.1 (Almost top-down)
+            const minPitch = 0.5;
+            const maxPitch = Math.PI / 2 - 0.1;
+            this.camPitch = Math.max(minPitch, Math.min(maxPitch, this.camPitch));
+        } else {
+            // Flush deltas even if not using them to prevent jump on next click
+            this.input.getDeltas();
+        }
+
+        // Handle Camera Zoom
+        const zoomDelta = this.input.getZoomDelta();
+        if (zoomDelta !== 0) {
+            const zoomSpeed = 50; // Distance per click
+            this.camDist += zoomDelta * zoomSpeed;
+            // Clamp Distance
+            // Min: 400 (Prevent clipping)
+            // Max: 1500 (Keep action focused)
+            this.camDist = Math.max(400, Math.min(1500, this.camDist));
+        }
+
+        // Apply Camera Transform relative to Player
+        this.updateCameraTransform(); // Use helper method for consistency
+
         // Update Reticle
         if (this.reticle && cursorTarget && this.player) {
             this.reticle.position.set(cursorTarget.x, 2, cursorTarget.z); // Slightly above ground
@@ -849,24 +880,15 @@ export class Game {
 
             // Pass current biome fog color for camouflage blending (used for tinting if needed)
             const fogColor = this.currentBiome ? this.currentBiome.fogColor : 0x000000;
-            e.updateMesh(visibility, fogColor);
+            e.updateMesh(visibility, fogColor, this.camera3D);
         });
 
         this.bullets.forEach(b => b.updateMesh());
         this.items.forEach(i => i.updateMesh());
         this.particles.forEach(p => p.update()); // Particle update handles mesh update
 
-        // Camera follow (Basic)
-        // Camera is already set at specific height/angle in init3D.
-        // We just move X, Z to follow player.
-        // Camera offset was (0, 800, 500) looking at (0,0,0).
-        // So offset from target point (0,0,0) is (0, 800, 500).
-        const targetX = this.player.x + this.player.width / 2;
-        const targetZ = this.player.y + this.player.height / 2;
+        // Camera follow handled by updateCameraTransform() above
 
-        this.camera3D.position.x = targetX;
-        this.camera3D.position.z = targetZ + 600;
-        this.camera3D.lookAt(targetX, 0, targetZ);
 
         // Shake
         if (this.camera.shake > 0 && this.state !== 'gameover') {
@@ -897,8 +919,25 @@ export class Game {
 
     createPlayerBullets() {
         const bounds = this.player.getBounds();
-        const startX = bounds.centerX;
-        const startY = bounds.centerY;
+        // Calculate Barrel Position
+        // Gun Mesh Offset is (25, 10, 10). In 2D Top-Down:
+        // Forward (X) = 25
+        // Right (Y/Z) = 10
+        // We need to rotate this offset by the player's angle.
+        const gunOffsetX = 25;
+        const gunOffsetY = 10;
+
+        // Rotate offset
+        const cos = Math.cos(this.player.angle);
+        const sin = Math.sin(this.player.angle);
+
+        // Rotated Vector = (x*cos - y*sin, x*sin + y*cos)
+        // Note: Canvas Y is down, so rotation might feel inverted, but player.angle is already computed via atan2(dy, dx) so it's standard radians.
+        const rotatedX = gunOffsetX * cos - gunOffsetY * sin;
+        const rotatedY = gunOffsetX * sin + gunOffsetY * cos;
+
+        const startX = bounds.centerX + rotatedX;
+        const startY = bounds.centerY + rotatedY;
 
         // Calculate damage with berserk bonus at different health thresholds per level
         // Level 1 (0.5): +50% damage at ≤10% HP
@@ -1411,5 +1450,15 @@ export class Game {
 
     saveMetaProgress() {
         StatsManager.saveMetaProgress(this.metaProgress);
+    }
+
+    updateCameraTransform() {
+        if (!this.player) return;
+        const hRadius = this.camDist * Math.cos(this.camPitch);
+        const camY = this.camDist * Math.sin(this.camPitch);
+        const camX = this.player.x + hRadius * Math.sin(this.camYaw);
+        const camZ = this.player.y + hRadius * Math.cos(this.camYaw);
+        this.camera3D.position.set(camX, camY, camZ);
+        this.camera3D.lookAt(this.player.x, 0, this.player.y);
     }
 }

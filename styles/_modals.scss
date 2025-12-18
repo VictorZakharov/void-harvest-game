@@ -56,6 +56,14 @@
     }
 }
 
+// Special overrides for Start Screen to fit the wide controls diagram
+#start-screen {
+    .modal-content {
+        max-width: 1150px;
+        width: 95%;
+    }
+}
+
 // ============================================
 // Controls Info Section
 // ============================================
@@ -66,13 +74,14 @@
     border-radius: v.$border-radius-xl;
     margin: v.$spacing-xl 0;
     border: v.$border-width-sm solid rgba(v.$color-primary, 0.2);
+    pointer-events: none; // Infographic is non-interactive
 }
 
 .controls-visual {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 30px;
+    gap: 40px; // Narrowed gap to pull content away from edges
     margin: v.$spacing-xl 0;
 }
 
@@ -125,10 +134,166 @@
 }
 
 .mouse-section {
+    position: relative;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: v.$spacing-xs + v.$spacing-xs;
+    width: 280px;
+    height: 160px; // Increased height for Top Label
+
+    // Infographic Styles
+    &.infographic {
+        .callout {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #ccc;
+            font-size: 11px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            white-space: nowrap;
+            opacity: 1;
+            pointer-events: none;
+            z-index: 10;
+
+            .label {
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding: 4px 8px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 4px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(2px);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            }
+
+            .connector {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+
+                .line {
+                    background: none;
+                }
+
+                .dot {
+                    width: 5px;
+                    height: 5px;
+                    background: #fff;
+                    border-radius: 50%;
+                    box-shadow: 0 0 5px currentColor;
+                    flex-shrink: 0;
+                }
+            }
+
+            // Aim: LEFT SIDE (Symmetrical)
+            &.aim {
+                right: 50%;
+                margin-right: 22px; // Align with Left Button outer edge
+                top: 30px; // Lower start point
+                transform: none; // Remove translateY
+                flex-direction: row;
+
+                .label {
+                    border-color: rgba(255, 136, 136, 0.3);
+                    color: #ffcccc;
+                    background: linear-gradient(90deg, rgba(50, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+                    transform: translate(5px, -20px); // Small adjustment to meet flatter line
+                }
+
+                .connector {
+                    flex-direction: row; // Line -> Dot
+                    width: 60px;
+                    transform: rotate(20deg); // Flatter angle
+                    transform-origin: right center;
+                    margin-right: -5px; // Pull closer to mouse
+
+                    .line {
+                        width: 100%;
+                        height: 1px;
+                        border-top: 2px dotted rgba(255, 136, 136, 0.6);
+                    }
+
+                    .dot {
+                        background: #ffaaaa;
+                        margin-left: -2px;
+                    }
+
+                    // Overlap slightly for solid connection
+                }
+            }
+
+            // Orbit: RIGHT SIDE (Symmetrical)
+            &.orbit {
+                left: 50%;
+                margin-left: 22px; // Align with Right Button outer edge
+                top: 30px; // Lower start point
+                transform: none;
+                flex-direction: row; // Connector -> Label
+
+                .label {
+                    border-color: rgba(136, 204, 255, 0.3);
+                    color: #cceeff;
+                    background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 20, 50, 0.6));
+                    transform: translate(-5px, -20px); // Small adjustment to meet flatter line
+                }
+
+                .connector {
+                    flex-direction: row-reverse; // Dot -> Line
+                    width: 60px;
+                    transform: rotate(-20deg); // Flatter angle
+                    transform-origin: left center;
+                    margin-left: -5px; // Pull closer to mouse
+
+                    .line {
+                        width: 100%;
+                        height: 1px;
+                        border-top: 2px dotted rgba(136, 204, 255, 0.6);
+                    }
+
+                    .dot {
+                        background: #ccffff;
+                        margin-right: -2px;
+                    }
+                }
+            }
+
+            // Zoom: TOP CENTER (Above Mouse)
+            &.zoom {
+                left: 50%;
+                top: -30px;
+                transform: translateX(-50%);
+                flex-direction: column-reverse;
+                gap: 4px;
+
+                .label {
+                    border-color: rgba(136, 255, 136, 0.3);
+                    color: #ccffcc;
+                    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 50, 0, 0.6));
+                }
+
+                .connector {
+                    flex-direction: column;
+                    height: 35px;
+                    width: 10px; // Narrow logic container
+
+                    .line {
+                        height: 100%;
+                        width: 1px;
+                        border-left: 2px dotted rgba(136, 255, 136, 0.6); // Vertical Dotted
+                    }
+
+                    .dot {
+                        background: #ccffcc;
+                        margin-top: -2px;
+                    }
+                }
+            }
+        }
+    }
 }
 
 .mouse {
@@ -139,6 +304,7 @@
     border-radius: 30px 30px 20px 20px;
     position: relative;
     box-shadow: v.$shadow-md;
+    z-index: 2; // Above lines
 }
 
 .mouse-buttons {
@@ -160,14 +326,16 @@
 
     &.left {
         border-radius: 15px 0 0 0;
-        background: rgba(255, 100, 100, 0.4);
+        background: rgba(255, 100, 100, 0.3);
         border-color: #ff6666;
-        box-shadow: 0 0 12px rgba(255, 100, 100, 0.6),
-            inset 0 2px 4px rgba(255, 150, 150, 0.3);
+        box-shadow: inset 0 2px 4px rgba(255, 150, 150, 0.2);
     }
 
     &.right {
         border-radius: 0 15px 0 0;
+        background: rgba(100, 200, 255, 0.3);
+        border-color: #44aaff;
+        box-shadow: inset 0 2px 4px rgba(150, 200, 255, 0.2);
     }
 }
 
@@ -178,9 +346,10 @@
     transform: translateX(-50%);
     width: 8px;
     height: 15px;
-    background: rgba(v.$color-gray, 0.3);
-    border: v.$border-width-sm solid v.$color-gray;
+    background: rgba(100, 255, 100, 0.5); // Green tint
+    border: v.$border-width-sm solid #88ff88;
     border-radius: v.$border-radius-md;
+    box-shadow: 0 0 5px rgba(100, 255, 100, 0.4);
 }
 
 // ============================================
