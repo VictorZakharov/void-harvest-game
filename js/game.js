@@ -44,7 +44,7 @@ export class Game {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x000000);
         this.scene.background = new THREE.Color(0x000000);
-        // this.scene.fog = new THREE.FogExp2(0x000000, DEFAULT_FOG_DENSITY); // Disable Fog per user request for "0 atmosphere"
+        this.scene.fog = new THREE.FogExp2(0x000000, 0); // Latent fog, enabled only during weather
 
         // Cursor Light (Follows mouse)
         // Cursor Light (Follows mouse)
@@ -545,7 +545,7 @@ export class Game {
 
         // Reset Fog Density
         if (this.scene && this.scene.fog) {
-            this.scene.fog.density = DEFAULT_FOG_DENSITY;
+            this.scene.fog.density = 0; // Return to perfect visibility
         }
     }
 
@@ -809,6 +809,13 @@ export class Game {
             const spreadRadius = Math.max(10, dist * Math.tan(this.player.currentSpread));
 
             this.reticle.scale.set(spreadRadius, spreadRadius, 1);
+
+            // Dynamic Color based on Range
+            if (dist > this.player.range) {
+                this.reticle.material.color.setHex(0x888888); // Grey out-of-range
+            } else {
+                this.reticle.material.color.setHex(0x00ffff); // Cyan in-range
+            }
 
             // Sync Shadow
             if (this.reticleShadow) {

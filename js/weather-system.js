@@ -11,8 +11,9 @@ export class WeatherSystem {
         this.windTimer = 0;
         this.windVector = new THREE.Vector3(-20, 0, 0); // Default Left
 
-        // Texture for Sandstorm
+        // Textures for Weather
         this.dustTexture = this.createDustTexture();
+        this.snowTexture = this.createSnowTexture();
 
         // Configuration per weather type
         this.configs = {
@@ -28,23 +29,23 @@ export class WeatherSystem {
                 blending: THREE.AdditiveBlending
             },
             [WEATHER_TYPES.SNOW]: {
-                count: 4000,
+                count: 6000,     // Increased from 4000 for "blizzard" feel
                 color: 0xffffff,
-                size: 3.0,
-                velocityY: -3,
-                velocityX: 0.5, // Drift
-                opacity: 0.9,
+                size: 4.0,       // Larger flakes (up from 3.0)
+                velocityY: -4,   // Faster fall (was -3)
+                velocityX: 0.8,  // More drift (was 0.5)
+                opacity: 0.95,   // Almost solid
                 transparent: true,
-                map: null,
+                map: this.snowTexture,
                 blending: THREE.AdditiveBlending
             },
             [WEATHER_TYPES.SANDSTORM]: {
-                count: 800,      // Reduced from 2000 to unclutter screen
-                color: 0xffddaa, // Warmer/Brighter sand color
-                size: 120.0,     // Slightly shorter streaks
+                count: 2200,     // Perfectly balanced for "thick" air
+                color: 0xccaa88, // Desaturated sand for better fog blending
+                size: 140.0,     // Shorter streaks for natural feel
                 velocityY: 0,
                 velocityZ: 0,
-                opacity: 0.15,   // Much more transparent
+                opacity: 0.5,    // Transparent volume
                 transparent: true,
                 map: this.dustTexture,
                 blending: THREE.AdditiveBlending
@@ -54,21 +55,56 @@ export class WeatherSystem {
 
     createDustTexture() {
         const canvas = document.createElement('canvas');
-        canvas.width = 256; // Much wider for long streaks
-        canvas.height = 32;
+        canvas.width = 256;
+        canvas.height = 64; // Increased height for noise
         const ctx = canvas.getContext('2d');
 
-        // Draw a clean, sharp, long horizontal beam
+        // Draw a refined, noisy horizontal streak
         const grad = ctx.createLinearGradient(0, 0, 256, 0);
         grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.0)');
-        grad.addColorStop(0.1, 'rgba(255, 255, 255, 0.2)');
-        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
-        grad.addColorStop(0.9, 'rgba(255, 255, 255, 0.2)');
+        grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.3)');
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
+        grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.3)');
         grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
 
         ctx.fillStyle = grad;
-        // Thinner beam (2px height) for sharp lines
-        ctx.fillRect(0, 15, 256, 2);
+
+        // Draw multiple thin, staggered lines with noise
+        for (let i = 0; i < 5; i++) {
+            const y = 10 + i * 10;
+            const h = 2 + Math.random() * 4;
+            const xOff = Math.random() * 50;
+            const w = 150 + Math.random() * 100;
+            ctx.fillRect(xOff, y, w, h);
+        }
+
+        // Add some "grit" (noise dots)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        for (let i = 0; i < 200; i++) {
+            ctx.fillRect(Math.random() * 256, Math.random() * 64, 2, 2);
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        return texture;
+    }
+
+    createSnowTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        // Draw a soft circle
+        const rad = 32;
+        const grad = ctx.createRadialGradient(rad, rad, 0, rad, rad, rad);
+        grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+        grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
+        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(rad, rad, rad, 0, Math.PI * 2);
+        ctx.fill();
 
         const texture = new THREE.CanvasTexture(canvas);
         return texture;
@@ -105,8 +141,10 @@ export class WeatherSystem {
         let geometry;
 
         if (type === WEATHER_TYPES.SANDSTORM) {
-            // Horizontal Box: Length = config.size
-            geometry = new THREE.BoxGeometry(config.size, 0.8, 0.8);
+            // Horizontal Plane for Streaks: Width = config.size, Height = much thicker
+            // Using Plane instead of Box to avoid 3D side highlights
+            geometry = new THREE.PlaneGeometry(config.size, 12.0);
+            geometry.rotateX(-Math.PI / 2); // Make it sit flat/horizontal
         } else {
             // Vertical Box (Rain): Height = config.size
             // Thin width/depth
@@ -115,11 +153,11 @@ export class WeatherSystem {
 
         const material = new THREE.MeshBasicMaterial({
             color: config.color,
+            map: config.map || null, // APPLY MAP
             transparent: true,
             opacity: config.opacity,
             depthWrite: false,
-            // Rain looks better with Standard blending (or Additive for magical rain)
-            // Sticking to Additive for visibility against dark backgrounds
+            side: THREE.DoubleSide, // Ensure visibility from both sides of the plane
             blending: config.blending || THREE.AdditiveBlending
         });
 
@@ -193,7 +231,7 @@ export class WeatherSystem {
             opacity: config.opacity,
             blending: config.blending || THREE.AdditiveBlending,
             depthWrite: false,
-            // map: config.map || null // No map for points now? Rain/Snow use default squares or could use blur texture
+            map: config.map || null // Apply snow/point texture here
         });
 
         this.particles = new THREE.Points(geometry, material);

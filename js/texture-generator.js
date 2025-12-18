@@ -129,9 +129,9 @@ export class TextureGenerator {
                 ctx.lineTo(startX, yBase + 400);
                 ctx.fill();
 
-                // 2. Highlight Crest (Bright Sand)
-                ctx.fillStyle = '#ffeedd';
-                ctx.globalAlpha = 1.0; // Solid for crisp visuals
+                // 2. Highlight Crest (Warm Sand Glow - No more snow look!)
+                ctx.fillStyle = '#ffcc66'; // Warm orange/sand
+                ctx.globalAlpha = 0.8; // High visibility but semi-blended
                 ctx.beginPath();
 
                 // Top Edge

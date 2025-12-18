@@ -28,11 +28,11 @@ export const BIOMES = {
         id: 'desert',
         name: 'Wasteland',
         groundColor: 0xccaa66, // Sand
-        fogColor: 0x443311,    // Dark orange/brown
+        fogColor: 0x886644,    // Brightened orange/brown for better visibility in thick fog
         weather: WEATHER_TYPES.SANDSTORM,
         weatherParticleColor: 0xddbb88,
-        weatherFogDensity: 0.0015 // Reduced from 0.002 to improve visibility
+        weatherFogDensity: 0.0025 // Balanced for 1000-unit camera distance
     }
 };
 
-export const DEFAULT_FOG_DENSITY = 0.001; // Base visibility
+export const DEFAULT_FOG_DENSITY = 0; // Pure clarity by default
