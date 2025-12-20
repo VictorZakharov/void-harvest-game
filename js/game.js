@@ -1,11 +1,12 @@
 // ==================== GAME CLASS ====================
 import {
-    CANVAS_WIDTH, CANVAS_HEIGHT, GAME_DURATION,
+    CANVAS_WIDTH, CANVAS_HEIGHT, GAME_DURATION, BASE_CAMERA_HEIGHT,
     WAVE_DURATION, INITIAL_SPAWN_RATE, MIN_SPAWN_RATE, SPAWN_RATE_DECREASE,
     WAVE_UNLOCK_FAST, WAVE_UNLOCK_SHOOTER, WAVE_UNLOCK_TANK, WAVE_UNLOCK_ICE,
     WAVE_SCALING_BOOST_1, WAVE_SCALING_BOOST_2, ENEMY_SCALING_PER_WAVE,
     HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT, PARTICLE_COUNT_HIT, PARTICLE_COUNT_DEATH,
-    WEATHER_DURATION, WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, WEATHER_SLOW_AMOUNT
+    WEATHER_DURATION, WEATHER_WARNING_TIME, WEATHER_FADE_TIME,
+    WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, WEATHER_SLOW_AMOUNT
 } from './constants.js';
 import { BIOMES, WEATHER_TYPES, DEFAULT_FOG_DENSITY } from './biomes.js';
 import { Player, Enemy, Bullet, Item } from './entities.js';
@@ -259,6 +260,7 @@ export class Game {
         this.weatherState = 'none'; // 'none', 'active'
         this.weatherTimer = 0;
         this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
+        this.baseFogDensity = DEFAULT_FOG_DENSITY; // Initialize base density
 
         // Fix: Explicitly stop any active weather visuals
         if (this.weatherSystem) {
@@ -351,7 +353,7 @@ export class Game {
         // Update Fog Color
         if (this.scene && this.scene.fog) {
             this.scene.fog.color.setHex(this.currentBiome.fogColor);
-            this.scene.fog.density = DEFAULT_FOG_DENSITY;
+            this.baseFogDensity = this.currentBiome.fogDensity || DEFAULT_FOG_DENSITY;
         }
 
         // Update Background Color (matches fog usually)
@@ -472,7 +474,7 @@ export class Game {
         }
 
         if (this.state === 'playing') {
-            this.update();
+            this.update(dt);
         }
 
         // Always draw, even when paused or gameover
@@ -484,27 +486,54 @@ export class Game {
         requestAnimationFrame(() => this.gameLoop());
     }
 
-    updateWeather() {
-        if (!this.currentBiome || this.currentBiome.weather === WEATHER_TYPES.NONE) return;
+    updateWeather() { // Frame-based update
+        if (!this.currentBiome) return;
+        if (this.currentBiome.weather === WEATHER_TYPES.NONE) return;
 
-        // Update weather system particles (wrap around player)
-        if (this.player && this.weatherSystem) {
-            this.weatherSystem.update(this.player.x, this.player.y);
-        }
+        const warningUI = document.getElementById('weather-warning');
 
         if (this.weatherState === 'none') {
-            this.nextWeatherTimer--;
+            this.nextWeatherTimer--; // Decrement by frame
+
+            // Warning Logic
+            if (this.nextWeatherTimer <= WEATHER_WARNING_TIME) {
+                if (warningUI) {
+                    warningUI.classList.remove('hidden');
+                    warningUI.textContent = `WARNING: ${this.currentBiome.weather.toUpperCase()} APPROACHING`;
+                }
+            } else {
+                if (warningUI) warningUI.classList.add('hidden');
+            }
+
             if (this.nextWeatherTimer <= 0) {
                 this.triggerWeather();
             }
         } else if (this.weatherState === 'active') {
-            this.weatherTimer--;
+            if (warningUI) warningUI.classList.add('hidden'); // Hide warning once active
 
-            // Visuals handled by weatherSystem.update()
+            this.weatherTimer--; // Decrement by frame
+
+            // Calculate Fade Factor (0.0 to 1.0)
+            let fadeFactor = 1.0;
+            const timeElapsed = WEATHER_DURATION - this.weatherTimer;
+            const timeRemaining = this.weatherTimer;
+
+            if (timeElapsed < WEATHER_FADE_TIME) {
+                // FADE IN
+                fadeFactor = timeElapsed / WEATHER_FADE_TIME;
+            } else if (timeRemaining < WEATHER_FADE_TIME) {
+                // FADE OUT
+                fadeFactor = timeRemaining / WEATHER_FADE_TIME;
+            }
+
+            // Update weather system particles (wrap around player)
+            if (this.player && this.weatherSystem) {
+                this.weatherSystem.update(this.player.x, this.player.y, fadeFactor);
+            }
 
             // Apply player slow (1 frame duration, continually re-applied)
             this.player.slowEffects.push({
-                amount: WEATHER_SLOW_AMOUNT,
+                amount: WEATHER_SLOW_AMOUNT * fadeFactor,
                 timer: 1
             });
 
@@ -517,47 +546,40 @@ export class Game {
     triggerWeather() {
         this.weatherState = 'active';
         this.weatherTimer = WEATHER_DURATION;
-        console.log(`Weather started: ${this.currentBiome.weather}`);
+        // console.log(`Weather started: ${this.currentBiome.weather}`);
 
         if (this.weatherSystem) {
             this.weatherSystem.startWeather(this.currentBiome.weather);
         }
 
         // Increase Fog Density
-        if (this.scene && this.scene.fog) {
-            // target density
-            const targetDensity = this.currentBiome.weatherFogDensity || DEFAULT_FOG_DENSITY * 3;
-            // Immediate switch for now, or lerp in update if desired. 
-            // Let's do a simple lerp in update if we wanted smoother transition, 
-            // but immediate change is clear feedback.
-            this.scene.fog.density = targetDensity;
-        }
+        const targetDensity = this.currentBiome.weatherFogDensity || DEFAULT_FOG_DENSITY * 3;
+        this.baseFogDensity = targetDensity;
     }
 
     endWeather() {
         this.weatherState = 'none';
         this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
-        console.log("Weather ended");
+        // console.log("Weather ended");
 
         if (this.weatherSystem) {
             this.weatherSystem.stopWeather();
         }
 
         // Reset Fog Density
-        if (this.scene && this.scene.fog) {
-            this.scene.fog.density = 0; // Return to perfect visibility
-        }
+        // Use biome default or global default
+        this.baseFogDensity = this.currentBiome?.fogDensity || DEFAULT_FOG_DENSITY;
     }
 
 
 
-    update() {
+    update(dt) {
         // Zoom handled in render3D
 
 
         this.gameTime++;
 
-        this.updateWeather();
+        this.updateWeather(); // Frame-based update
 
         // Check win condition (10 minutes)
         if (this.gameTime >= GAME_DURATION * 60) {
@@ -753,6 +775,16 @@ export class Game {
     }
 
     render3D() {
+        // --- DYNAMIC FOG SCALING ---
+        if (this.scene && this.scene.fog) {
+            const currentHeight = this.camera3D.position.y;
+            const height = Math.max(100, currentHeight);
+            const scale = BASE_CAMERA_HEIGHT / height;
+            const base = (typeof this.baseFogDensity !== 'undefined') ? this.baseFogDensity : DEFAULT_FOG_DENSITY;
+            this.scene.fog.density = base * scale;
+        }
+        // ---------------------------
+
         // Update entity meshes
         const lightRadius = this.player.getLightRadius();
         const cursorTarget = this.cursorLight ? this.cursorLight.target.position : null;
@@ -897,6 +929,7 @@ export class Game {
         // Camera follow handled by updateCameraTransform() above
 
 
+        // Shake
         // Shake
         if (this.camera.shake > 0 && this.state !== 'gameover') {
             this.camera3D.position.x += (Math.random() - 0.5) * this.camera.shake * 2;
@@ -1339,7 +1372,7 @@ export class Game {
         this.state = 'gameover';
         this.camera.shake = 0; // Stop screen shake
 
-        const souls = Math.floor(this.kills / 5);
+        const souls = this.getRunSouls();
         this.totalSouls += souls;
         this.metaProgress.souls = this.totalSouls;
         this.saveMetaProgress();
@@ -1467,5 +1500,9 @@ export class Game {
         const camZ = this.player.y + hRadius * Math.cos(this.camYaw);
         this.camera3D.position.set(camX, camY, camZ);
         this.camera3D.lookAt(this.player.x, 0, this.player.y);
+    }
+
+    getRunSouls() {
+        return Math.floor(this.kills / 5);
     }
 }

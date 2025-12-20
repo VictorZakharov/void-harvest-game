@@ -10,6 +10,7 @@
 
 export const CANVAS_WIDTH = 3000;
 export const CANVAS_HEIGHT = 3000;
+export const BASE_CAMERA_HEIGHT = 800; // Reference height for fog density scaling
 
 // ============================================
 // GAME RULES
@@ -135,8 +136,11 @@ export const ENEMY_SCALING_PER_WAVE = 0.1; // 10% increase per wave
 // WEATHER SYSTEM
 // ============================================
 
-export const WEATHER_DURATION = 900; // frames (15 seconds)
-export const WEATHER_INTERVAL_MIN = 3600; // frames (60 seconds)
-export const WEATHER_INTERVAL_MAX = 5400; // frames (90 seconds)
+export const WEATHER_DURATION = 1200; // 20 seconds at 60fps
+export const WEATHER_WARNING_TIME = 300; // 5 seconds warning
+export const WEATHER_FADE_TIME = 120; // 2 seconds fade in/out
+
+export const WEATHER_INTERVAL_MIN = 3600; // 60 seconds
+export const WEATHER_INTERVAL_MAX = 7200; // 120 seconds
 export const WEATHER_SLOW_AMOUNT = 0.15; // 15% slow
 

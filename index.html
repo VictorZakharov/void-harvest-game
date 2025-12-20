@@ -28,19 +28,39 @@
                     <span id="level-text">Lv 1</span>
                 </div>
                 <div id="active-skills"></div>
-                <div id="game-stats">
-                    <div>
-                        <span id="time-text">Time: 0:00</span>
-                        <span id="wave-text">Wave: 1</span>
+                <div id="game-stats-content">
+                    <div id="time-stats">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span id="time-val">0:00</span>
                     </div>
-                    <span id="kills-text">Kills: 0</span>
+                    <div id="wave-stats">
+                        <span class="stat-label">WAVE</span>
+                        <span id="wave-val">1</span>
+                        <div id="wave-icons"></div>
+                    </div>
+                    <div id="kills-stats">
+                        <span class="stat-label">KILLS</span>
+                        <span id="kills-val">0</span>
+                    </div>
+                    <div id="souls-stats">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                        </svg>
+                        <span id="souls-banked-text" title="Banked Souls">0</span>
+                        <span id="souls-run-text" title="Current Run Souls">(+0)</span>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Frozen State Message -->
-                <div id="frozen-message" class="hidden">
-                    <div class="frozen-text">GAME FROZEN</div>
-                    <div class="frozen-sub">MOVE OR ATTACK TO RESUME</div>
-                </div>
+            <!-- Frozen State Message -->
+            <div id="frozen-message" class="hidden">
+                <div class="frozen-text">GAME FROZEN</div>
+                <div class="frozen-sub">MOVE OR ATTACK TO RESUME</div>
             </div>
         </div>
 
@@ -54,6 +74,12 @@
                 <button id="exit-pause-btn" class="btn">Exit to Main Menu</button>
             </div>
         </div>
+
+        <!-- Weather Warning (Independent of panels) -->
+        <div id="weather-warning" class="hidden">WARNING: WEATHER APPROACHING</div>
+
+        <!-- HUD (Heads-Up Display) -->
+        <!-- game-ui container removed as it was unused and hidden -->
 
         <!-- Level Up Modal -->
         <div id="levelup-modal" class="modal hidden">
@@ -90,7 +116,8 @@
             <div class="modal-content" style="max-width: 500px; text-align: center;">
                 <h2 style="color: #ff8844; margin-bottom: 20px;">⚠️ Reset All Upgrades?</h2>
                 <p style="font-size: 18px; margin: 20px 0;">This will reset all permanent upgrades to level 0.</p>
-                <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;"></p>
+                <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;">
+                </p>
                 <p style="color: #aaa; margin-bottom: 30px;">This action cannot be undone.</p>
                 <div style="display: flex; gap: 20px; justify-content: center;">
                     <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes,
@@ -103,6 +130,29 @@
         <!-- Start Screen -->
         <div id="start-screen" class="modal">
             <div class="modal-content">
+                <button id="meta-btn" class="btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                    Upgrades
+                    <div id="main-souls-display" class="souls-display hidden">
+                        <span class="separator">|</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #b388ff;">
+                            <path
+                                d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                        </svg>
+                        <span id="main-souls-count">0</span>
+                    </div>
+                </button>
+                <button id="guide-btn" class="btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                    Guide
+                </button>
                 <h1>Void Harvest</h1>
                 <p>Survive waves of enemies and become stronger!</p>
                 <div class="controls-info">
@@ -188,23 +238,7 @@
                     </svg>
                     Custom Game
                 </button>
-                <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
-                    <button id="meta-btn" class="btn" style="flex: 1;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M12 19V5M5 12l7-7 7 7" />
-                        </svg>
-                        Upgrades
-                    </button>
-                    <button id="guide-btn" class="btn" style="flex: 1;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                        </svg>
-                        Guide
-                    </button>
-                </div>
+
             </div>
         </div>
 
@@ -240,11 +274,13 @@
                 </div>
 
                 <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>
-                <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease. Click
+                <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease.
+                    Click
                     at max level to reset.</p>
                 <div id="custom-skill-config"></div>
 
-                <button id="start-custom-btn" class="btn btn-large" style="margin-top: 20px;">Start Custom Game</button>
+                <button id="start-custom-btn" class="btn btn-large" style="margin-top: 20px;">Start Custom
+                    Game</button>
                 <button id="cancel-custom-btn" class="btn">Cancel</button>
             </div>
         </div>

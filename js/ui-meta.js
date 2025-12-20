@@ -95,4 +95,9 @@ export function performMetaReset(game) {
     // Save and refresh
     game.saveMetaProgress();
     showMetaUpgrades(game);
+
+    // Update main menu button if UI manager is available
+    if (game.ui && game.ui.updateMainMenuSouls) {
+        game.ui.updateMainMenuSouls();
+    }
 }

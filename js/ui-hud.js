@@ -6,9 +6,12 @@ export function updateHUD(game) {
     const healthText = document.getElementById('health-text');
     const xpBar = document.getElementById('xp-bar');
     const levelText = document.getElementById('level-text');
-    const timeText = document.getElementById('time-text');
-    const killsText = document.getElementById('kills-text');
-    const waveText = document.getElementById('wave-text');
+    const timeVal = document.getElementById('time-val');
+    const killsVal = document.getElementById('kills-val');
+    const soulsBankedText = document.getElementById('souls-banked-text');
+    const soulsRunText = document.getElementById('souls-run-text');
+    const waveVal = document.getElementById('wave-val');
+    const waveIcons = document.getElementById('wave-icons');
 
     const healthPercent = (game.player.health / game.player.maxHealth) * 100;
     healthBar.style.width = healthPercent + '%';
@@ -21,51 +24,58 @@ export function updateHUD(game) {
     const seconds = Math.floor(game.gameTime / 60);
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    timeText.textContent = `Time: ${minutes}:${secs.toString().padStart(2, '0')}`;
+    timeVal.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
 
-    killsText.textContent = `Kills: ${game.kills}`;
+    killsVal.textContent = `${game.kills}`;
+
+    if (soulsBankedText && soulsRunText) {
+        soulsBankedText.textContent = `${game.totalSouls}`;
+        const runSouls = game.getRunSouls ? game.getRunSouls() : Math.floor(game.kills / 5);
+        soulsRunText.textContent = `(+${runSouls})`;
+    }
 
     // Determine which enemies can spawn this wave
     const wave = game.wave;
-    let enemyIcons = '';
+    let enemyIconsHtml = '';
 
     // Custom game mode: show only enabled enemies
     if (game.customEnemies) {
         if (game.customEnemies.basic) {
-            enemyIcons += '<span class="enemy-indicator basic">●</span> ';
+            enemyIconsHtml += '<span class="enemy-indicator basic">●</span> ';
         }
         if (game.customEnemies.fast) {
-            enemyIcons += '<span class="enemy-indicator fast">●</span> ';
+            enemyIconsHtml += '<span class="enemy-indicator fast">●</span> ';
         }
         if (game.customEnemies.shooter) {
-            enemyIcons += '<span class="enemy-indicator shooter">●</span> ';
+            enemyIconsHtml += '<span class="enemy-indicator shooter">●</span> ';
         }
         if (game.customEnemies.tank) {
-            enemyIcons += '<span class="enemy-indicator tank">●</span> ';
+            enemyIconsHtml += '<span class="enemy-indicator tank">●</span> ';
         }
         if (game.customEnemies.ice) {
-            enemyIcons += '<span class="enemy-indicator ice">●</span> ';
+            enemyIconsHtml += '<span class="enemy-indicator ice">●</span> ';
         }
-        enemyIcons = enemyIcons.trim();
+        enemyIconsHtml = enemyIconsHtml.trim();
     } else {
         // Normal mode: show enemies based on wave progression
-        enemyIcons = '<span class="enemy-indicator basic">●</span>';
+        enemyIconsHtml = '<span class="enemy-indicator basic">●</span>';
 
         if (wave >= 3) {
-            enemyIcons += ' <span class="enemy-indicator fast">●</span>';
+            enemyIconsHtml += ' <span class="enemy-indicator fast">●</span>';
         }
         if (wave >= 5) {
-            enemyIcons += ' <span class="enemy-indicator shooter">●</span>';
+            enemyIconsHtml += ' <span class="enemy-indicator shooter">●</span>';
         }
         if (wave >= 7) {
-            enemyIcons += ' <span class="enemy-indicator tank">●</span>';
+            enemyIconsHtml += ' <span class="enemy-indicator tank">●</span>';
         }
         if (wave >= 8) {
-            enemyIcons += ' <span class="enemy-indicator ice">●</span>';
+            enemyIconsHtml += ' <span class="enemy-indicator ice">●</span>';
         }
     }
 
-    waveText.innerHTML = `Wave: ${game.wave} ${enemyIcons}`;
+    waveVal.textContent = `${game.wave}`;
+    if (waveIcons) waveIcons.innerHTML = enemyIconsHtml;
 
     // Update status effects
     const statusEffectsContainer = document.getElementById('status-effects');

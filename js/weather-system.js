@@ -40,15 +40,15 @@ export class WeatherSystem {
                 blending: THREE.AdditiveBlending
             },
             [WEATHER_TYPES.SANDSTORM]: {
-                count: 2200,     // Perfectly balanced for "thick" air
-                color: 0xccaa88, // Desaturated sand for better fog blending
-                size: 140.0,     // Shorter streaks for natural feel
+                count: 1500,     // Reduced from 2200 for less clutter
+                color: 0xccaa88, // Desaturated sand
+                size: 140.0,
                 velocityY: 0,
                 velocityZ: 0,
-                opacity: 0.5,    // Transparent volume
+                opacity: 0.15,    // Much lower opacity since we use Normal blending
                 transparent: true,
                 map: this.dustTexture,
-                blending: THREE.AdditiveBlending
+                blending: THREE.NormalBlending // Fixes the "glowing snow paddle" artifact
             }
         };
     }
@@ -274,17 +274,25 @@ export class WeatherSystem {
         }
     }
 
-    update(playerX, playerZ) {
+    update(playerX, playerZ, fadeFactor = 1.0) {
         if (this.activeType === WEATHER_TYPES.NONE) return;
 
         // --- Streak Weather Update (InstancedMesh: Sandstorm / Rain) ---
         if (this.mesh && (this.activeType === WEATHER_TYPES.SANDSTORM || this.activeType === WEATHER_TYPES.RAIN)) {
+            // Update Opacity
+            if (this.mesh.material) {
+                this.mesh.material.opacity = this.activeConfig.opacity * fadeFactor;
+            }
             this.updateStreakWeather(playerX, playerZ);
             return;
         }
 
         // --- Point Weather Update (Snow) ---
         if (this.particles) {
+            // Update Opacity
+            if (this.particles.material) {
+                this.particles.material.opacity = this.activeConfig.opacity * fadeFactor;
+            }
             this.updatePointWeather(playerX, playerZ);
         }
     }

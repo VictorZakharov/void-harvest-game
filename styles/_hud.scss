@@ -8,17 +8,16 @@
 // Stat Bars (Health & XP)
 .stat-bar {
     display: flex;
-    align-items: center;
+    align-items: center; // Align label and bar vertically
     gap: v.$spacing-sm;
-    background: rgba(v.$color-black, v.$opacity-bg-dark);
-    padding: v.$spacing-sm v.$spacing-md;
-    border-radius: v.$border-radius-md;
+    // Removed solid background
+    padding: v.$spacing-sm;
 
     span {
         min-width: 25px;
         font-size: v.$font-size-base;
-        font-weight: bold;
-        color: v.$color-white;
+        font-weight: 800; // Extra bold
+        text-shadow: 0 0 5px currentColor; // Glow matching text color
     }
 }
 
@@ -27,7 +26,15 @@
     position: absolute;
     bottom: v.$spacing-lg;
     left: v.$spacing-lg;
-    border: v.$border-width-sm solid v.$color-danger;
+
+    span {
+        color: v.$color-danger;
+    }
+
+    .bar-container {
+        border-color: rgba(v.$color-danger, 0.5);
+        box-shadow: 0 0 10px rgba(v.$color-danger, 0.2);
+    }
 }
 
 // XP Bar - Bottom Right
@@ -35,7 +42,15 @@
     position: absolute;
     bottom: v.$spacing-lg;
     right: v.$spacing-lg;
-    border: v.$border-width-sm solid v.$color-success;
+
+    span {
+        color: v.$color-success;
+    }
+
+    .bar-container {
+        border-color: rgba(v.$color-success, 0.5);
+        box-shadow: 0 0 10px rgba(v.$color-success, 0.2);
+    }
 }
 
 .bar-container {
@@ -174,6 +189,29 @@
     }
 }
 
+#souls-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: v.$font-size-lg;
+    color: #b388ff; // Soul Purple
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(179, 136, 255, 0.6);
+    margin-left: 15px;
+
+    svg {
+        color: #b388ff;
+        filter: drop-shadow(0 0 4px #b388ff);
+        margin-top: -2px; // Visual alignment fix
+    }
+
+    #souls-run-text {
+        color: #d1c4e9; // Lighter purple for new souls
+        font-size: v.$font-size-md;
+        margin-left: 2px;
+    }
+}
+
 .active-skill-level {
     position: absolute;
     bottom: -2px;
@@ -220,28 +258,71 @@
     display: flex;
     justify-content: space-between;
     padding: v.$spacing-lg;
+    // Children handled by #game-stats-content
+}
+
+// New Wrapper Style
+#game-stats-content {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
 
     >div {
         display: flex;
-        gap: v.$spacing-xs + v.$spacing-xs;
+        align-items: center;
+        gap: 15px;
     }
 }
 
-#time-text,
-#kills-text,
-#wave-text {
-    background: rgba(v.$color-black, v.$opacity-bg-dark);
-    padding: v.$spacing-sm v.$spacing-lg;
-    border: v.$border-width-sm solid v.$color-primary;
-    border-radius: v.$border-radius-md;
+#time-stats,
+#wave-stats,
+#kills-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: v.$font-size-lg;
     font-weight: bold;
-    color: v.$color-primary;
+    // Removed background/border for cleaner look
 }
 
-#wave-text {
-    border-color: v.$color-warning;
+#time-stats {
+    color: v.$color-info;
+    text-shadow: 0 0 5px rgba(v.$color-info, 0.6);
+
+    svg {
+        filter: drop-shadow(0 0 4px v.$color-info);
+    }
+}
+
+#wave-stats {
     color: v.$color-warning;
+    text-shadow: 0 0 5px rgba(v.$color-warning, 0.6);
+
+    .stat-label {
+        font-size: v.$font-size-sm;
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin-right: 2px;
+    }
+
+    #wave-icons {
+        display: flex;
+        gap: 4px;
+        margin-left: 5px;
+    }
+}
+
+#kills-stats {
+    color: v.$color-danger;
+    text-shadow: 0 0 5px rgba(v.$color-danger, 0.6);
+
+    .stat-label {
+        font-size: v.$font-size-sm;
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin-right: 2px;
+    }
 }
 
 // ============================================
@@ -321,5 +402,45 @@
 
     100% {
         opacity: 0.7;
+    }
+}
+
+// ============================================
+// Weather Warning
+// ============================================
+
+#weather-warning {
+    position: absolute;
+    top: 80px; // Below game timer (approx height)
+    left: 20px; // Aligned with left stats
+    transform: none; // Connects to left, no centering
+    color: v.$color-danger; // Red
+    font-size: 20px; // Smaller font (was 32px)
+    font-weight: 900;
+    text-shadow: 0 0 5px rgba(v.$color-danger, 0.8), 1px 1px 0px black;
+    background: rgba(0, 0, 0, 0.7); // Slightly more transparent
+    padding: 8px 15px; // Smaller padding
+    border: 2px solid v.$color-danger; // Thinner border
+    border-radius: 4px;
+    z-index: 200;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    pointer-events: none;
+
+    // Animation for impact (simplified)
+    animation: warning-pulse 0.5s infinite alternate;
+}
+
+@keyframes warning-pulse {
+    0% {
+        transform: scale(1);
+        border-color: v.$color-danger;
+        box-shadow: 0 0 5px rgba(v.$color-danger, 0.2);
+    }
+
+    100% {
+        transform: scale(1.02); // Subtle pulse
+        border-color: #ff8888;
+        box-shadow: 0 0 10px rgba(v.$color-danger, 0.5);
     }
 }

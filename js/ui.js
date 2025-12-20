@@ -21,6 +21,24 @@ export class UIManager {
         this.customBiome = { value: null }; // {value: 'id'} or null for random. Use object for ref passing.
         this.setupEventHandlers();
         this.setupMainMenuEffects();
+        this.updateMainMenuSouls(); // Initial check
+    }
+
+    updateMainMenuSouls() {
+        const display = document.getElementById('main-souls-display');
+        const count = document.getElementById('main-souls-count');
+
+        if (display && count) {
+            const souls = this.game.totalSouls || 0;
+            count.textContent = souls;
+
+            // Only show if we have souls or history of souls? 
+            // User requested "indicate unspent souls", implies we show 0 if they spent them?
+            // "indicate unspent souls to user" - likely show 0 if they validly have 0.
+            // Let's show it always if the UI is active, or maybe hide if 0 and never played?
+            // Simpler: Always show.
+            display.classList.remove('hidden');
+        }
     }
 
     setupEventHandlers() {
@@ -129,6 +147,7 @@ export class UIManager {
 
         document.getElementById('close-meta-btn').onclick = () => {
             document.getElementById('meta-modal').classList.add('hidden');
+            this.updateMainMenuSouls(); // Update count on close
 
             // Return to appropriate screen
             if (this.game.state === 'gameover') {
@@ -171,6 +190,7 @@ export class UIManager {
             this.game.reset();
             this.game.state = 'start';
             document.getElementById('start-screen').classList.remove('hidden');
+            this.updateMainMenuSouls(); // Update when returning to menu
         };
     }
 

@@ -3,11 +3,13 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
 
 export class InputHandler {
     constructor(canvas) {
+        this.canvas = canvas;
         this.keys = {};
         this.mouseDown = false;
         this.rightMouseDown = false;
-        this.mouseX = 0;
-        this.mouseY = 0;
+        // Initialize mouse to center of screen
+        this.mouseX = canvas.width / 2;
+        this.mouseY = canvas.height / 2;
 
         // Manual Delta Tracking
         this.lastClientX = 0;
