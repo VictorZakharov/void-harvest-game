@@ -2,14 +2,17 @@
 import {
     CANVAS_WIDTH, CANVAS_HEIGHT, GAME_DURATION, BASE_CAMERA_HEIGHT,
     WAVE_DURATION, INITIAL_SPAWN_RATE, MIN_SPAWN_RATE, SPAWN_RATE_DECREASE,
-    WAVE_UNLOCK_FAST, WAVE_UNLOCK_SHOOTER, WAVE_UNLOCK_TANK, WAVE_UNLOCK_ICE,
-    WAVE_SCALING_BOOST_1, WAVE_SCALING_BOOST_2, ENEMY_SCALING_PER_WAVE,
-    HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT, PARTICLE_COUNT_HIT, PARTICLE_COUNT_DEATH,
-    WEATHER_DURATION, WEATHER_WARNING_TIME, WEATHER_FADE_TIME,
-    WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, WEATHER_SLOW_AMOUNT
+    PARTICLE_COUNT_HIT, PARTICLE_COUNT_DEATH,
+    WEATHER_DURATION, WEATHER_FADE_TIME, WEATHER_WARNING_TIME,
+    WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, WEATHER_SLOW_AMOUNT,
+    HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT
 } from './constants.js';
 import { BIOMES, WEATHER_TYPES, DEFAULT_FOG_DENSITY } from './biomes.js';
-import { Player, Enemy, Bullet, Item } from './entities.js';
+import { Player } from './entities/Player.js';
+import { Enemy } from './entities/Enemy.js';
+import { EnemySpawner } from './entities/enemy-spawner.js';
+import { BulletManager } from './entities/bullet-manager.js';
+import { Item } from './entities/Item.js';
 import { Particle } from './particles.js';
 import { TextureGenerator } from './texture-generator.js';
 import { WeatherSystem } from './weather-system.js';
@@ -35,6 +38,9 @@ export class Game {
 
         this.ui = new UIManager(this);
 
+        // Initialize stats early for managers
+        this.stats = StatsManager.createEmptyStats();
+
         // Initialize 3D Scene
         this.init3D();
 
@@ -43,7 +49,6 @@ export class Game {
 
     init3D() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x000000);
         this.scene.background = new THREE.Color(0x000000);
         this.scene.fog = new THREE.FogExp2(0x000000, 0); // Latent fog, enabled only during weather
 
@@ -202,10 +207,25 @@ export class Game {
         const boundaryLine = new THREE.Line(boundaryGeo, boundaryMat);
         this.scene.add(boundaryLine);
 
-        // Raycasting
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -5); // Intersect at y=5 (mid-height of player/items)
+
+        // Initialize lists
+        this.enemies = [];
+        this.items = [];
+        this.particles = [];
+        this.bullets = []; // Just in case, though handled by manager
+
+        // MANAGERS
+        this.enemySpawner = new EnemySpawner(this.scene, this.enemies);
+        this.bulletManager = new BulletManager(this.scene, this.stats, {
+            createParticles: (x, y, color, count) => this.createParticles(x, y, color, count),
+            onGameOver: () => this.gameOver(),
+            onCameraShake: (amount) => { this.camera.shake = amount; },
+            onEnemyDeath: (enemy) => this.onEnemyDeath(enemy),
+            onEnemyHit: (enemy, damage) => { /* Optional hook */ }
+        });
     }
 
     reset(commitHistory = false) {
@@ -219,8 +239,9 @@ export class Game {
             if (this.player?.mesh) this.scene.remove(this.player.mesh);
         }
 
-        this.enemies = [];
-        this.bullets = [];
+        this.enemies.length = 0; // Clear without breaking reference
+        if (this.bulletManager) this.bulletManager.clear(); // Clear bullets and meshes
+        // this.bullets = []; // Replaced by manager
         this.items = [];
         this.particles = [];
 
@@ -296,6 +317,7 @@ export class Game {
 
         // Initialize stats
         this.stats = StatsManager.createEmptyStats();
+        if (this.bulletManager) this.bulletManager.stats = this.stats;
 
         // Trigger debug weather
         if (this.debugWeather) {
@@ -619,14 +641,14 @@ export class Game {
 
         // Player shooting
         if (this.player.shoot(this.input.mouseDown)) {
-            this.createPlayerBullets();
+            this.bulletManager.createPlayerBullets(this.player);
         }
 
         // Spawn enemies
         this.spawnTimer++;
         if (this.spawnTimer >= this.spawnRate) {
             this.spawnTimer = 0;
-            this.spawnEnemy();
+            this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
         }
 
         // Increase difficulty over time
@@ -647,7 +669,7 @@ export class Game {
 
             // Enemy shooting
             if (enemy.canShoot()) {
-                this.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
+                this.bulletManager.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
             }
 
             // Check collision with player
@@ -665,84 +687,7 @@ export class Game {
         }
 
         // Update bullets
-        for (let i = this.bullets.length - 1; i >= 0; i--) {
-            const bullet = this.bullets[i];
-            bullet.update();
-
-            if (bullet.isOutOfBounds()) {
-                this.scene.remove(bullet.mesh);
-                this.bullets.splice(i, 1);
-                continue;
-            }
-
-            // Check bullet collisions
-            if (bullet.isPlayer) {
-                for (let j = this.enemies.length - 1; j >= 0; j--) {
-                    const enemy = this.enemies[j];
-
-                    // Skip if this bullet already hit this enemy
-                    if (bullet.hitEnemies.has(enemy)) continue;
-
-                    if (bullet.collidesWith(enemy)) {
-                        // Mark this enemy as hit by this bullet
-                        bullet.hitEnemies.add(enemy);
-
-                        // Track stats
-                        this.stats.shotsHit++;
-                        this.stats.damageDealt += bullet.damage;
-
-                        // Check for freeze effect
-                        if (this.player.freezeChance > 0 && Math.random() < this.player.freezeChance) {
-                            enemy.frozen = true;
-                            enemy.freezeTimer = 60; // 1 second
-                            this.createParticles(enemy.x, enemy.y, '#66ccff', 15);
-                        }
-
-                        if (enemy.takeDamage(bullet.damage)) {
-                            this.kills++;
-                            this.stats.enemiesKilled[enemy.type]++;
-                            this.player.onKill(); // Vampire effect
-                            this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
-                            this.spawnXP(enemy.x, enemy.y, enemy.xpValue);
-
-                            this.scene.remove(enemy.mesh);
-                            this.enemies.splice(j, 1);
-                        } else {
-                            this.createParticles(enemy.x, enemy.y, '#ffff00', PARTICLE_COUNT_HIT);
-                        }
-
-                        // Only remove bullet and stop checking if it has no piercing left
-                        if (bullet.onHit()) {
-                            this.scene.remove(bullet.mesh);
-                            this.bullets.splice(i, 1);
-                            break;
-                        }
-                        // Otherwise, bullet continues to next enemy (piercing)
-                    }
-                }
-            } else {
-                // Enemy bullet
-                if (bullet.collidesWith(this.player)) {
-                    // Ice bullets apply slow effect (cumulative)
-                    if (bullet.enemyType === 'ice') {
-                        this.player.slowEffects.push({
-                            amount: 0.15, // 15% slow
-                            timer: 60     // 1 second
-                        });
-                        this.createParticles(this.player.x, this.player.y, '#66ccff', 8);
-                    } else {
-                        this.stats.damageReceived.bullet += bullet.damage;
-                        if (this.player.takeDamage(bullet.damage)) {
-                            this.gameOver();
-                        }
-                        this.createParticles(this.player.x, this.player.y, '#ff0000', PARTICLE_COUNT_HIT);
-                    }
-                    this.scene.remove(bullet.mesh);
-                    this.bullets.splice(i, 1);
-                    this.camera.shake = 8;
-                }
-            }
-        }
+        this.bulletManager.update(this.player, this.enemies);
 
         // Update items
         for (let i = this.items.length - 1; i >= 0; i--) {
@@ -922,7 +867,7 @@ export class Game {
             e.updateMesh(visibility, fogColor, this.camera3D);
         });
 
-        this.bullets.forEach(b => b.updateMesh());
+        this.bulletManager.updateMeshes();
         this.items.forEach(i => i.updateMesh());
         this.particles.forEach(p => p.update()); // Particle update handles mesh update
 
@@ -957,367 +902,8 @@ export class Game {
     // Draw slow/frozen effects not implemented in 3D yet
 
 
-    createPlayerBullets() {
-        const bounds = this.player.getBounds();
-        // Calculate Barrel Position
-        // Gun Mesh Offset is (25, 10, 10). In 2D Top-Down:
-        // Forward (X) = 25
-        // Right (Y/Z) = 10
-        // We need to rotate this offset by the player's angle.
-        const gunOffsetX = 25;
-        const gunOffsetY = 10;
-
-        // Rotate offset
-        const cos = Math.cos(this.player.angle);
-        const sin = Math.sin(this.player.angle);
-
-        // Rotated Vector = (x*cos - y*sin, x*sin + y*cos)
-        // Note: Canvas Y is down, so rotation might feel inverted, but player.angle is already computed via atan2(dy, dx) so it's standard radians.
-        const rotatedX = gunOffsetX * cos - gunOffsetY * sin;
-        const rotatedY = gunOffsetX * sin + gunOffsetY * cos;
-
-        const startX = bounds.centerX + rotatedX;
-        const startY = bounds.centerY + rotatedY;
-
-        // Calculate damage with berserk bonus at different health thresholds per level
-        // Level 1 (0.5): +50% damage at ≤10% HP
-        // Level 2 (1.0): +100% damage at <15% HP
-        // Level 3 (1.5): +150% damage at <20% HP
-        let effectiveDamage = this.player.damage;
-        if (this.player.berserkBonus > 0) {
-            const healthPercent = this.player.health / this.player.maxHealth;
-            const berserkThreshold = this.player.berserkBonus * 0.1 + 0.05;
-            const isBerserk = healthPercent <= berserkThreshold;
-            effectiveDamage = this.player.damage * (isBerserk ? (1 + this.player.berserkBonus) : 1);
-        }
-
-        if (this.player.projectileCount === 1) {
-            // Apply Spread
-            const spreadOffset = (Math.random() - 0.5) * 2 * this.player.currentSpread;
-            const bullet = new Bullet(
-                startX, startY, this.player.angle + spreadOffset, this.player.bulletSpeed,
-                effectiveDamage, true, this.player.piercing, this.player.range
-            );
-            this.bullets.push(bullet);
-            this.scene.add(bullet.mesh);
-            this.stats.shotsFired++;
-
-            // Increase Recoil
-            this.player.currentSpread = Math.min(this.player.maxSpread, this.player.currentSpread + this.player.spreadPerShot);
-        } else {
-            // Multishot logic - Add recoil to the base spread
-            // Basic spread for multishot is Fixed (0.3). We add random jitter from recoil.
-            const spreadStep = 0.3;
-            for (let i = 0; i < this.player.projectileCount; i++) {
-                const baseOffset = (i - (this.player.projectileCount - 1) / 2) * spreadStep;
-                const jitter = (Math.random() - 0.5) * 2 * this.player.currentSpread;
-
-                const bullet = new Bullet(
-                    startX, startY, this.player.angle + baseOffset + jitter, this.player.bulletSpeed,
-                    effectiveDamage, true, this.player.piercing, this.player.range
-                );
-                this.bullets.push(bullet);
-                this.scene.add(bullet.mesh);
-                this.stats.shotsFired++;
-            }
-            // Increase Recoil
-            this.player.currentSpread = Math.min(this.player.maxSpread, this.player.currentSpread + this.player.spreadPerShot);
-        }
-    }
-
-    createEnemyBullet(enemy, targetX, targetY) {
-        const bounds = enemy.getBounds();
-        const angle = Math.atan2(targetY - bounds.centerY, targetX - bounds.centerX);
-
-        let startX = bounds.centerX;
-        let startY = bounds.centerY;
-
-        // Visual offset to match gun position for shooters
-        if (enemy.type === 'shooter' || enemy.type === 'ice') {
-            // Gun is at Local: Forward (X) ~ Width/2 + 15, Right (Z) ~ Height/2 + 4
-            // 3D/Game Space Mapping:
-            // Local Forward X -> Rotated Vector
-            // Local Right Z -> Perpendicular Vector
-
-            const localFwd = enemy.width / 2 + 15;
-            const localRight = enemy.height / 2 + 4;
-
-            // Rotation formula derived from mesh.rotation.y = -angle
-            // x' = x*cos(a) - z*sin(a)
-            // z' = x*sin(a) + z*cos(a)
-            // Here 'z' is the 'right' component in local space
-
-            startX += localFwd * Math.cos(angle) - localRight * Math.sin(angle);
-            startY += localFwd * Math.sin(angle) + localRight * Math.cos(angle);
-        }
-
-        const bullet = new Bullet(
-            startX, startY, angle, 4, enemy.damage, false, 0, 600, enemy.type
-        );
-        this.bullets.push(bullet);
-        this.scene.add(bullet.mesh);
-    }
-
-    spawnEnemy() {
-        // Radial spawning with "Smart Bounds"
-        // Calculate valid angular intervals where the spawn circle lies within map bounds
-        // to avoid spawning enemies in the "illuminated void" or having them snap to edge.
-
-        const originX = this.player.x + (this.player.width / 2);
-        const originY = this.player.y + (this.player.height / 2);
-        const lightRadius = this.player.getLightRadius();
-        const R = lightRadius * 1.5; // Spawn radius
-
-        // 1. Initialize valid intervals (0 to 2PI)
-        let intervals = [{ start: 0, end: Math.PI * 2 }];
-
-        // Helper to subtract an angular range from the valid set
-        const cut = (badStart, badEnd) => {
-            const newIntervals = [];
-            // Normalize inputs to 0..2PI
-            badStart = (badStart + Math.PI * 4) % (Math.PI * 2);
-            badEnd = (badEnd + Math.PI * 4) % (Math.PI * 2);
-
-            // If wrapping (e.g. 350 to 10), split into two cuts
-            if (badStart > badEnd) {
-                // Cut badStart..2PI AND 0..badEnd
-                // Recursive call is easiest, but let's handle manually to avoid stack
-                // Actually, let's just run logic twice for the split
-                // We'll create a temp list for first pass
-            }
-            // Wait, handling circular range subtraction generic is tricky.
-            // Simpler: Just intersect valid ranges!
-            // Valid Range X: [acos((0-ox)/R), acos((W-ox)/R)]? 
-            // This is easier.
-        };
-
-        // REVISED GEOMETRY APPROACH: INTERSECTION
-        // We need an angle theta such that:
-        // originX + R*cos(theta) is in [-50, W+50]
-        // originY + R*sin(theta) is in [-50, H+50]
-
-        // 1. Find Valid Arc for X
-        // cos(theta) must be in [minCos, maxCos]
-        const minCos = (-50 - originX) / R;
-        const maxCos = (CANVAS_WIDTH + 50 - originX) / R;
-        // cos is valid if angle is NOT in the "forbidden Left cone" or "forbidden Right cone"
-        // Valid Cos Range corresponds to arc around PI/2 and 3PI/2? No.
-        // Left Edge (cos < minCos): Forbidden Arc centered at PI.
-        // Right Edge (cos > maxCos): Forbidden Arc centered at 0.
-
-        // 2. Find Valid Arc for Y
-        const minSin = (-50 - originY) / R;
-        const maxSin = (CANVAS_HEIGHT + 50 - originY) / R;
-
-        // Subtraction list
-        const badRanges = []; // {start, end}
-
-        // Left Wall (PI)
-        if (minCos > -1) {
-            const span = Math.acos(Math.max(-1, Math.min(1, minCos))); // Half-width of bad cone
-            badRanges.push({ start: Math.PI - span, end: Math.PI + span });
-        }
-        // Right Wall (0)
-        if (maxCos < 1) {
-            const span = Math.acos(Math.max(-1, Math.min(1, maxCos))); // Half-width (acos is 0..PI)
-            // Range is -span to +span (wrapping)
-            badRanges.push({ start: 2 * Math.PI - span, end: span }); // Wrap handled simply?
-        }
-        // Top Wall (3PI/2 - Up in screen Y-check? No Y is down. 0 is Top.)
-        // sin < minSin. minSin is negative usually.
-        // Forbidden arc centered at 3PI/2 (270 deg)
-        if (minSin > -1) {
-            // asin gives -PI/2 to PI/2.
-            // value is sin(theta) < minSin.
-            // theta such that sin(theta) = minSin are intersections.
-            // Arc is the bottom part? No Top part of screen is y=0.
-            // y < -50 means "Above Top".
-            // sin(t) corresponds to Y change.
-            // t=3PI/2 -> sin=-1 -> y = oy - R. Correct.
-            // So centered at 3PI/2.
-            // Width? asin returns angle from X axis?
-            // Let's use span from vertical.
-            // cos(complement) = minSin?
-            const span = Math.acos(Math.max(-1, Math.min(1, minSin))); // Angle from 3PI/2 intersection?
-            // Actually: asin(minSin) gives angle near 3PI/2 (negative).
-            // Valid Y is sin > minSin.
-            // Bad Y is sin < minSin.
-            // Range is roughly [3PI/2 - delta, 3PI/2 + delta].
-            // To get width: Intersection is where sin(theta) = minSin.
-            // theta = asin(minSin). (e.g. -10 deg). And PI - asin(minSin) (190 deg).
-            // Bad range is between them: 190 to 350.
-            // Center is 270 (3PI/2).
-            const ang1 = Math.asin(Math.max(-1, Math.min(1, minSin))); // -PI/2..PI/2
-            // Two solutions to sin(t)=K: a, PI-a.
-            // Lower region is between PI-ang1 and 2PI+ang1.
-            // Since ang1 is negative, PI-ang1 is > PI.
-            // Start: PI - ang1. End: 2PI + ang1.
-            badRanges.push({ start: Math.PI - ang1, end: (2 * Math.PI + ang1) });
-        }
-        // Bottom Wall (PI/2)
-        // y > H+50. sin(t) > maxSin. center at PI/2.
-        if (maxSin < 1) {
-            const ang1 = Math.asin(Math.max(-1, Math.min(1, maxSin)));
-            // Solutions: ang1, PI-ang1.
-            // Region between ang1 and PI-ang1 is the "Hump" (positive sin).
-            // Start: ang1. End: PI - ang1.
-            badRanges.push({ start: ang1, end: Math.PI - ang1 });
-        }
-
-        // 3. Subtract all badRanges from [0, 2PI]
-        const flatten = (ranges) => {
-            // Sort by start
-            // Normalize to 0..2PI handling wraps by splitting
-            const clean = [];
-            ranges.forEach(r => {
-                let s = r.start % (2 * Math.PI);
-                let e = r.end % (2 * Math.PI);
-                if (s < 0) s += 2 * Math.PI;
-                if (e < 0) e += 2 * Math.PI;
-                if (e < s) {
-                    clean.push({ s: s, e: 2 * Math.PI });
-                    clean.push({ s: 0, e: e });
-                } else {
-                    clean.push({ s, e });
-                }
-            });
-            clean.sort((a, b) => a.s - b.s);
-            // Union
-            if (clean.length === 0) return [];
-            const union = [clean[0]];
-            for (let i = 1; i < clean.length; i++) {
-                let last = union[union.length - 1];
-                if (clean[i].s < last.e) {
-                    last.e = Math.max(last.e, clean[i].e);
-                } else {
-                    union.push(clean[i]);
-                }
-            }
-            return union;
-        };
-
-        const bad = flatten(badRanges);
-
-        // Invert to find Good Intervals
-        const good = [];
-        let cursor = 0;
-        bad.forEach(b => {
-            if (b.s > cursor) good.push({ s: cursor, e: b.s });
-            cursor = Math.max(cursor, b.e);
-        });
-        if (cursor < 2 * Math.PI) good.push({ s: cursor, e: 2 * Math.PI });
-
-        if (good.length === 0) return; // No valid spawn (e.g. map fully lit)
-
-        // 4. Pick Random
-        const totalLen = good.reduce((sum, g) => sum + (g.e - g.s), 0);
-        let pick = Math.random() * totalLen;
-        let angle = 0;
-        for (let g of good) {
-            const len = g.e - g.s;
-            if (pick <= len) {
-                angle = g.s + pick;
-                break;
-            }
-            pick -= len;
-        }
-
-        let x = originX + Math.cos(angle) * R;
-        let y = originY + Math.sin(angle) * R;
-
-        // No clamping needed (we ensured it's inside bounds via angle)
-        // Except maybe float errors?
 
 
-
-        // Choose enemy type based on wave with increasing difficulty
-        let type = 'basic';
-        const rand = Math.random();
-
-        if (this.wave >= 20) {
-            // Extreme late game - brutal difficulty
-            if (rand < 0.35) type = 'tank';
-            else if (rand < 0.6) type = 'shooter';
-            else if (rand < 0.8) type = 'ice';
-            else if (rand < 0.95) type = 'fast';
-            else type = 'basic';
-        } else if (this.wave >= WAVE_SCALING_BOOST_1) {
-            // Very late game - very hard
-            if (rand < 0.3) type = 'tank';
-            else if (rand < 0.55) type = 'shooter';
-            else if (rand < 0.75) type = 'ice';
-            else if (rand < 0.9) type = 'fast';
-            else type = 'basic';
-        } else if (this.wave >= 10) {
-            // Late game - hard enemies
-            if (rand < 0.2) type = 'tank';
-            else if (rand < 0.45) type = 'shooter';
-            else if (rand < 0.65) type = 'ice';
-            else if (rand < 0.85) type = 'fast';
-            else type = 'basic';
-        } else if (this.wave >= WAVE_UNLOCK_ICE) {
-            // Mid-late game - ice introduced
-            if (rand < 0.1) type = 'tank';
-            else if (rand < 0.3) type = 'shooter';
-            else if (rand < 0.45) type = 'ice';
-            else if (rand < 0.7) type = 'fast';
-            else type = 'basic';
-        } else if (this.wave >= WAVE_UNLOCK_TANK) {
-            // Mid-late game - tanks introduced
-            if (rand < 0.1) type = 'tank';
-            else if (rand < 0.35) type = 'shooter';
-            else if (rand < 0.65) type = 'fast';
-            else type = 'basic';
-        } else if (this.wave >= WAVE_UNLOCK_SHOOTER) {
-            // Mid game - shooters introduced
-            if (rand < 0.25) type = 'shooter';
-            else if (rand < 0.55) type = 'fast';
-            else type = 'basic';
-        } else if (this.wave >= WAVE_UNLOCK_FAST) {
-            // Early-mid game - fast enemies introduced
-            if (rand < 0.35) type = 'fast';
-            else type = 'basic';
-        }
-        // Wave 1-2: Only basic enemies
-
-        // Custom game mode: filter by enabled enemy types
-        if (this.customEnemies) {
-            // If selected type is disabled, choose randomly from enabled types
-            if (!this.customEnemies[type]) {
-                const enabledTypes = Object.keys(this.customEnemies).filter(t => this.customEnemies[t]);
-                if (enabledTypes.length > 0) {
-                    type = enabledTypes[Math.floor(Math.random() * enabledTypes.length)];
-                } else {
-                    type = 'basic'; // Fallback
-                }
-            }
-        }
-
-        const enemy = new Enemy(x, y, type);
-
-        // Scale enemy stats based on wave (10% HP and damage increase per wave after wave 1)
-        let scaleFactor = 1 + ((this.wave - 1) * ENEMY_SCALING_PER_WAVE);
-
-        // Extra scaling for extreme late game
-        if (this.wave >= WAVE_SCALING_BOOST_1) {
-            scaleFactor += (this.wave - WAVE_SCALING_BOOST_1) * 0.05; // Additional 5% per wave after 15
-        }
-        if (this.wave >= WAVE_SCALING_BOOST_2) {
-            scaleFactor += (this.wave - WAVE_SCALING_BOOST_2) * 0.1; // Even more brutal after wave 25
-        }
-
-        enemy.maxHealth = Math.floor(enemy.maxHealth * scaleFactor);
-        enemy.health = enemy.maxHealth;
-        enemy.damage = Math.floor(enemy.damage * scaleFactor);
-
-        // Speed increases in late game
-        if (this.wave >= 12) {
-            enemy.speed *= 1 + ((this.wave - 12) * 0.04);
-        }
-
-        this.enemies.push(enemy);
-        this.scene.add(enemy.mesh);
-    }
 
     spawnXP(x, y, amount) {
         for (let i = 0; i < amount; i++) {
@@ -1351,6 +937,22 @@ export class Game {
             case 'health':
                 this.player.heal(HEALTH_RESTORE_AMOUNT);
                 break;
+        }
+    }
+
+    onEnemyDeath(enemy) {
+        this.kills++;
+        this.stats.enemiesKilled[enemy.type]++;
+        this.player.onKill(); // Vampire effect
+        this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
+        this.spawnXP(enemy.x, enemy.y, enemy.xpValue);
+
+        this.scene.remove(enemy.mesh);
+
+        // Remove from list safely
+        const index = this.enemies.indexOf(enemy);
+        if (index > -1) {
+            this.enemies.splice(index, 1);
         }
     }
 
