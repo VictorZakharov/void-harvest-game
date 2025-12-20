@@ -12,6 +12,8 @@ import { Player } from './entities/Player.js';
 import { Enemy } from './entities/Enemy.js';
 import { EnemySpawner } from './entities/enemy-spawner.js';
 import { BulletManager } from './entities/bullet-manager.js';
+import { ItemManager } from './entities/item-manager.js';
+import { ParticleManager } from './entities/particle-manager.js';
 import { Item } from './entities/Item.js';
 import { Particle } from './particles.js';
 import { TextureGenerator } from './texture-generator.js';
@@ -211,20 +213,25 @@ export class Game {
         this.mouse = new THREE.Vector2();
         this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -5); // Intersect at y=5 (mid-height of player/items)
 
-        // Initialize lists
+        // Initialize lists (Entities tracked by managers, but referenced here if needed?)
         this.enemies = [];
-        this.items = [];
-        this.particles = [];
-        this.bullets = []; // Just in case, though handled by manager
+        // items and particles are now fully managed by managers, minimal need for local list unless for debugging
 
         // MANAGERS
+        this.particleManager = new ParticleManager(this.scene);
+
         this.enemySpawner = new EnemySpawner(this.scene, this.enemies);
+
         this.bulletManager = new BulletManager(this.scene, this.stats, {
-            createParticles: (x, y, color, count) => this.createParticles(x, y, color, count),
+            createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
             onGameOver: () => this.gameOver(),
             onCameraShake: (amount) => { this.camera.shake = amount; },
             onEnemyDeath: (enemy) => this.onEnemyDeath(enemy),
             onEnemyHit: (enemy, damage) => { /* Optional hook */ }
+        });
+
+        this.itemManager = new ItemManager(this.scene, this.player, this.metaProgress, {
+            onLevelUp: () => this.ui.showLevelUpScreen()
         });
     }
 
@@ -240,10 +247,9 @@ export class Game {
         }
 
         this.enemies.length = 0; // Clear without breaking reference
-        if (this.bulletManager) this.bulletManager.clear(); // Clear bullets and meshes
-        // this.bullets = []; // Replaced by manager
-        this.items = [];
-        this.particles = [];
+        if (this.bulletManager) this.bulletManager.clear();
+        if (this.itemManager) this.itemManager.clear();
+        if (this.particleManager) this.particleManager.clear();
 
         // Do NOT clear custom settings here. 
         // They are managed by the UI (Start vs Custom Start).
@@ -295,6 +301,9 @@ export class Game {
         // Create completely fresh player with base stats
         this.player = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
         if (this.scene && this.player.mesh) this.scene.add(this.player.mesh);
+
+        // Update managers with new player instance
+        if (this.itemManager) this.itemManager.player = this.player;
 
         // Apply meta upgrades AFTER player is created (permanent upgrades only)
         this.applyMetaUpgrades();
@@ -678,7 +687,7 @@ export class Game {
                 if (this.player.takeDamage(enemy.damage)) {
                     this.gameOver();
                 }
-                this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
+                this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
 
                 this.scene.remove(enemy.mesh);
                 this.enemies.splice(i, 1);
@@ -690,25 +699,10 @@ export class Game {
         this.bulletManager.update(this.player, this.enemies);
 
         // Update items
-        for (let i = this.items.length - 1; i >= 0; i--) {
-            const item = this.items[i];
-            item.update(playerBounds.centerX, playerBounds.centerY, this.player.magnetBonus, this.player.speed, this.player, target.x, target.z);
-
-            if (item.collidesWith(this.player)) {
-                this.collectItem(item);
-                this.scene.remove(item.mesh);
-                this.items.splice(i, 1);
-            }
-        }
+        this.itemManager.update();
 
         // Update particles
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
-            if (this.particles[i].isDead()) {
-                this.scene.remove(this.particles[i].mesh);
-                this.particles.splice(i, 1);
-            }
-        }
+        this.particleManager.update();
 
         // Update camera shake
         if (this.camera.shake > 0) {
@@ -847,9 +841,11 @@ export class Game {
             // Reveal enemies near bullets (Radius 150)
             const BULLET_LIGHT_RADIUS = 150;
             // Optimization: Only check if not already fully visible
-            if (visibility < 1.0) {
-                for (let j = 0; j < this.bullets.length; j++) {
-                    const b = this.bullets[j];
+            if (visibility < 1.0 && this.bulletManager) {
+                // Access bullets from manager
+                const bullets = this.bulletManager.bullets;
+                for (let j = 0; j < bullets.length; j++) {
+                    const b = bullets[j];
                     if (!b.isPlayer) continue; // Only player bullets emit light
 
                     const dB = Math.sqrt((e.x - b.x) ** 2 + (e.y - b.y) ** 2);
@@ -867,9 +863,10 @@ export class Game {
             e.updateMesh(visibility, fogColor, this.camera3D);
         });
 
-        this.bulletManager.updateMeshes();
-        this.items.forEach(i => i.updateMesh());
-        this.particles.forEach(p => p.update()); // Particle update handles mesh update
+        if (this.bulletManager) this.bulletManager.updateMeshes();
+        if (this.itemManager) this.itemManager.updateMeshes();
+        // this.particleManager.update() call in Game.update() handles physics + mesh updates.
+        // No need to call update again here.
 
         // Camera follow handled by updateCameraTransform() above
 
@@ -905,47 +902,14 @@ export class Game {
 
 
 
-    spawnXP(x, y, amount) {
-        for (let i = 0; i < amount; i++) {
-            const offsetX = (Math.random() - 0.5) * 20;
-            const offsetY = (Math.random() - 0.5) * 20;
-            const item = new Item(x + offsetX, y + offsetY, 'xp');
-            this.items.push(item);
-            this.scene.add(item.mesh);
-        }
 
-        // Chance for health drop (base 5% + player bonus)
-        const healthDropRate = HEALTH_DROP_BASE_RATE + (this.player.dropBonus || 0);
-        if (Math.random() < healthDropRate) {
-            const item = new Item(x, y, 'health');
-            this.items.push(item);
-            this.scene.add(item.mesh);
-        }
-    }
-
-    collectItem(item) {
-        switch (item.type) {
-            case 'xp':
-                let xpGain = 1;
-                const xpBoostLevel = this.metaProgress.upgrades['xp_gain'] || 0;
-                xpGain *= (1 + 0.2 * xpBoostLevel); // +20% per level
-
-                if (this.player.addXP(xpGain)) {
-                    this.ui.showLevelUpScreen();
-                }
-                break;
-            case 'health':
-                this.player.heal(HEALTH_RESTORE_AMOUNT);
-                break;
-        }
-    }
 
     onEnemyDeath(enemy) {
         this.kills++;
         this.stats.enemiesKilled[enemy.type]++;
         this.player.onKill(); // Vampire effect
-        this.createParticles(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
-        this.spawnXP(enemy.x, enemy.y, enemy.xpValue);
+        this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
+        this.itemManager.spawnXP(enemy.x, enemy.y, enemy.xpValue);
 
         this.scene.remove(enemy.mesh);
 
@@ -953,20 +917,6 @@ export class Game {
         const index = this.enemies.indexOf(enemy);
         if (index > -1) {
             this.enemies.splice(index, 1);
-        }
-    }
-
-    createParticles(x, y, color, count) {
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 3 + 1;
-            const p = new Particle(
-                x, y, color,
-                Math.cos(angle) * speed,
-                Math.sin(angle) * speed
-            );
-            this.particles.push(p);
-            this.scene.add(p.mesh);
         }
     }
 
