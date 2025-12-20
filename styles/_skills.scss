@@ -48,6 +48,81 @@
         color: v.$color-light-gray;
         line-height: 1.4;
     }
+
+    // Category Colors
+    &.offensive {
+        border-color: v.$skill-offensive;
+        background: rgba(v.$skill-offensive, 0.05); // Reduced opacity
+
+        h3 {
+            color: v.$skill-offensive;
+        }
+
+        p {
+            color: v.$color-light-gray;
+        }
+
+        // Enforce text readability
+
+        .skill-icon {
+            color: v.$skill-offensive;
+            border-color: v.$skill-offensive;
+            background: rgba(v.$skill-offensive, 0.15);
+        }
+
+        &:hover {
+            background: rgba(v.$skill-offensive, 0.15);
+            box-shadow: 0 0 25px rgba(v.$skill-offensive, 0.4);
+        }
+    }
+
+    &.defensive {
+        border-color: v.$skill-defensive;
+        background: rgba(v.$skill-defensive, 0.05);
+
+        h3 {
+            color: v.$skill-defensive;
+        }
+
+        p {
+            color: v.$color-light-gray;
+        }
+
+        .skill-icon {
+            color: v.$skill-defensive;
+            border-color: v.$skill-defensive;
+            background: rgba(v.$skill-defensive, 0.15);
+        }
+
+        &:hover {
+            background: rgba(v.$skill-defensive, 0.15);
+            box-shadow: 0 0 25px rgba(v.$skill-defensive, 0.4);
+        }
+    }
+
+    &.survival {
+        border-color: v.$skill-survival;
+        background: rgba(v.$skill-survival, 0.05);
+
+        h3 {
+            color: v.$skill-survival;
+        }
+
+        p {
+            color: v.$color-light-gray;
+        }
+
+        .skill-icon {
+            color: v.$skill-survival;
+            border-color: v.$skill-survival;
+            background: rgba(v.$skill-survival, 0.15);
+        }
+
+        &:hover {
+            background: rgba(v.$skill-survival, 0.15);
+            box-shadow: 0 0 25px rgba(v.$skill-survival, 0.4);
+        }
+    }
 }
 
 .skill-icon {

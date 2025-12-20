@@ -347,7 +347,8 @@ export function showPauseScreen(game) {
         // Show earned skills first, then custom skills
         [...earnedSkills, ...customSkills].forEach(({ skillId, level, skillDef }) => {
             const isCustomSkill = game.customSkillIds && game.customSkillIds.has(skillId);
-            const className = isCustomSkill ? 'active-skill custom-skill' : 'active-skill';
+            const categoryClass = skillDef.category || 'defensive';
+            const className = isCustomSkill ? `active-skill custom-skill ${categoryClass}` : `active-skill ${categoryClass}`;
 
             const detail = getSkillDetail(skillDef, level);
 

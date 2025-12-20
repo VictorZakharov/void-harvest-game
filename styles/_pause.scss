@@ -304,4 +304,93 @@
             bottom: 120%; // Float up slightly on hover
         }
     }
+
+    // Categories
+    &.offensive {
+        .skill-icon {
+            border-color: v.$skill-offensive;
+            background: rgba(v.$skill-offensive, 0.2);
+            color: v.$skill-offensive;
+        }
+
+        .skill-tooltip {
+            border-color: v.$skill-offensive;
+        }
+
+        .tooltip-header {
+            background: rgba(v.$skill-offensive, 0.15);
+        }
+
+        .tooltip-title {
+            color: v.$skill-offensive;
+        }
+
+        .tooltip-level-pips .pip.filled {
+            background: v.$skill-offensive;
+            box-shadow: 0 0 4px rgba(v.$skill-offensive, 0.6);
+        }
+
+        // Arrow color override
+        .skill-tooltip::after {
+            border-color: v.$skill-offensive transparent transparent transparent;
+        }
+    }
+
+    &.defensive {
+        .skill-icon {
+            border-color: v.$skill-defensive;
+            background: rgba(v.$skill-defensive, 0.2);
+            color: v.$skill-defensive;
+        }
+
+        .skill-tooltip {
+            border-color: v.$skill-defensive;
+        }
+
+        .tooltip-header {
+            background: rgba(v.$skill-defensive, 0.15);
+        }
+
+        .tooltip-title {
+            color: v.$skill-defensive;
+        }
+
+        .tooltip-level-pips .pip.filled {
+            background: v.$skill-defensive;
+            box-shadow: 0 0 4px rgba(v.$skill-defensive, 0.6);
+        }
+
+        .skill-tooltip::after {
+            border-color: v.$skill-defensive transparent transparent transparent;
+        }
+    }
+
+    &.survival {
+        .skill-icon {
+            border-color: v.$skill-survival;
+            background: rgba(v.$skill-survival, 0.2);
+            color: v.$skill-survival;
+        }
+
+        .skill-tooltip {
+            border-color: v.$skill-survival;
+        }
+
+        .tooltip-header {
+            background: rgba(v.$skill-survival, 0.15);
+        }
+
+        .tooltip-title {
+            color: v.$skill-survival;
+        }
+
+        .tooltip-level-pips .pip.filled {
+            background: v.$skill-survival;
+            box-shadow: 0 0 4px rgba(v.$skill-survival, 0.6);
+        }
+
+        .skill-tooltip::after {
+            border-color: v.$skill-survival transparent transparent transparent;
+        }
+    }
 }

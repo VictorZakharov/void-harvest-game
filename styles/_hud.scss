@@ -187,6 +187,34 @@
             height: v.$skill-icon-md;
         }
     }
+
+    // Category overrides
+    &.offensive {
+        border-color: v.$skill-offensive;
+        background: rgba(v.$skill-offensive, 0.15);
+
+        .skill-icon {
+            color: v.$skill-offensive;
+        }
+    }
+
+    &.defensive {
+        border-color: v.$skill-defensive;
+        background: rgba(v.$skill-defensive, 0.15);
+
+        .skill-icon {
+            color: v.$skill-defensive;
+        }
+    }
+
+    &.survival {
+        border-color: v.$skill-survival;
+        background: rgba(v.$skill-survival, 0.15);
+
+        .skill-icon {
+            color: v.$skill-survival;
+        }
+    }
 }
 
 #souls-stats {

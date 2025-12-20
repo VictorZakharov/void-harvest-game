@@ -53,6 +53,80 @@
             height: v.$skill-icon-xl;
         }
     }
+
+    // Category overrides
+    &.offensive {
+        border-color: v.$skill-offensive;
+        background: rgba(v.$skill-offensive, 0.05); // Lower opacity
+
+        .skill-icon {
+            color: v.$skill-offensive;
+            border-color: v.$skill-offensive;
+        }
+
+        .custom-skill-name {
+            color: v.$skill-offensive;
+        }
+
+        // Ensure desc is readable
+        .custom-skill-desc .active-value {
+            color: v.$skill-offensive;
+        }
+
+        &.active,
+        &:hover {
+            border-color: v.$skill-offensive;
+            background: rgba(v.$skill-offensive, 0.15);
+        }
+    }
+
+    &.defensive {
+        border-color: v.$skill-defensive;
+        background: rgba(v.$skill-defensive, 0.05);
+
+        .skill-icon {
+            color: v.$skill-defensive;
+            border-color: v.$skill-defensive;
+        }
+
+        .custom-skill-name {
+            color: v.$skill-defensive;
+        }
+
+        .custom-skill-desc .active-value {
+            color: v.$skill-defensive;
+        }
+
+        &.active,
+        &:hover {
+            border-color: v.$skill-defensive;
+            background: rgba(v.$skill-defensive, 0.15);
+        }
+    }
+
+    &.survival {
+        border-color: v.$skill-survival;
+        background: rgba(v.$skill-survival, 0.05);
+
+        .skill-icon {
+            color: v.$skill-survival;
+            border-color: v.$skill-survival;
+        }
+
+        .custom-skill-name {
+            color: v.$skill-survival;
+        }
+
+        .custom-skill-desc .active-value {
+            color: v.$skill-survival;
+        }
+
+        &.active,
+        &:hover {
+            border-color: v.$skill-survival;
+            background: rgba(v.$skill-survival, 0.15);
+        }
+    }
 }
 
 .custom-skill-level-badge {

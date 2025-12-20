@@ -30,6 +30,7 @@ export const SKILLS = [
         baseValue: 20,
         unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.damage,
         apply: (player) => {
             // Compounding damage (Multiplicative) is REQUIRED to keep up with enemy scaling.
@@ -45,7 +46,9 @@ export const SKILLS = [
         name: 'Rapid Fire',
         baseValue: 15,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.firerate,
         apply: (player) => {
             player.fireRate = Math.max(1, Math.floor(player.fireRate * 0.85));
@@ -57,7 +60,9 @@ export const SKILLS = [
         name: 'Movement Speed',
         baseValue: 8,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'survival',
         icon: ICONS.speed,
         apply: (player) => {
             player.speed *= 1.08;
@@ -69,7 +74,9 @@ export const SKILLS = [
         name: 'Max Health',
         baseValue: 30,
         unit: 'HP',
+        unit: 'HP',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'defensive',
         icon: ICONS.health,
         apply: (player) => {
             player.maxHealth += 30;
@@ -82,7 +89,9 @@ export const SKILLS = [
         name: 'Multi-Shot',
         baseValue: 1,
         unit: 'projectile',
+        unit: 'projectile',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.multishot,
         apply: (player) => {
             player.projectileCount++;
@@ -94,7 +103,9 @@ export const SKILLS = [
         name: 'Piercing Shots',
         baseValue: 1,
         unit: 'pierce',
+        unit: 'pierce',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.piercing,
         apply: (player) => {
             player.piercing++;
@@ -106,7 +117,9 @@ export const SKILLS = [
         name: 'Bullet Velocity',
         baseValue: 25,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.bulletspeed,
         apply: (player) => {
             player.bulletSpeed *= 1.25;
@@ -118,7 +131,9 @@ export const SKILLS = [
         name: 'Extended Range',
         baseValue: 50,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.range,
         apply: (player) => {
             player.range *= 1.5;
@@ -130,7 +145,9 @@ export const SKILLS = [
         name: 'Passive Heal',
         baseValue: 1,
         unit: 'HP/sec',
+        unit: 'HP/sec',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'defensive',
         icon: ICONS.regen,
         apply: (player) => {
             player.healthRegen += 1;
@@ -142,7 +159,9 @@ export const SKILLS = [
         name: 'Vampiric Touch',
         baseValue: 1,
         unit: 'HP/kill',
+        unit: 'HP/kill',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'defensive',
         icon: ICONS.vampire,
         apply: (player) => {
             player.vampire += 1;
@@ -154,7 +173,9 @@ export const SKILLS = [
         name: 'Freeze Chance',
         baseValue: 10,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'survival',
         icon: ICONS.freeze,
         apply: (player) => {
             player.freezeChance += 0.1; // 10% per level
@@ -166,7 +187,9 @@ export const SKILLS = [
         name: 'Extra Choice',
         baseValue: 1,
         unit: 'slot',
+        unit: 'slot',
         maxLevel: EXTRA_CHOICE_MAX_LEVEL,
+        category: 'survival',
         icon: ICONS.extrachoice,
         apply: (player) => {
             player.extraChoice = true;
@@ -178,7 +201,9 @@ export const SKILLS = [
         name: 'Berserk Mode',
         baseValue: 50,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'offensive',
         icon: ICONS.berserk,
         apply: (player) => {
             // Level 1: +50% damage at ≤10% HP
@@ -193,7 +218,9 @@ export const SKILLS = [
         name: 'Armor',
         baseValue: 1,
         unit: 'armor',
+        unit: 'armor',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'defensive',
         icon: ICONS.armor,
         apply: (player) => {
             player.armor = (player.armor || 0) + 1;
@@ -205,7 +232,9 @@ export const SKILLS = [
         name: 'Magnet Range',
         baseValue: 50,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'survival',
         icon: ICONS.magnet,
         apply: (player) => {
             player.magnetBonus = (player.magnetBonus || 0) + 0.5; // +50% magnet range per level
@@ -217,7 +246,9 @@ export const SKILLS = [
         name: 'Lucky Drops',
         baseValue: 2,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'survival',
         icon: ICONS.luck,
         apply: (player) => {
             player.dropBonus = (player.dropBonus || 0) + 0.02; // +2% drop rate per level
@@ -229,7 +260,9 @@ export const SKILLS = [
         name: 'Light Radius',
         baseValue: 50,
         unit: '%',
+        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
+        category: 'survival',
         icon: ICONS.light,
         apply: (player) => {
             player.lightRadiusBonus = (player.lightRadiusBonus || 0) + 0.5; // +50% range per level

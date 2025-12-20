@@ -57,7 +57,7 @@ export function showLevelUpScreen(game) {
         }
 
         const div = document.createElement('div');
-        div.className = 'skill-option';
+        div.className = `skill-option ${skill.category || 'defensive'}`;
         div.innerHTML = `
             <div class="skill-icon">
                 ${skill.icon}

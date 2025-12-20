@@ -25,7 +25,8 @@ export function renderCustomSkillSelection(game, customSkills, callback) {
         description += `<span class="${currentLevel > 0 ? 'active-value' : 'inactive-value'}">${space}${skill.unit}</span>`;
 
         const skillDiv = document.createElement('div');
-        skillDiv.className = 'custom-skill-item';
+        const categoryClass = skill.category || 'defensive';
+        skillDiv.className = `custom-skill-item ${categoryClass}`;
         if (currentLevel > 0) {
             skillDiv.classList.add('active');
         }

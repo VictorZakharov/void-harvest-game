@@ -167,7 +167,8 @@ export function updateHUD(game) {
     [...earnedSkills, ...customSkills].forEach(({ skillId, level, skillDef }) => {
         const skillBadge = document.createElement('div');
         const isCustomSkill = game.customSkillIds && game.customSkillIds.has(skillId);
-        skillBadge.className = isCustomSkill ? 'active-skill custom-skill' : 'active-skill';
+        const categoryClass = skillDef.category || 'defensive';
+        skillBadge.className = isCustomSkill ? `active-skill custom-skill ${categoryClass}` : `active-skill ${categoryClass}`;
 
         skillBadge.innerHTML = `
             <div class="skill-icon">
