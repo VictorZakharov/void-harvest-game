@@ -40,15 +40,15 @@ export class WeatherSystem {
                 blending: THREE.AdditiveBlending
             },
             [WEATHER_TYPES.SANDSTORM]: {
-                count: 1500,     // Reduced from 2200 for less clutter
+                count: 800,      // Reduced for performance/layering
                 color: 0xccaa88, // Desaturated sand
-                size: 140.0,
+                size: 200.0,     // Large clouds
                 velocityY: 0,
                 velocityZ: 0,
-                opacity: 0.15,    // Much lower opacity since we use Normal blending
+                opacity: 0.1,    // Very subtle
                 transparent: true,
                 map: this.dustTexture,
-                blending: THREE.NormalBlending // Fixes the "glowing snow paddle" artifact
+                blending: THREE.NormalBlending
             }
         };
     }
@@ -56,32 +56,28 @@ export class WeatherSystem {
     createDustTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 256;
-        canvas.height = 64; // Increased height for noise
+        canvas.height = 256; // Square for cloud
         const ctx = canvas.getContext('2d');
 
-        // Draw a refined, noisy horizontal streak
-        const grad = ctx.createLinearGradient(0, 0, 256, 0);
-        grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.0)');
-        grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.3)');
-        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
-        grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.3)');
-        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+        // Draw a soft cloud-like puff
+        const rad = 128;
+        const grad = ctx.createRadialGradient(rad, rad, 0, rad, rad, rad);
+        grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.4)'); // Soft center
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)'); // Transparent edge
 
         ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
 
-        // Draw multiple thin, staggered lines with noise
-        for (let i = 0; i < 5; i++) {
-            const y = 10 + i * 10;
-            const h = 2 + Math.random() * 4;
-            const xOff = Math.random() * 50;
-            const w = 150 + Math.random() * 100;
-            ctx.fillRect(xOff, y, w, h);
-        }
-
-        // Add some "grit" (noise dots)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        for (let i = 0; i < 200; i++) {
-            ctx.fillRect(Math.random() * 256, Math.random() * 64, 2, 2);
+        // Add some noise for texture so it's not too perfect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const r = Math.random() * 30 + 10;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         const texture = new THREE.CanvasTexture(canvas);
@@ -141,9 +137,8 @@ export class WeatherSystem {
         let geometry;
 
         if (type === WEATHER_TYPES.SANDSTORM) {
-            // Horizontal Plane for Streaks: Width = config.size, Height = much thicker
-            // Using Plane instead of Box to avoid 3D side highlights
-            geometry = new THREE.PlaneGeometry(config.size, 12.0);
+            // Horizontal Plane for Cloud Puffs: Height = Width (Square)
+            geometry = new THREE.PlaneGeometry(config.size, config.size);
             geometry.rotateX(-Math.PI / 2); // Make it sit flat/horizontal
         } else {
             // Vertical Box (Rain): Height = config.size
@@ -248,7 +243,7 @@ export class WeatherSystem {
             angle = Math.PI; // Exactly Left
         }
 
-        const speed = 80 + Math.random() * 40; // Very Fast
+        const speed = 20 + Math.random() * 10; // Slower, smoother drift (was 80-120)
         this.windVector.set(Math.cos(angle) * speed, 0, 0);
         this.windTimer = 300 + Math.random() * 180;
     }
