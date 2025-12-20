@@ -42,12 +42,6 @@ export class BulletManager {
         const startY = bounds.centerY + rotatedY;
 
         let effectiveDamage = player.damage;
-        if (player.berserkBonus > 0) {
-            const healthPercent = player.health / player.maxHealth;
-            const berserkThreshold = player.berserkBonus * 0.1 + 0.05;
-            const isBerserk = healthPercent <= berserkThreshold;
-            effectiveDamage = player.damage * (isBerserk ? (1 + player.berserkBonus) : 1);
-        }
 
         const createBullet = (angleOffset) => {
             const bullet = new Bullet(

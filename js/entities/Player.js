@@ -45,10 +45,7 @@ export class Player extends Entity {
         this.healthRegen = 0; // HP per second
         this.regenTimer = 0;
 
-        // Vampire (lifesteal)
-        this.vampire = 0; // HP per kill
-        this.vampireTimer = 0;
-        this.vampireCooldown = 30; // frames (0.5 sec at 60fps)
+
 
         // Slow effect (cumulative - multiple ice hits stack)
         this.slowEffects = []; // Array of {amount, timer} objects
@@ -60,7 +57,7 @@ export class Player extends Entity {
         this.extraChoice = false; // If true, show 4 skills instead of 3
 
         // Berserk mode
-        this.berserkBonus = 0; // Damage multiplier when below 30% health
+
 
         // Armor
         this.armor = 0; // Absorbs damage before HP
@@ -80,6 +77,13 @@ export class Player extends Entity {
         this.minSpread = 0.02; // Tiny base spread for "human" feel
         this.spreadPerShot = 0.08; // Jump per shot
         this.spreadRecovery = 0.005; // Recovery per frame
+
+        // Energy Shield
+        this.shieldUnlocked = false;
+        this.shieldActive = false;
+        this.shieldTimer = 0;
+        this.shieldCooldown = 600; // 10 seconds at 60fps
+
     }
 
     update(input, mouseX, mouseY, camYaw = 0) {
@@ -163,6 +167,25 @@ export class Player extends Entity {
             this.currentSpread = Math.max(this.minSpread, this.currentSpread - (this.spreadRecovery * 0.5));
         }
 
+        // Shield Recharge Logic
+        if (this.shieldUnlocked && !this.shieldActive) {
+            this.shieldTimer--;
+            if (this.shieldTimer <= 0) {
+                this.shieldActive = true;
+                // Visuals will be updated in updateLights or separate render pass
+            }
+        }
+
+        // Update Shield Visuals
+        if (this.shieldMesh) {
+            this.shieldMesh.visible = this.shieldActive;
+            if (this.shieldActive) {
+                // Pulse effect?
+                const scale = 1 + Math.sin(Date.now() * 0.005) * 0.05;
+                this.shieldMesh.scale.set(scale, scale, scale);
+            }
+        }
+
     }
 
     shoot(mouseDown) {
@@ -193,6 +216,13 @@ export class Player extends Entity {
     }
 
     takeDamage(amount) {
+        // Shield Check
+        if (this.shieldActive) {
+            this.shieldActive = false;
+            this.shieldTimer = this.shieldCooldown;
+            return false; // Blocked logic (return value indicates isDead, implies 0 damage taken)
+        }
+
         // Armor reduces damage (permanent damage reduction)
         if (this.armor > 0) {
             amount = Math.max(0, amount - this.armor);
@@ -251,6 +281,7 @@ export class Player extends Entity {
         const headGeo = new THREE.BoxGeometry(this.width * 0.6, 15, this.height * 0.4);
         const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 }); // Standard for lighting
         const head = new THREE.Mesh(headGeo, headMat);
+
         head.position.y = 10;
         head.position.z = -5;
         head.castShadow = true;
@@ -289,7 +320,17 @@ export class Player extends Entity {
         this.spotLight.target = target;
         group.add(this.spotLight);
 
-
+        // Shield Mesh (Hidden by default)
+        const shieldGeo = new THREE.SphereGeometry(this.width, 16, 16);
+        const shieldMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.3,
+            wireframe: true
+        });
+        this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+        this.shieldMesh.visible = false;
+        group.add(this.shieldMesh);
 
         return group;
     }

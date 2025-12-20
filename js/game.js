@@ -683,15 +683,28 @@ export class Game {
 
             // Check collision with player
             if (enemy.collidesWith(this.player)) {
-                this.stats.damageReceived[enemy.type] += enemy.damage;
+                const blocked = this.player.shieldActive;
+
+                if (!blocked) {
+                    this.stats.damageReceived[enemy.type] += enemy.damage;
+                }
+
                 if (this.player.takeDamage(enemy.damage)) {
                     this.gameOver();
+                    return; // Prevent further processing if dead
                 }
-                this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
+
+                if (!blocked) {
+                    this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
+                    this.camera.shake = 10;
+                } else {
+                    // Shield Block Effect (Blue sparks)
+                    this.particleManager.create(enemy.x, enemy.y, '#00ffff', 10);
+                    this.camera.shake = 5;
+                }
 
                 this.scene.remove(enemy.mesh);
                 this.enemies.splice(i, 1);
-                this.camera.shake = 10;
             }
         }
 
