@@ -60,6 +60,28 @@
         transform: translateZ(2px) translateY(0); // Maintain Z-lift while active
         box-shadow: v.$shadow-sm, 0 0 15px rgba(v.$color-primary, 0.4);
     }
+
+    &:disabled {
+        background: #333; // Dark grey for disabled state
+        border-color: #555;
+        color: #888;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none; // Remove lift
+        opacity: 0.7;
+
+        &::before {
+            display: none; // Remove glow effect
+        }
+
+        &:hover {
+            transform: none;
+            box-shadow: none;
+            background: #333;
+            border-color: #555;
+            color: #888;
+        }
+    }
 }
 
 .btn-large {

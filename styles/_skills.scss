@@ -2,6 +2,7 @@
 // SKILL CHOICES
 // ============================================
 
+@use 'sass:color';
 @use 'variables' as v;
 
 #skill-choices {
@@ -34,6 +35,17 @@
         background: rgba(v.$color-primary, 0.3);
         // Transform is handled by JS for parallax
         box-shadow: v.$glow-cyan-md;
+    }
+
+    // Animation State
+    &.flip-out {
+        transition: transform 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) !important; // easeInCubic
+        pointer-events: none;
+    }
+
+    &.flip-in {
+        transition: transform 0.4s cubic-bezier(0.215, 0.61, 0.355, 1) !important; // easeOutCubic
+        pointer-events: none;
     }
 
     h3 {
