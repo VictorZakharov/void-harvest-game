@@ -77,6 +77,7 @@ export class PlayerVisuals {
         this.head = new THREE.Mesh(headGeo, headMat);
         this.head.position.y = 15; // Relative to torso center
         this.head.castShadow = true;
+        this.head.rotation.order = 'YXZ';
         this.torso.add(this.head);
 
         // --- Eyes ---
@@ -103,6 +104,11 @@ export class PlayerVisuals {
             mesh.castShadow = true;
 
             container.add(mesh);
+
+            // Critical: YXZ order ensures Y (Turn) happens before X (Swing/Raise)
+            // This prevents the arm from "rolling" when we want it to "aim".
+            container.rotation.order = 'YXZ';
+
             return { container, mesh };
         };
 
@@ -122,6 +128,7 @@ export class PlayerVisuals {
 
         // --- Legs ---
         // Left Leg
+        const legLength = 28;
         const lLeg = createLimb(3, legLength, 3, -4, -12, 0);
         this.leftLeg = lLeg.container;
         this.torso.add(this.leftLeg);
@@ -248,12 +255,41 @@ export class PlayerVisuals {
         if (!this.mesh) return;
 
         // Position & Main Rotation
+        // Position
         this.mesh.position.set(this.player.x + this.player.width / 2, 0, this.player.y + this.player.height / 2);
+
+        // 1. ROTATE TORSO TO AIM (Smooth Mouse Tracking)
+        // This ensures Head and Arms always face the cursor smoothly.
         this.mesh.rotation.y = -this.player.angle + Math.PI / 2;
 
-        // Running Animation logic
+        // 2. ROTATE LEGS TO MOVEMENT (Independent "Strafing" footwork)
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
         const isMoving = speed > 0.1;
+
+        let legOffset = 0;
+        if (isMoving) {
+            // Movement angle (Snapped to 45 deg via WASD)
+            const moveAngle = Math.atan2(this.player.vy, this.player.vx);
+
+            // Calculate leg rotation relative to torso (which faces aim direction)
+            // GlobalLegRotation (-Move + PI/2) = GlobalTorsoRotation (-Aim + PI/2) + LocalRotation
+            // LocalRotation = this.player.angle - moveAngle
+
+            legOffset = this.player.angle - moveAngle;
+
+            // Normalize to -PI..PI
+            legOffset = Math.atan2(Math.sin(legOffset), Math.cos(legOffset));
+        }
+
+        // Apply Snap-Counter-Rotation to Legs
+        // If YXZ order is set (which it is), this rotates the "hips" before swinging the legs.
+        if (this.leftLeg) this.leftLeg.rotation.y = legOffset;
+        if (this.rightLeg) this.rightLeg.rotation.y = legOffset;
+
+        // Reset Arm Twists (Arms now naturally face forward/aim via Torso)
+        if (this.head) this.head.rotation.y = 0;
+        if (this.leftArm) this.leftArm.rotation.y = 0;
+        if (this.rightArm) this.rightArm.rotation.y = 0;
 
         // Initialize this.animTime in constructor if not already done
         if (this.animTime === undefined) this.animTime = 0;
