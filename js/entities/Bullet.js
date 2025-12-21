@@ -103,7 +103,7 @@ export class Bullet extends Entity {
 
     updateMesh() {
         if (this.mesh) {
-            this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
+            this.mesh.position.set(this.x + this.width / 2, 20, this.y + this.height / 2);
             // Rotate to face velocity
             // Velocity angle is -this.angle (standard canvas inverted Y)
             this.mesh.rotation.y = -this.angle;
