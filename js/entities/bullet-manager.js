@@ -31,19 +31,21 @@ export class BulletManager {
     createPlayerBullets(player) {
         const bounds = player.getBounds();
         const gunOffsetX = 25;
-        const gunOffsetY = 10;
+        const rightGunY = 10;
+        const leftGunY = -10; // Mirror for left hand
+
         const cos = Math.cos(player.angle);
         const sin = Math.sin(player.angle);
 
-        const rotatedX = gunOffsetX * cos - gunOffsetY * sin;
-        const rotatedY = gunOffsetX * sin + gunOffsetY * cos;
-
-        const startX = bounds.centerX + rotatedX;
-        const startY = bounds.centerY + rotatedY;
-
         let effectiveDamage = player.damage;
 
-        const createBullet = (angleOffset) => {
+        const createBulletAt = (angleOffset, sideOffset) => {
+            const rotatedX = gunOffsetX * cos - sideOffset * sin;
+            const rotatedY = gunOffsetX * sin + sideOffset * cos;
+
+            const startX = bounds.centerX + rotatedX;
+            const startY = bounds.centerY + rotatedY;
+
             const bullet = new Bullet(
                 startX, startY, player.angle + angleOffset, player.bulletSpeed,
                 effectiveDamage, true, player.piercing, player.range
@@ -55,14 +57,18 @@ export class BulletManager {
 
         if (player.projectileCount === 1) {
             const spreadOffset = (Math.random() - 0.5) * 2 * player.currentSpread;
-            createBullet(spreadOffset);
+            createBulletAt(spreadOffset, rightGunY); // Always right hand for single shot
             player.currentSpread = Math.min(player.maxSpread, player.currentSpread + player.spreadPerShot);
         } else {
-            const spreadStep = 0.3;
+            const spreadStep = 0.15; // Slightly tighter spread per bullet since they are separated physically
             for (let i = 0; i < player.projectileCount; i++) {
+                // Alternate sides: Even -> Right, Odd -> Left
+                const isRight = (i % 2 === 0);
+                const sideOffset = isRight ? rightGunY : leftGunY;
+
                 const baseOffset = (i - (player.projectileCount - 1) / 2) * spreadStep;
                 const jitter = (Math.random() - 0.5) * 2 * player.currentSpread;
-                createBullet(baseOffset + jitter);
+                createBulletAt(baseOffset + jitter, sideOffset);
             }
             player.currentSpread = Math.min(player.maxSpread, player.currentSpread + player.spreadPerShot);
         }
@@ -100,10 +106,10 @@ export class BulletManager {
      * @param {Player} player - The player entity (for enemy bullet collisions).
      * @param {Enemy[]} enemies - List of active enemies (for player bullet collisions).
      */
-    update(player, enemies) {
+    update(player, enemies, timeScale = 1.0) {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
-            bullet.update();
+            bullet.update(timeScale);
 
             if (bullet.isOutOfBounds()) {
                 this.scene.remove(bullet.mesh);

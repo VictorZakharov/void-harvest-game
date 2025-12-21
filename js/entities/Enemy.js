@@ -25,7 +25,7 @@ export class Enemy extends Entity {
                 break;
             case 'fast':
                 this.maxHealth = 15;
-                this.speed = 3;
+                this.speed = 2.7; // Reduced from 3 to 0.9x
                 this.damage = 5;
                 this.xpValue = 2;
                 this.width = this.height = 28;
@@ -43,7 +43,7 @@ export class Enemy extends Entity {
                 this.damage = 5;
                 this.xpValue = 3;
                 this.shootTimer = 0;
-                this.shootRate = 120;
+                this.shootRate = 240; // Reduced from 120 (2x slower)
                 this.width = this.height = 32;
                 break;
             case 'ice':
@@ -93,13 +93,15 @@ export class Enemy extends Entity {
      * @param {number} playerX - Player's X position.
      * @param {number} playerY - Player's Y position.
      * @param {number} speedModifier - Multiplier for movement speed.
+     * @param {number} [timeScale=1.0] - Global game time scale.
      */
-    update(playerX, playerY, speedModifier = 1) {
+    update(playerX, playerY, speedModifier = 1, timeScale = 1.0) {
         // Update freeze timer
         if (this.freezeTimer > 0) {
-            this.freezeTimer--;
-            if (this.freezeTimer === 0) {
+            this.freezeTimer -= timeScale;
+            if (this.freezeTimer <= 0) {
                 this.frozen = false;
+                this.freezeTimer = 0;
             }
         }
 
@@ -124,20 +126,22 @@ export class Enemy extends Entity {
 
         // Apply knockback if active
         if (this.knockbackTimer > 0) {
-            this.knockbackTimer--;
+            this.knockbackTimer -= timeScale;
             this.knockbackVx *= 0.9;
             this.knockbackVy *= 0.9;
-            this.x += this.knockbackVx;
-            this.y += this.knockbackVy;
+
+            // Apply time-scaled knockback movement
+            this.x += this.knockbackVx * timeScale;
+            this.y += this.knockbackVy * timeScale;
             return;
         }
 
-        this.x += this.vx;
+        this.x += this.vx; // vx already has speedModifier which includes timeScale (checked in Game.js)
         this.y += this.vy;
 
         // Shooter and ice enemy shooting timer
         if ((this.type === 'shooter' || this.type === 'ice') && this.shootTimer !== undefined) {
-            this.shootTimer++;
+            this.shootTimer += timeScale;
         }
     }
 
@@ -188,8 +192,8 @@ export class Enemy extends Entity {
      * Compatibility method to update the visual mesh.
      * Delegates to EnemyVisuals.
      */
-    updateMesh(...args) {
-        this.visuals.update(...args);
+    updateMesh(visibility, fogColor, camera, dt = 16) {
+        this.visuals.update(visibility, fogColor, camera, dt);
     }
 
     /**

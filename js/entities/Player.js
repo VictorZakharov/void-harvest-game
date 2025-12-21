@@ -122,8 +122,9 @@ export class Player extends Entity {
      * @param {number} mouseX - Mouse X world coordinate.
      * @param {number} mouseY - Mouse Y world coordinate.
      * @param {number} [camYaw=0] - Current camera rotation.
+     * @param {number} [timeScale=1.0] - Global game time scale.
      */
-    update(input, mouseX, mouseY, camYaw = 0) {
+    update(input, mouseX, mouseY, camYaw = 0, timeScale = 1.0) {
         // Slow effects
         for (let i = this.slowEffects.length - 1; i >= 0; i--) {
             this.slowEffects[i].timer--;
@@ -143,6 +144,10 @@ export class Player extends Entity {
         if (input.keys['s'] || input.keys['ArrowDown']) ivy = effectiveSpeed;
         if (input.keys['a'] || input.keys['ArrowLeft']) ivx = -effectiveSpeed;
         if (input.keys['d'] || input.keys['ArrowRight']) ivx = effectiveSpeed;
+
+        // Apply Time Scale to Movement Input
+        ivx *= timeScale;
+        ivy *= timeScale;
 
         if (ivx !== 0 && ivy !== 0) {
             ivx *= 0.707;
@@ -165,10 +170,11 @@ export class Player extends Entity {
         this.angle = Math.atan2(mouseY - bounds.centerY, mouseX - bounds.centerX);
 
         // Timers
-        if (this.fireTimer > 0) this.fireTimer--;
+        if (this.fireTimer > 0) this.fireTimer -= timeScale;
+        if (this.fireTimer < 0) this.fireTimer = 0;
 
         if (this.healthRegen > 0) {
-            this.regenTimer++;
+            this.regenTimer += timeScale;
             if (this.regenTimer >= 60) {
                 this.regenTimer = 0;
                 this.heal(this.healthRegen);
@@ -177,14 +183,14 @@ export class Player extends Entity {
 
         // Spread
         if (this.fireTimer <= 0) {
-            this.currentSpread = Math.max(this.minSpread, this.currentSpread - this.spreadRecovery);
+            this.currentSpread = Math.max(this.minSpread, this.currentSpread - (this.spreadRecovery * timeScale));
         } else {
-            this.currentSpread = Math.max(this.minSpread, this.currentSpread - (this.spreadRecovery * 0.5));
+            this.currentSpread = Math.max(this.minSpread, this.currentSpread - (this.spreadRecovery * 0.5 * timeScale));
         }
 
         // Shield logic
         if (this.shieldUnlocked && !this.shieldActive) {
-            this.shieldTimer--;
+            this.shieldTimer -= timeScale;
             if (this.shieldTimer <= 0) {
                 this.shieldActive = true;
             }
@@ -192,7 +198,7 @@ export class Player extends Entity {
 
         // Shockwave logic
         if (this.shockwaveUnlocked) {
-            this.shockwaveTimer++;
+            this.shockwaveTimer += timeScale;
             if (this.shockwaveTimer >= this.shockwaveCooldown) {
                 this.shockwaveTimer = 0;
                 this.triggerShockwave = true;
@@ -286,9 +292,7 @@ export class Player extends Entity {
     /**
      * Synchronizes mesh positions.
      */
-    updateMesh() {
-        if (this.visuals) {
-            this.visuals.update();
-        }
+    updateMesh(dt = 16) {
+        this.visuals.update(dt);
     }
 }

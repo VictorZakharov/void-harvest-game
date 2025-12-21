@@ -150,7 +150,7 @@ export class LightingManager {
 
         if (this.cursorLight) {
             this.cursorLight.position.y = 300 * radiusMultiplier;
-            this.cursorLight.intensity = 5000 * Math.pow(radiusMultiplier, 1.5);
+            this.cursorLight.intensity = 800 * radiusMultiplier;
             this.cursorLight.distance = 3000 * radiusMultiplier;
         }
 

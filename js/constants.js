@@ -111,7 +111,7 @@ export const XP_ITEM_BASE_VALUE = 5;
 // ============================================
 
 export const BULLET_BASE_SPEED = 8;
-export const BULLET_BASE_RANGE = 500;
+export const BULLET_BASE_RANGE = 300; // Reduced from 500
 export const BULLET_SIZE = 4;
 export const BULLET_COLOR = '#00ffff';
 

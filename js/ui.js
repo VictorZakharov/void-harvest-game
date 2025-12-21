@@ -20,8 +20,39 @@ export class UIManager {
         };
         this.customBiome = { value: null }; // {value: 'id'} or null for random. Use object for ref passing.
         this.setupEventHandlers();
+        this.setupSpeedControls();
         this.setupMainMenuEffects();
         this.updateMainMenuSouls(); // Initial check
+    }
+
+    setupSpeedControls() {
+        // Initialize buttons based on current speed
+        this.updateSpeedButtons(this.game.timeScale || 1.0);
+
+        const speedBtns = document.querySelectorAll('.speed-btn');
+        speedBtns.forEach(btn => {
+            btn.onclick = (e) => {
+                const speed = parseFloat(e.target.dataset.speed);
+                this.game.timeScale = speed;
+
+                // Save to persistence
+                this.game.metaProgress.gameSpeed = speed;
+                this.game.saveMetaProgress();
+
+                this.updateSpeedButtons(speed);
+            };
+        });
+    }
+
+    updateSpeedButtons(activeSpeed) {
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            const btnSpeed = parseFloat(btn.dataset.speed);
+            if (activeSpeed === btnSpeed) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
     }
 
     updateMainMenuSouls() {

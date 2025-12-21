@@ -48,27 +48,21 @@ export class ItemManager {
     /**
      * Updates all items: handles magnet attraction and collision with player.
      */
-    update() {
-        // We need player bounds for update logic inside Item.js usually?
-        // Let's check Item.update signature: update(targetX, targetY, magnetStrength, speed, player, targetX_alt, targetZ_alt)
-        // Wait, the signature in Game.js was:
-        // item.update(playerBounds.centerX, playerBounds.centerY, this.player.magnetBonus, this.player.speed, this.player, target.x, target.z);
-        // We'll simplify this if possible, or replicate it.
-
+    update(timeScale = 1.0) {
         const bounds = this.player.getBounds();
 
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
 
-            // Pass necessary data for magnet logic
-            // Note: The original Game.js code passed 'target.x' and 'target.z' as last args but they seemed undefined in the snippet?
-            // Actually, let's assume standard behavior.
+            // Update item logic (magnetism, movement)
             item.update(
                 bounds.centerX,
                 bounds.centerY,
                 this.player.magnetBonus,
                 this.player.speed,
-                this.player
+                this.player,
+                null, null, // Cursor target arguments (unused)
+                timeScale
             );
 
             if (item.collidesWith(this.player)) {

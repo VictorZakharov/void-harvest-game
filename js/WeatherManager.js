@@ -26,14 +26,14 @@ export class WeatherManager {
      * @param {number} defaultFogDensity - Global default fog density.
      * @returns {number|null} New fog density if weather state changed, otherwise null.
      */
-    update(player, currentBiome, defaultFogDensity) {
+    update(player, currentBiome, defaultFogDensity, timeScale = 1.0) {
         if (!currentBiome || currentBiome.weather === WEATHER_TYPES.NONE) return null;
 
         const warningUI = document.getElementById('weather-warning');
         let newFogDensity = null;
 
         if (this.weatherState === 'none') {
-            this.nextWeatherTimer--;
+            this.nextWeatherTimer -= timeScale;
 
             if (this.nextWeatherTimer <= WEATHER_WARNING_TIME) {
                 if (warningUI) {
@@ -51,7 +51,7 @@ export class WeatherManager {
         } else if (this.weatherState === 'active') {
             if (warningUI) warningUI.classList.add('hidden');
 
-            this.weatherTimer--;
+            this.weatherTimer -= timeScale;
 
             let fadeFactor = 1.0;
             const timeElapsed = WEATHER_DURATION - this.weatherTimer;

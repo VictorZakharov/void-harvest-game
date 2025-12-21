@@ -30,10 +30,10 @@ export class Bullet extends Entity {
         this.mesh = this.createMesh();
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.distanceTraveled += this.speed;
+    update(timeScale = 1.0) {
+        this.x += this.vx * timeScale;
+        this.y += this.vy * timeScale;
+        this.distanceTraveled += this.speed * timeScale;
     }
 
     isOutOfBounds() {

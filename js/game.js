@@ -42,6 +42,8 @@ export class Game {
         this.persistence = new PersistenceManager();
         this.metaProgress = this.persistence.loadMetaProgress();
         this.totalSouls = this.metaProgress.souls || 0;
+        // Load Game Speed (Default 1.0)
+        this.timeScale = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 1.0;
 
         this.ui = new UIManager(this);
 
@@ -292,7 +294,7 @@ export class Game {
         }
 
         if (this.state !== 'start') {
-            this.render3D();
+            this.render3D(dt);
         }
 
         requestAnimationFrame(() => this.gameLoop());
@@ -328,10 +330,16 @@ export class Game {
      * @param {number} dt - Time since last frame in milliseconds.
      */
     update(dt) {
-        this.gameTime++;
+        // Apply time scaling to the entire update step
+        // For gameplay simulation (movement, timers), we use this factor.
+
+        // Advance game time by the scaled amount
+        // Integers timers (like spawnTimer) are now floats or accumulated.
+
+        this.gameTime += this.timeScale;
 
         if (this.weather) {
-            const newFog = this.weather.update(this.player, this.currentBiome, DEFAULT_FOG_DENSITY);
+            const newFog = this.weather.update(this.player, this.currentBiome, DEFAULT_FOG_DENSITY, this.timeScale);
             if (newFog !== null) this.baseFogDensity = newFog;
         }
 
@@ -343,19 +351,20 @@ export class Game {
         const target = this.rendering.getMouseWorldPosition(this.input.mouseX, this.input.mouseY);
         this.lighting.update(target, this.player);
 
-        this.player.update(this.input, target.x, target.z, this.rendering.camYaw || 0);
+        // Pass timeScale to player update
+        this.player.update(this.input, target.x, target.z, this.rendering.camYaw || 0, this.timeScale);
 
         if (this.player.shoot(this.input.mouseDown)) {
             this.bulletManager.createPlayerBullets(this.player);
         }
 
-        this.spawnTimer++;
+        this.spawnTimer += this.timeScale;
         if (this.spawnTimer >= this.spawnRate) {
             this.spawnTimer = 0;
             this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
         }
 
-        this.difficultyTimer++;
+        this.difficultyTimer += this.timeScale;
         if (this.difficultyTimer >= WAVE_DURATION) {
             this.difficultyTimer = 0;
             this.spawnRate = Math.max(MIN_SPAWN_RATE, this.spawnRate - SPAWN_RATE_DECREASE);
@@ -381,7 +390,10 @@ export class Game {
                 }
             }
 
-            enemy.update(playerBounds.centerX, playerBounds.centerY, currentSpeedMod);
+            // Apply Global Time Scale to Enemy Speed
+            currentSpeedMod *= this.timeScale;
+
+            enemy.update(playerBounds.centerX, playerBounds.centerY, currentSpeedMod, this.timeScale);
 
             if (enemy.canShoot()) {
                 this.bulletManager.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
@@ -392,8 +404,8 @@ export class Game {
             }
         }
 
-        this.bulletManager.update(this.player, this.enemies);
-        this.itemManager.update();
+        this.bulletManager.update(this.player, this.enemies, this.timeScale);
+        this.itemManager.update(this.timeScale);
         this.particleManager.update();
 
         if (this.camera.shake > 0) this.camera.shake--;
@@ -468,17 +480,21 @@ export class Game {
     /**
      * Renders the 3D scene, updating fog, camera, and all visible meshes.
      */
-    render3D() {
-        this.rendering.updateFog(this.baseFogDensity, BASE_CAMERA_HEIGHT, DEFAULT_FOG_DENSITY);
+    render3D(dt = 16) {
+        this.rendering.updateFog(this.baseFogDensity, 800, DEFAULT_FOG_DENSITY);
         this.rendering.updateCamera(this.player, this.input);
 
-        const cursorTarget = this.lighting.getCursorTarget();
-        this.player.updateMesh();
+        const target = this.lighting.getCursorTarget();
+
+        // Calculate animation delta (0 if paused/frozen)
+        const animDelta = (this.state === 'playing' ? this.timeScale : 0) * dt;
+
+        this.player.updateMesh(animDelta);
 
         this.enemies.forEach(e => {
-            let visibility = 0.0;
-            if (cursorTarget) {
-                const dCursor = Math.sqrt((e.x - cursorTarget.x) ** 2 + (e.y - cursorTarget.z) ** 2);
+            let visibility = 0;
+            if (target) {
+                const dCursor = Math.sqrt((e.x - target.x) ** 2 + (e.y - target.z) ** 2);
                 const radiusMultiplier = this.player ? (1 + this.player.lightRadiusBonus) : 1;
                 const lightHeight = 300 * radiusMultiplier;
                 const cEnd = lightHeight * Math.tan(Math.PI / 3);
@@ -501,7 +517,7 @@ export class Game {
                 }
             }
 
-            e.updateMesh(visibility, this.currentBiome?.fogColor || 0x000000, this.rendering.camera3D);
+            e.updateMesh(visibility, this.currentBiome?.fogColor || 0x000000, this.rendering.camera3D, animDelta);
         });
 
         this.bulletManager.updateMeshes();

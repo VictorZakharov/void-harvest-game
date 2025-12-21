@@ -107,7 +107,7 @@ export class RenderingManager {
         if (zoomDelta !== 0) {
             const zoomSpeed = 50;
             this.camDist += zoomDelta * zoomSpeed;
-            this.camDist = Math.max(400, Math.min(1500, this.camDist));
+            this.camDist = Math.max(200, Math.min(1500, this.camDist));
         }
 
         const hRadius = this.camDist * Math.cos(this.camPitch);

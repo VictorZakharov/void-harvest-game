@@ -26,7 +26,7 @@ export class Item extends Entity {
         this.mesh = this.createMesh();
     }
 
-    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3, playerEntity = null, cursorX = null, cursorY = null) {
+    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3, playerEntity = null, cursorX = null, cursorY = null, timeScale = 1.0) {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -72,8 +72,8 @@ export class Item extends Entity {
         if (dist < effectiveMagnetRange && dist > 0) {
             // Magnet pull speed is always 10% faster than player speed
             const effectiveMagnetSpeed = playerSpeed * 1.1;
-            this.vx = (dx / dist) * effectiveMagnetSpeed;
-            this.vy = (dy / dist) * effectiveMagnetSpeed;
+            this.vx = (dx / dist) * effectiveMagnetSpeed * timeScale;
+            this.vy = (dy / dist) * effectiveMagnetSpeed * timeScale;
             this.x += this.vx;
             this.y += this.vy;
         }

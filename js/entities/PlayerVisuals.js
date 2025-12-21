@@ -24,7 +24,9 @@ export class PlayerVisuals {
         this.shieldMesh = null;
         this.shockwaveMesh = null;
         this.stasisParticles = [];
+        this.stasisParticles = [];
         this.shockwaveVisualTimer = 0;
+        this.animTime = 0;
 
         // Animation parts
         this.torso = null;
@@ -33,7 +35,9 @@ export class PlayerVisuals {
         this.rightArm = null;
         this.leftLeg = null;
         this.rightLeg = null;
+        this.rightLeg = null;
         this.gun = null;
+        this.secondGun = null;
 
         this.init();
     }
@@ -64,7 +68,7 @@ export class PlayerVisuals {
         // A thin vertical box/line
         const torsoGeo = new THREE.BoxGeometry(4, 25, 4);
         this.torso = new THREE.Mesh(torsoGeo, skinMat);
-        this.torso.position.y = 20; // Center of torso raised up
+        this.torso.position.y = 40; // Center of torso raised up
         this.torso.castShadow = true;
         group.add(this.torso);
 
@@ -117,12 +121,6 @@ export class PlayerVisuals {
         this.torso.add(this.rightArm);
 
         // --- Legs ---
-        // Attached to bottom of torso (torso center is 20, height 25 -> bottom is 7.5? Wait.
-        // H=25, center=20. Top=32.5, Bottom=7.5. 
-        // Let's adjust pivot points to look natural.
-
-        const legLength = 20;
-
         // Left Leg
         const lLeg = createLimb(3, legLength, 3, -4, -12, 0);
         this.leftLeg = lLeg.container;
@@ -144,6 +142,14 @@ export class PlayerVisuals {
         // Align Gun Z (Length) with Arm -Y (Down/Forward when raised)
         this.gun.rotation.x = Math.PI / 2;
         this.rightArm.add(this.gun);
+
+        // --- Second Weapon (Dual Wield) ---
+        // Attached to Left Arm Mesh
+        this.secondGun = new THREE.Mesh(gunGeo, gunMat);
+        this.secondGun.position.set(-2, -armLength, 0); // Mirror X position
+        this.secondGun.rotation.x = Math.PI / 2;
+        this.secondGun.visible = false; // Hidden by default
+        this.leftArm.add(this.secondGun);
 
 
         // --- Lights ---
@@ -176,7 +182,8 @@ export class PlayerVisuals {
             color: 0x00ffff,
             wireframe: true,
             transparent: true,
-            opacity: 0.5
+            opacity: 0.1, // Even more transparent (50% of 0.2)
+            depthWrite: false
         });
         this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
         this.shieldMesh.visible = false;
@@ -237,19 +244,32 @@ export class PlayerVisuals {
     /**
      * Updates all visual components based on player logical state.
      */
-    update() {
+    update(dt = 16) {
         if (!this.mesh) return;
 
         // Position & Main Rotation
         this.mesh.position.set(this.player.x + this.player.width / 2, 0, this.player.y + this.player.height / 2);
-        // Rotate +90 degrees (+Option.PI/2) to Align Face (+Z) with Aim (+X)
         this.mesh.rotation.y = -this.player.angle + Math.PI / 2;
 
         // Running Animation logic
-        // Calculate velocity magnitude
         const speed = Math.sqrt(this.player.vx * this.player.vx + this.player.vy * this.player.vy);
         const isMoving = speed > 0.1;
-        const time = Date.now() * 0.015 * (speed / this.player.speed); // Scale anim speed with movement speed
+
+        // Initialize this.animTime in constructor if not already done
+        if (this.animTime === undefined) this.animTime = 0;
+
+        // Accumulate proper time delta (scaled by movement speed relative to base speed)
+        // Adjust animation speed based on movement vs idle state
+        if (isMoving) {
+            // Scale animation speed by movement intensity
+            // 0.015 is the base time factor
+            this.animTime += dt * 0.015 * (speed / this.player.speed);
+        } else {
+            // Slower breathing animation for idle state
+            this.animTime += dt * 0.002;
+        }
+
+        const time = this.animTime;
 
         // Default Pose
         let lLegRot = 0;
@@ -267,6 +287,26 @@ export class PlayerVisuals {
             lArmRot = Math.sin(time + Math.PI) * 0.6;
             // Right arm stays mostly steady for aiming, slight bob
             rArmRot = -Math.PI / 2 + Math.sin(time) * 0.1;
+        } else {
+            // Breathing check
+            // Already incrementing time
+        }
+
+        // --- Dual Wield Logic ---
+        const isDualWielding = this.player.projectileCount > 1;
+        if (this.secondGun) {
+            this.secondGun.visible = isDualWielding;
+        }
+
+        if (isDualWielding) {
+            // Left Arm aims forward just like Right Arm
+            // We can add a slight phase offset to the bobbing so they are not perfectly synced (more natural)
+            lArmRot = -Math.PI / 2 + Math.sin(time * 0.001 + 0.5) * 0.1;
+
+            // If strictly moving, we might want to override the run swing.
+            // But let's enforce aiming pose if dual wielding.
+        } else if (!isMoving) {
+            // Idle arm poses (already 0 by default)
         }
 
         // Apply Rotations (X axis for forward/backward swing)
@@ -277,7 +317,8 @@ export class PlayerVisuals {
 
         // Bobbing torso
         if (this.torso) {
-            this.torso.position.y = 20 + Math.abs(Math.sin(time)) * 2;
+            const bounce = isMoving ? Math.abs(Math.sin(time)) * 2 : Math.sin(time) * 0.1;
+            this.torso.position.y = 40 + bounce;
         }
 
 
@@ -292,7 +333,9 @@ export class PlayerVisuals {
         if (this.shieldMesh) {
             this.shieldMesh.visible = this.player.shieldActive;
             if (this.player.shieldActive) {
-                const scale = 1 + Math.sin(Date.now() * 0.005) * 0.05;
+                // Shield pulse effect
+                const scale = 1 + Math.sin(time * 2.0) * 0.05;
+
                 this.shieldMesh.position.y = 20; // Center on stick figure
                 this.shieldMesh.scale.set(scale, scale, scale);
             }
@@ -310,7 +353,7 @@ export class PlayerVisuals {
         }
 
         if (this.shockwaveVisualTimer > 0) {
-            this.shockwaveVisualTimer--;
+            this.shockwaveVisualTimer -= dt / 16.0; // Scale timer decrement relative to 60fps frame
             const progress = 1 - (this.shockwaveVisualTimer / 30);
             const maxRadius = (this.player.shockwaveForce || 10) * 10;
             const scale = 1 + progress * maxRadius;
@@ -328,11 +371,12 @@ export class PlayerVisuals {
 
             this.stasisParticles.forEach(p => {
                 p.mesh.visible = true;
-                p.angle += p.speed;
-                p.radius += (p.radiusDrift || 0);
+                p.angle += p.speed * (dt / 16.0); // Scale speed relative to 60fps
+                p.radius += (p.radiusDrift || 0) * (dt / 16.0);
                 if (p.radius > r || p.radius < innerR) p.radiusDrift *= -1;
 
-                const time = Date.now() * 0.001;
+                // Vertical phase needs continuous time. 
+                // Ideally each particle tracks its own phase or we use animTime
                 const verticalPhase = p.radius * 0.1;
                 const relativeY = -10 + (Math.sin(time * 2 + verticalPhase + p.angle) * 15 + 15);
 

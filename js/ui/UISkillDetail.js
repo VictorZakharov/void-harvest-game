@@ -57,7 +57,7 @@ export class UISkillDetail {
             case 'range':
                 const rangeBonus = Math.round((Math.pow(1.5, level) - 1) * 100);
                 currentBonusText = `+${rangeBonus}% Attack Range`;
-                scalingText = 'Base: 500px (+50% compounding/lvl)';
+                scalingText = 'Base: 300px (+50% compounding/lvl)';
                 break;
             case 'regen':
                 currentBonusText = `+${level} HP/sec`;
@@ -98,6 +98,11 @@ export class UISkillDetail {
             case 'extrachoice':
                 currentBonusText = `+${level} Skill Choice`;
                 scalingText = `Total: ${3 + level} (3 Base + Bonus)`;
+                break;
+            case 'light':
+                const lightBonus = level * 50;
+                currentBonusText = `+${lightBonus}% Light Radius`;
+                scalingText = `Total: ${100 + lightBonus}% (100% Base + Bonus)`;
                 break;
             default:
                 currentBonusText = `Level ${level} Effect`;

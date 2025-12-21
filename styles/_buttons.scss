@@ -89,3 +89,15 @@
     font-size: v.$font-size-h1;
     border-width: v.$border-width-lg;
 }
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 14px;
+    margin: 0;
+}
+
+.speed-btn.active {
+    background: v.$color-primary;
+    color: #1a1a2e;
+    box-shadow: 0 0 10px v.$color-primary;
+}
