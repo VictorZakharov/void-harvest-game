@@ -227,7 +227,7 @@
 
                     <!-- Speed Controls (Left) -->
                     <div class="speed-controls-group" style="text-align: left;">
-                        <div style="color: #aaa; margin-bottom: 5px; font-size: 14px;">Game Speed</div>
+                        <div class="label-mono">Game Speed</div>
                         <div class="speed-controls" style="display: flex; gap: 5px;">
                             <button id="speed-slow-btn" class="btn btn-small speed-btn" data-speed="0.5">Slow</button>
                             <button id="speed-med-btn" class="btn btn-small speed-btn" data-speed="0.75">Med</button>
@@ -326,10 +326,24 @@
                     at max level to reset.</p>
                 <div id="custom-skill-config"></div>
 
-                <button id="start-custom-btn" class="btn btn-large" style="margin-top: 20px;">Start Custom
-                    Game</button>
-                <button id="cancel-custom-btn" class="btn">Cancel</button>
+                <!-- Footer with Speed Slider and Start Button -->
+                <!-- Footer with Speed Buttons and Start Button -->
+                <div class="modal-footer">
+                    <div class="game-speed-control">
+                        <div class="label-mono">Game Speed</div>
+                        <div class="speed-controls" style="display: flex; gap: 5px;">
+                            <button class="btn btn-small speed-btn" data-speed="0.5">Slow</button>
+                            <button class="btn btn-small speed-btn" data-speed="1.0">Med</button>
+                            <button class="btn btn-small speed-btn" data-speed="2.0">Fast</button>
+                        </div>
+                    </div>
+
+                    <button id="start-custom-btn" class="btn btn-large">Start Custom Game</button>
+                    <!-- removed cancel button -->
+                </div>
             </div>
+            <!-- Sticky Close X -->
+            <span id="close-custom-modal" class="modal-close-btn">&times;</span>
         </div>
     </div>
 </body>

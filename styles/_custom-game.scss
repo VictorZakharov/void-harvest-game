@@ -3,13 +3,37 @@
 // ============================================
 
 @use 'variables' as v;
+@use 'sass:color';
 
 // Custom Skill Selection
 #custom-skill-config {
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-xl;
+    margin: v.$spacing-lg 0;
+}
+
+.skill-category-section {
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-md;
+}
+
+.skill-category-header {
+    color: v.$color-primary;
+    font-size: v.$font-size-lg;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(v.$color-primary, 0.3);
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+.skill-category-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: v.$spacing-md;
-    margin: v.$spacing-lg 0;
 }
 
 .custom-skill-item {
@@ -432,4 +456,80 @@
             box-shadow: 0 0 8px rgba(v.$color-primary, 0.5);
         }
     }
+}
+
+// ============================================
+// Modal UI Enhancements
+// ============================================
+
+// Themed Scrollbar
+.modal-content {
+    &::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: v.$border-radius-sm;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: v.$color-primary;
+        border-radius: v.$border-radius-sm;
+        box-shadow: 0 0 5px rgba(v.$color-primary, 0.5);
+
+        &:hover {
+            background: color.adjust(v.$color-primary, $lightness: 10%);
+        }
+    }
+}
+
+// Sticky Close Button
+.modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 32px;
+    color: v.$color-primary;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 10;
+    transition: all 0.3s;
+    font-family: Arial, sans-serif; // Clean X
+
+    &:hover {
+        color: v.$color-white;
+        text-shadow: 0 0 10px v.$color-primary;
+        transform: scale(1.1);
+    }
+}
+
+// Modal Footer (Game Speed & Start)
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: v.$spacing-xxl;
+    padding-top: v.$spacing-lg;
+    border-top: 1px solid rgba(v.$color-white, 0.1);
+}
+
+.game-speed-control {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-start; // Ensure left alignment
+
+    // label styles removed to match main screen inline styles
+
+    .speed-value {
+        color: v.$color-white;
+        font-weight: bold;
+        float: right;
+    }
+}
+
+// Override button margin to fit footer
+#start-custom-btn {
+    margin: 0 !important;
 }

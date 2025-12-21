@@ -6,76 +6,104 @@ export function renderCustomSkillSelection(game, customSkills, callback) {
     const container = document.getElementById('custom-skill-config');
     container.innerHTML = '';
 
-    SKILLS.forEach(skill => {
-        const currentLevel = customSkills[skill.id] || 0;
+    const categories = [
+        { id: 'offensive', name: 'Attack' },
+        { id: 'defensive', name: 'Defense' },
+        { id: 'survival', name: 'Survival' }
+    ];
 
-        // Build description showing values at each level
-        let description = '+';
-        const space = skill.unit === '%' ? '' : ' ';
-        for (let i = 1; i <= skill.maxLevel; i++) {
-            const value = skill.baseValue * i;
-            const isActive = i <= currentLevel;
-            const colorClass = isActive ? 'active-value' : 'inactive-value';
+    categories.forEach(cat => {
+        // Create Section
+        const section = document.createElement('div');
+        section.className = 'skill-category-section';
 
-            if (i > 1) {
-                description += `<span class="${colorClass}">/</span>`;
-            }
-            description += `<span class="${colorClass}">${value}</span>`;
-        }
-        description += `<span class="${currentLevel > 0 ? 'active-value' : 'inactive-value'}">${space}${skill.unit}</span>`;
+        // Header
+        const header = document.createElement('div');
+        header.className = 'skill-category-header';
+        header.textContent = cat.name;
+        section.appendChild(header);
 
-        const skillDiv = document.createElement('div');
-        const categoryClass = skill.category || 'defensive';
-        skillDiv.className = `custom-skill-item ${categoryClass}`;
-        if (currentLevel > 0) {
-            skillDiv.classList.add('active');
-        }
+        // Grid
+        const grid = document.createElement('div');
+        grid.className = 'skill-category-grid';
 
-        skillDiv.innerHTML = `
-            <div class="skill-icon">
-                ${skill.icon}
-                ${currentLevel > 0 ? `<div class="custom-skill-level-badge">${currentLevel}</div>` : ''}
-            </div>
-            <div class="custom-skill-name">${skill.name}</div>
-            <div class="custom-skill-desc">${description}</div>
-        `;
+        // Filter and Render Skills
+        const categorySkills = SKILLS.filter(s => (s.category || 'defensive') === cat.id);
 
-        // Tooltip with instructions
-        skillDiv.title = `${skill.name}\nLeft click: increase level\nRight click: decrease level\nMax level: ${skill.maxLevel}`;
-
-        // Left click - increase level
-        skillDiv.addEventListener('click', (e) => {
-            e.preventDefault();
+        categorySkills.forEach(skill => {
             const currentLevel = customSkills[skill.id] || 0;
 
-            if (currentLevel >= skill.maxLevel) {
-                // At max level, reset to 0
-                customSkills[skill.id] = 0;
-            } else {
-                // Increase level
-                customSkills[skill.id] = currentLevel + 1;
+            // Build description showing values at each level
+            let description = '+';
+            const space = skill.unit === '%' ? '' : ' ';
+            for (let i = 1; i <= skill.maxLevel; i++) {
+                const value = skill.baseValue * i;
+                const isActive = i <= currentLevel;
+                const colorClass = isActive ? 'active-value' : 'inactive-value';
+
+                if (i > 1) {
+                    description += `<span class="${colorClass}">/</span>`;
+                }
+                description += `<span class="${colorClass}">${value}</span>`;
+            }
+            description += `<span class="${currentLevel > 0 ? 'active-value' : 'inactive-value'}">${space}${skill.unit}</span>`;
+
+            const skillDiv = document.createElement('div');
+            // Reuse existing item class
+            skillDiv.className = `custom-skill-item ${cat.id}`;
+            if (currentLevel > 0) {
+                skillDiv.classList.add('active');
             }
 
-            callback();
+            skillDiv.innerHTML = `
+                <div class="skill-icon">
+                    ${skill.icon}
+                    ${currentLevel > 0 ? `<div class="custom-skill-level-badge">${currentLevel}</div>` : ''}
+                </div>
+                <div class="custom-skill-name">${skill.name}</div>
+                <div class="custom-skill-desc">${description}</div>
+            `;
+
+            // Tooltip with instructions
+            skillDiv.title = `${skill.name}\nLeft click: increase level\nRight click: decrease level\nMax level: ${skill.maxLevel}`;
+
+            // Left click - increase level
+            skillDiv.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentLevel = customSkills[skill.id] || 0;
+
+                if (currentLevel >= skill.maxLevel) {
+                    // At max level, reset to 0
+                    customSkills[skill.id] = 0;
+                } else {
+                    // Increase level
+                    customSkills[skill.id] = currentLevel + 1;
+                }
+
+                callback();
+            });
+
+            // Right click - decrease level
+            skillDiv.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const currentLevel = customSkills[skill.id] || 0;
+
+                if (currentLevel <= 0) {
+                    // At 0, wrap to max level
+                    customSkills[skill.id] = skill.maxLevel;
+                } else {
+                    // Decrease level
+                    customSkills[skill.id] = currentLevel - 1;
+                }
+
+                callback();
+            });
+
+            grid.appendChild(skillDiv);
         });
 
-        // Right click - decrease level
-        skillDiv.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const currentLevel = customSkills[skill.id] || 0;
-
-            if (currentLevel <= 0) {
-                // At 0, wrap to max level
-                customSkills[skill.id] = skill.maxLevel;
-            } else {
-                // Decrease level
-                customSkills[skill.id] = currentLevel - 1;
-            }
-
-            callback();
-        });
-
-        container.appendChild(skillDiv);
+        section.appendChild(grid);
+        container.appendChild(section);
     });
 }
 

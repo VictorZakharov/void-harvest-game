@@ -132,10 +132,16 @@ export class UIManager {
             this.game.start();
         };
 
-        document.getElementById('cancel-custom-btn').onclick = () => {
-            document.getElementById('custom-modal').classList.add('hidden');
-            document.getElementById('start-screen').classList.remove('hidden');
-        };
+        // Close Button (X)
+        const closeBtn = document.getElementById('close-custom-modal');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                document.getElementById('custom-modal').classList.add('hidden');
+                document.getElementById('start-screen').classList.remove('hidden'); // Return to start
+            };
+        }
+
+        // Custom Game Speed Buttons are handled globally by setupSpeedControls()
 
         document.getElementById('restart-btn').onclick = () => {
             document.getElementById('gameover-modal').classList.add('hidden');
@@ -289,17 +295,30 @@ export class UIManager {
     }
     setupMainMenuEffects() {
         const startScreen = document.getElementById('start-screen');
-        const card = startScreen.querySelector('.modal-content');
+        const startCard = startScreen.querySelector('.modal-content');
+        const customModal = document.getElementById('custom-modal');
+        const customCard = customModal.querySelector('.modal-content');
 
-        // Ensure card keeps 3D context
-        card.style.transformStyle = 'preserve-3d';
-        card.style.transition = 'transform 0.1s ease-out';
+        // Ensure cards keep 3D context
+        [startCard, customCard].forEach(card => {
+            if (card) {
+                card.style.transformStyle = 'preserve-3d';
+                card.style.transition = 'transform 0.1s ease-out';
+            }
+        });
 
         let rafId = null;
 
         document.addEventListener('mousemove', (e) => {
-            // Only active if start screen is visible
-            if (startScreen.classList.contains('hidden')) return;
+            // Check active modal
+            let activeCard = null;
+            if (!startScreen.classList.contains('hidden')) {
+                activeCard = startCard;
+            } else if (!customModal.classList.contains('hidden')) {
+                activeCard = customCard;
+            }
+
+            if (!activeCard) return;
 
             if (rafId) return; // Throttle to frame rate
 
@@ -315,19 +334,19 @@ export class UIManager {
                 const ny = (clientY - cy) / cy;
 
                 // Settings
-                const maxTilt = 5; // Reduced from 10 to prevent extreme clipping
+                const maxTilt = 5;
 
                 // Tilt Calculation
                 const rx = -ny * maxTilt; // Rotate X (Up/Down tilt)
                 const ry = nx * maxTilt;  // Rotate Y (Left/Right tilt)
 
-                // Apply to Container
-                card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+                // Apply to Active Card
+                activeCard.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
 
                 rafId = null;
             });
         });
 
-        // Reset on mouse leave or idle? Not strictly necessary for fullscreen overlay
+        // Reset transforms when mouse leaves? Optional, but keeping simple for now.
     }
 }
