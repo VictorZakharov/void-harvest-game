@@ -461,7 +461,7 @@ export class Game {
             this.camera.shake = 5;
         }
 
-        this.scene.remove(enemy.mesh);
+        enemy.dispose(this.scene);
         this.enemies.splice(index, 1);
     }
 
@@ -516,7 +516,7 @@ export class Game {
         this.player.onKill();
         this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
         this.itemManager.spawnXP(enemy.x, enemy.y, enemy.xpValue);
-        this.scene.remove(enemy.mesh);
+        enemy.dispose(this.scene);
         const index = this.enemies.indexOf(enemy);
         if (index > -1) this.enemies.splice(index, 1);
     }
