@@ -282,19 +282,42 @@
             <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
                 <h2>Custom Game Configuration</h2>
 
-                <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Enemy Types</h3>
-                <p style="color: #ccc; margin-bottom: 15px;">Click to toggle which enemy types to spawn:</p>
-                <div id="enemy-type-config"></div>
+                <div class="custom-config-row" style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
+                    <!-- Label Column (Left) -->
+                    <div
+                        style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
+                        <h3 style="color: #00ffff; margin: 0; text-align: right;">Enemy Types</h3>
 
-                <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Biome Selection</h3>
-                <div id="custom-biome-config"
-                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                        <!-- Select All Checkbox -->
+                        <div class="sci-fi-checkbox-wrapper">
+                            <input type="checkbox" id="enemy-select-all" class="sci-fi-checkbox">
+                            <label for="enemy-select-all">Select All</label>
+                        </div>
+                    </div>
+
+                    <!-- Enemy Options (Center/Right) -->
+                    <div id="enemy-type-config" class="enemy-selector-group">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
 
-                <div style="margin-top: 25px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="debug-weather-check" style="width: 20px; height: 20px;">
-                    <label for="debug-weather-check" style="color: #ccccff; font-size: 16px; cursor: pointer;">Start
-                        with Weather Active (Debug)</label>
+                <div class="custom-config-row" style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
+                    <!-- Label Column (Left) -->
+                    <div
+                        style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
+                        <h3 style="color: #00ffff; margin: 0; text-align: right;">Biome Selection</h3>
+
+                        <!-- Debug Checkbox moved here -->
+                        <div class="sci-fi-checkbox-wrapper">
+                            <input type="checkbox" id="debug-weather-check" class="sci-fi-checkbox">
+                            <label for="debug-weather-check" style="font-size: 12px;">Debug Weather</label>
+                        </div>
+                    </div>
+
+                    <!-- Biome Options (Center) -->
+                    <div id="custom-biome-config" class="biome-selector-group">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
 
                 <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>

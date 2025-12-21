@@ -182,7 +182,7 @@
     flex-direction: row;
     gap: v.$spacing-xs + v.$spacing-xs;
     margin: v.$spacing-lg 0;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .custom-enemy-item {
@@ -261,4 +261,175 @@
     font-size: v.$font-size-title;
     font-weight: bold;
     color: v.$color-success;
+}
+
+// ============================================
+// Enemy Selection Row
+// ============================================
+.enemy-selector-group {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    flex: 1;
+    gap: v.$spacing-sm;
+    margin: 0 !important; // Override ID margin
+
+    // Compact version for row layout
+    .custom-enemy-item {
+        padding: v.$spacing-sm;
+        margin: 0;
+        width: 100%; // Fill grid cell
+
+        .enemy-icon {
+            width: 32px;
+            height: 32px;
+
+            .enemy-emoji {
+                font-size: 18px;
+            }
+        }
+
+        .custom-enemy-name {
+            font-size: 12px;
+        }
+
+        .custom-enemy-desc {
+            display: none; // Hide description for compact row
+        }
+
+        .custom-enemy-status {
+            font-size: 16px;
+            position: absolute;
+            top: 2px;
+            right: 4px;
+        }
+
+        &:hover {
+            transform: translateY(-2px);
+        }
+    }
+}
+
+// ============================================
+// Biome Selection Row
+// ============================================
+
+.biome-selector-group {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    flex: 1;
+    gap: v.$spacing-sm;
+    // justify-content is irrelevant for grid with 1fr columns
+
+    // Compact version of custom-enemy-item for biomes
+    .custom-enemy-item {
+        padding: v.$spacing-sm;
+        margin: 0;
+        width: 100%;
+
+        .enemy-icon {
+            width: 32px;
+            height: 32px;
+
+            .enemy-emoji {
+                font-size: 18px;
+            }
+        }
+
+        .custom-enemy-name {
+            font-size: 12px;
+        }
+
+        .custom-enemy-desc {
+            display: none; // Hide description for compact row
+        }
+
+        .custom-enemy-status {
+            font-size: 16px;
+            position: absolute;
+            top: 2px;
+            right: 4px;
+        }
+
+        &:hover {
+            transform: translateY(-2px);
+        }
+    }
+}
+
+// ============================================
+// Sci-Fi Checkbox
+// ============================================
+
+.sci-fi-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    input[type="checkbox"].sci-fi-checkbox {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+
+        +label {
+            position: relative;
+            padding-left: 35px;
+            cursor: pointer;
+            color: v.$color-primary;
+            font-family: v.$font-family;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            user-select: none;
+            transition: all 0.3s;
+            text-shadow: 0 0 5px rgba(v.$color-primary, 0.4);
+
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 24px;
+                height: 24px;
+                background: rgba(0, 0, 0, 0.4);
+                border: 2px solid v.$color-primary;
+                border-radius: 4px;
+                box-shadow: 0 0 5px rgba(v.$color-primary, 0.3);
+                transition: all 0.3s ease;
+            }
+
+            &::after {
+                content: '✓';
+                position: absolute;
+                left: 5px;
+                top: 50%;
+                transform: translateY(-50%) scale(0);
+                font-size: 18px;
+                color: v.$color-primary;
+                font-weight: bold;
+                transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+                text-shadow: 0 0 8px v.$color-primary;
+            }
+        }
+
+        &:checked+label {
+            color: v.$color-white;
+
+            &::before {
+                background: rgba(v.$color-primary, 0.2);
+                box-shadow: 0 0 10px rgba(v.$color-primary, 0.6);
+                border-color: #fff;
+            }
+
+            &::after {
+                transform: translateY(-50%) scale(1);
+            }
+        }
+
+        &:hover+label::before {
+            border-color: v.$color-white;
+            box-shadow: 0 0 8px rgba(v.$color-primary, 0.5);
+        }
+    }
 }

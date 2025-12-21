@@ -91,6 +91,24 @@ export function renderCustomEnemySelection(game, customEnemies, callback) {
         { id: 'ice', name: 'Ice Shooter', color: '#66ccff', icon: '⬤', desc: 'Slows player' }
     ];
 
+    // Handle Select All Checkbox
+    const selectAllCb = document.getElementById('enemy-select-all');
+    if (selectAllCb) {
+        // Check if all are currently selected
+        const allSelected = enemies.every(e => customEnemies[e.id]);
+        selectAllCb.checked = allSelected;
+
+        // Override onclick to prevent multiple listeners accumulation (simple approach)
+        selectAllCb.onclick = (e) => {
+            // e.target.checked is the NEW state after click
+            const newState = e.target.checked;
+            enemies.forEach(enemy => {
+                customEnemies[enemy.id] = newState;
+            });
+            callback();
+        };
+    }
+
     enemies.forEach(enemy => {
         const isSelected = customEnemies[enemy.id];
 
@@ -156,6 +174,12 @@ export function renderCustomBiomeSelection(game, currentRef, callback) {
         const isSelected = currentRef.value === biome.id;
         const colorHex = '#' + biome.groundColor.toString(16).padStart(6, '0');
 
+        // Use brighter colors for text to ensure contrast
+        let textColor = colorHex;
+        if (biome.id === 'neutral') textColor = '#55aa55'; // Brighten Plains green
+        if (biome.id === 'snow') textColor = '#ffffff';    // Pure white for Tundra
+        if (biome.id === 'desert') textColor = '#ddcc88';  // Brighter sand
+
         const div = document.createElement('div');
         div.className = 'custom-enemy-item';
         if (isSelected) div.classList.add('active');
@@ -168,7 +192,7 @@ export function renderCustomBiomeSelection(game, currentRef, callback) {
                 <div class="enemy-emoji">■</div>
             </div>
              <div class="custom-enemy-info">
-                <div class="custom-enemy-name" style="color: ${colorHex};">${biome.name}</div>
+                <div class="custom-enemy-name" style="color: ${textColor};">${biome.name}</div>
                 <div class="custom-enemy-desc">Weather: ${weatherName}</div>
             </div>
             <div class="custom-enemy-status">${isSelected ? '✓' : ''}</div>
