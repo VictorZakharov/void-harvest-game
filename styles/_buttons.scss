@@ -101,3 +101,55 @@
     color: #1a1a2e;
     box-shadow: 0 0 10px v.$color-primary;
 }
+
+// ==================== SPLIT BUTTONS ====================
+.split-btn-group {
+    display: flex;
+    align-items: stretch;
+    filter: drop-shadow(0 0 10px rgba(v.$color-primary, 0.3));
+
+    &:hover {
+        filter: drop-shadow(0 0 15px rgba(v.$color-primary, 0.5));
+    }
+
+    .btn {
+        margin: 0; // Reset default btn margins
+        box-shadow: none; // Remove individual shadows, stick to group filter or adjust
+        filter: none;
+
+        // Ensure transforms happen relative to group
+        // If we want the whole group to lift, we might need to apply hover logic to group
+        // But for individual clickable areas, we keep them separate but connected visually.
+
+        // Override default hover rise
+        &:hover {
+            transform: translateZ(2px); // Keep Z-lift, remove Y-lift
+        }
+    }
+
+    .split-main {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: 1px solid rgba(v.$color-primary, 0.3);
+        padding-right: 25px; // Balance the text center visually
+    }
+
+    .split-action {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        padding: 0 15px; // Just enough for the icon
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        svg {
+            pointer-events: none;
+            transition: transform 0.3s ease;
+        }
+
+        &:hover svg {
+            transform: rotate(90deg);
+        }
+    }
+}
