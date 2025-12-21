@@ -3,7 +3,8 @@ import {
     CANVAS_WIDTH, CANVAS_HEIGHT,
     PLAYER_BASE_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_DAMAGE, PLAYER_BASE_FIRE_RATE, PLAYER_SIZE, PLAYER_BASE_LIGHT_RADIUS,
     XP_LEVEL_MULTIPLIER, INITIAL_XP_REQUIRED,
-    BULLET_BASE_SPEED, BULLET_BASE_RANGE, BULLET_SIZE
+    BULLET_BASE_SPEED, BULLET_BASE_RANGE, BULLET_SIZE,
+    POLAR_VORTEX_RADIUS, POLAR_VORTEX_INNER_RADIUS_RATIO
 } from '../constants.js';
 import { SpriteGenerator } from '../sprites.js';
 import { Entity } from './Entity.js';
@@ -28,6 +29,7 @@ export class Player extends Entity {
         this.range = BULLET_BASE_RANGE; // Base range
 
         // Create 3D mesh
+        this.vortexMesh = new THREE.Group(); // Non-rotating group for Polar Vortex
         this.mesh = this.createMesh();
 
         // XP and leveling
@@ -83,6 +85,17 @@ export class Player extends Entity {
         this.shieldActive = false;
         this.shieldTimer = 0;
         this.shieldCooldown = 600; // 10 seconds at 60fps
+
+        // Shockwave (Defensive)
+        this.shockwaveUnlocked = false;
+        this.shockwaveTimer = 0;
+        this.shockwaveCooldown = 180; // 3 seconds (nerfed from 2s)
+        this.shockwaveForce = 0;
+
+        // Stasis Field (Defensive)
+        this.stasisUnlocked = false;
+        this.stasisRadius = POLAR_VORTEX_RADIUS;
+        this.stasisSlow = 0; // % Slow amount (0.3 = 30%)
 
     }
 
@@ -184,6 +197,70 @@ export class Player extends Entity {
                 const scale = 1 + Math.sin(Date.now() * 0.005) * 0.05;
                 this.shieldMesh.scale.set(scale, scale, scale);
             }
+        }
+
+        // Shockwave Logic
+        if (this.shockwaveUnlocked) {
+            this.shockwaveTimer++;
+            if (this.shockwaveTimer >= this.shockwaveCooldown) {
+                this.shockwaveTimer = 0;
+                this.triggerShockwave = true;
+
+                // Start Visual Animation
+                if (this.shockwaveMesh) {
+                    this.shockwaveMesh.visible = true;
+                    this.shockwaveMesh.scale.set(1, 1, 1);
+                    this.shockwaveMesh.material.opacity = 1;
+                    this.shockwaveVisualTimer = 30; // 0.5s animation
+                }
+            }
+        }
+
+        // Animate Shockwave Visual
+        if (this.shockwaveVisualTimer > 0) {
+            this.shockwaveVisualTimer--;
+            if (this.shockwaveMesh) {
+                const progress = 1 - (this.shockwaveVisualTimer / 30);
+                // Radius = Force * 10 (Base 10 * 10 = 100)
+                const maxRadius = (this.shockwaveForce || 10) * 10;
+
+                const scale = 1 + progress * maxRadius;
+                this.shockwaveMesh.scale.set(scale, scale, 1);
+                this.shockwaveMesh.material.opacity = 1 - progress;
+            }
+            if (this.shockwaveVisualTimer <= 0) {
+                if (this.shockwaveMesh) this.shockwaveMesh.visible = false;
+            }
+        }
+
+        // Polar Vortex Visuals (Ice Storm)
+        if (this.stasisUnlocked && this.stasisParticles) {
+            const r = this.stasisRadius || POLAR_VORTEX_RADIUS;
+            const innerR = r * POLAR_VORTEX_INNER_RADIUS_RATIO;
+
+            this.stasisParticles.forEach(p => {
+                p.mesh.visible = true;
+
+                // Orbit
+                p.angle += p.speed;
+
+                // Smooth Radial Drift
+                p.radius += (p.radiusDrift || 0);
+                if (p.radius > r || p.radius < innerR) p.radiusDrift *= -1;
+
+                // Smooth Vertical Motion (Sine wave)
+                const time = Date.now() * 0.001;
+                const verticalPhase = p.radius * 0.1;
+                const relativeY = -10 + (Math.sin(time * 2 + verticalPhase + p.angle) * 15 + 15);
+
+                const x = Math.cos(p.angle) * p.radius;
+                const z = Math.sin(p.angle) * p.radius;
+
+                p.mesh.position.set(x, relativeY, z);
+
+                // Rotation: Streak should point in direction of movement (Tangent).
+                p.mesh.rotation.y = -p.angle;
+            });
         }
 
     }
@@ -324,13 +401,59 @@ export class Player extends Entity {
         const shieldGeo = new THREE.SphereGeometry(this.width, 16, 16);
         const shieldMat = new THREE.MeshBasicMaterial({
             color: 0x00ffff,
+            wireframe: true,
             transparent: true,
-            opacity: 0.3,
-            wireframe: true
+            opacity: 0.5
         });
         this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
         this.shieldMesh.visible = false;
         group.add(this.shieldMesh);
+
+        // Shockwave Mesh (Ring)
+        const ringGeo = new THREE.RingGeometry(1, 2, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide
+        });
+        this.shockwaveMesh = new THREE.Mesh(ringGeo, ringMat);
+        this.shockwaveMesh.rotation.x = -Math.PI / 2;
+        this.shockwaveMesh.position.y = 5; // Just above ground
+        this.shockwaveMesh.visible = false;
+        group.add(this.shockwaveMesh);
+
+        // Polar Vortex Particles (Ice Streaks)
+        this.stasisParticles = [];
+        const particleCount = 400;
+        // Elongated Box for "Streak/Comet" look: (Width, Height, Length/Tail)
+        // Z-axis length 6, X/Y width 0.8 (Thicker).
+        const particleGeo = new THREE.BoxGeometry(0.8, 0.8, 6);
+        const particleMat = new THREE.MeshBasicMaterial({
+            color: 0xccffff, // Brighter Cyan/White
+            transparent: true,
+            opacity: 0.9 // Almost opaque for visibility
+        });
+
+        for (let i = 0; i < particleCount; i++) {
+            const mesh = new THREE.Mesh(particleGeo, particleMat);
+            mesh.visible = false;
+
+            // Random scales length slightly
+            const lenScale = 0.8 + Math.random() * 1.5;
+            mesh.scale.set(1, 1, lenScale);
+
+            const innerR = POLAR_VORTEX_RADIUS * POLAR_VORTEX_INNER_RADIUS_RATIO;
+            this.vortexMesh.add(mesh); // Add to non-rotating group
+            this.stasisParticles.push({
+                mesh: mesh,
+                angle: Math.random() * Math.PI * 2,
+                radius: innerR + Math.random() * (POLAR_VORTEX_RADIUS - innerR),
+                radiusDrift: (Math.random() - 0.5) * 0.25, // Reduced drift for smaller radius
+                speed: 0.01 + Math.random() * 0.02, // Slower, more majestic spin
+                drift: 0.1 + Math.random() * 0.2
+            });
+        }
 
         return group;
     }
@@ -339,6 +462,10 @@ export class Player extends Entity {
         if (this.mesh) {
             this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
             this.mesh.rotation.y = -this.angle; // Rotate around Y axis
+        }
+        if (this.vortexMesh) {
+            this.vortexMesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
+            // DO NOT rotate vortexMesh, it stays world-aligned!
         }
     }
 }

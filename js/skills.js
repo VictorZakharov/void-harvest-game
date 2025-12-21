@@ -1,5 +1,5 @@
 // ==================== ICON SYSTEM ====================
-import { MAX_SKILL_LEVEL, EXTRA_CHOICE_MAX_LEVEL } from './constants.js';
+import { MAX_SKILL_LEVEL, EXTRA_CHOICE_MAX_LEVEL, POLAR_VORTEX_RADIUS, POLAR_VORTEX_SLOW_BASE } from './constants.js';
 
 export const ICONS = {
     damage: '<svg viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(45 12 12)"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="11" y="8" width="2" height="14" rx="0.5"/></g></svg>',
@@ -21,6 +21,8 @@ export const ICONS = {
     luck: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C9 2 6 4 6 6L8 10L12 8L16 10L18 6C18 4 15 2 12 2Z"/><line x1="8" y1="10" x2="9" y2="14" stroke="currentColor" stroke-width="1"/><line x1="12" y1="8" x2="12" y2="14" stroke="currentColor" stroke-width="1"/><line x1="16" y1="10" x2="15" y2="14" stroke="currentColor" stroke-width="1"/><rect x="9" y="14" width="6" height="6" rx="1"/><path d="M11 16H13V18H11V16M11 18H13V20H11V18" fill="white"/></svg>',
     light: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="4" stroke="currentColor" stroke-width="2"/><line x1="12" y1="20" x2="12" y2="23" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" stroke-width="2"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="2"/><line x1="20" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66" stroke="currentColor" stroke-width="2"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>',
+    shockwave: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/></svg>',
+    stasis: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6L16,12L12,18V6Z"/></svg>',
 };
 
 // ==================== SKILLS SYSTEM ====================
@@ -242,6 +244,26 @@ export const SKILLS = [
         }
     },
     {
+        id: "stasis",
+        name: "Polar Vortex",
+        description: `A freezing storm surrounds you, slowing nearby enemies within ${POLAR_VORTEX_RADIUS} units.`,
+        icon: "❄️",
+        tier: 1,
+        maxLevel: 3,
+        stat: "Slow",
+        rarity: "Rare",
+        baseValue: 15,
+        unit: "%",
+        color: "#00ffff",
+        type: "Defensive",
+        category: 'defensive',
+        apply: (player) => {
+            player.skills.stasis = (player.skills.stasis || 0) + 1;
+            player.stasisSlow = (player.skills.stasis * POLAR_VORTEX_SLOW_BASE) + POLAR_VORTEX_SLOW_BASE;
+            player.stasisUnlocked = true;
+        }
+    },
+    {
         id: 'shield',
         name: 'Energy Shield',
         description: 'Blocks 1 hit of damage. Recharges every 10s.',
@@ -253,6 +275,21 @@ export const SKILLS = [
         apply: (player) => {
             player.shieldUnlocked = true;
             player.skills.shield = 1;
+        }
+    },
+    {
+        id: 'shockwave',
+        name: 'Shockwave',
+        description: 'Pushes nearby enemies away every 3s.',
+        baseValue: 10,
+        unit: 'Force',
+        maxLevel: MAX_SKILL_LEVEL,
+        category: 'defensive',
+        icon: ICONS.shockwave,
+        apply: (player) => {
+            player.shockwaveForce = (player.shockwaveForce || 0) + 10;
+            player.skills.shockwave = (player.skills.shockwave || 0) + 1;
+            player.shockwaveUnlocked = true;
         }
     }
 ];

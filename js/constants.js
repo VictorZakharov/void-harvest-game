@@ -144,3 +144,10 @@ export const WEATHER_INTERVAL_MIN = 3600; // 60 seconds
 export const WEATHER_INTERVAL_MAX = 7200; // 120 seconds
 export const WEATHER_SLOW_AMOUNT = 0.15; // 15% slow
 
+// ============================================
+// DEFENSIVE SKILLS
+// ============================================
+
+export const POLAR_VORTEX_RADIUS = 150;
+export const POLAR_VORTEX_INNER_RADIUS_RATIO = 0.2; // 30/150
+export const POLAR_VORTEX_SLOW_BASE = 0.15; // 15% per level

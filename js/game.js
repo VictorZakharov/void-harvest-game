@@ -244,6 +244,7 @@ export class Game {
             this.items?.forEach(i => this.scene.remove(i.mesh));
             this.particles?.forEach(p => this.scene.remove(p.mesh));
             if (this.player?.mesh) this.scene.remove(this.player.mesh);
+            if (this.player?.vortexMesh) this.scene.remove(this.player.vortexMesh);
         }
 
         this.enemies.length = 0; // Clear without breaking reference
@@ -301,6 +302,7 @@ export class Game {
         // Create completely fresh player with base stats
         this.player = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
         if (this.scene && this.player.mesh) this.scene.add(this.player.mesh);
+        if (this.scene && this.player.vortexMesh) this.scene.add(this.player.vortexMesh);
 
         // Update managers with new player instance
         if (this.itemManager) this.itemManager.player = this.player;
@@ -670,11 +672,93 @@ export class Game {
 
         // Update enemies
         const playerBounds = this.player.getBounds();
-        const speedMod = (this.weatherState === 'active') ? (1 - WEATHER_SLOW_AMOUNT) : 1;
+        let speedMod = (this.weatherState === 'active') ? (1 - WEATHER_SLOW_AMOUNT) : 1;
+
+        // Shockwave Logic: Check if triggered
+        const doShockwave = this.player.triggerShockwave;
+        if (doShockwave) {
+            this.player.triggerShockwave = false;
+            // Visual Effect: Ring
+            this.particleManager.create(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, '#00ffff', 50); // Burst
+
+            // --- DENSITY CALCULATION ---
+            // 1. Identify affected enemies and calculate Total Resistance (Mass)
+            const shockwaveRadius = (this.player.shockwaveForce || 10) * 10;
+            const affectedEnemies = [];
+            let totalResistance = 0;
+
+            for (let i = 0; i < this.enemies.length; i++) {
+                const enemy = this.enemies[i];
+                const dx = (enemy.x + enemy.width / 2) - (this.player.x + this.player.width / 2);
+                const dy = (enemy.y + enemy.height / 2) - (this.player.y + this.player.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < shockwaveRadius) {
+                    affectedEnemies.push({ enemy, dist, dx, dy });
+                    totalResistance += (enemy.health || 30); // Use current health as mass
+                }
+            }
+
+            // 2. Calculate Crowd Factor
+            // Base Resistance = 100 (e.g., 3-4 basic enemies, or 1 Tank).
+            // If Mass <= 100, Factor = 1.0 (Full Push).
+            // If Mass > 100, Factor decreases.
+            const baseResistance = 100;
+            let crowdFactor = 1.0;
+
+            if (totalResistance > baseResistance) {
+                crowdFactor = baseResistance / totalResistance;
+            }
+
+            // Cap minimum push so it always does *something*
+            if (crowdFactor < 0.2) crowdFactor = 0.2;
+
+            // 3. Apply Dampened Knockback
+            for (const item of affectedEnemies) {
+                const { enemy, dist, dx, dy } = item;
+
+                let nx, ny;
+                if (dist < 1) {
+                    const angle = Math.random() * Math.PI * 2;
+                    nx = Math.cos(angle);
+                    ny = Math.sin(angle);
+                } else {
+                    nx = dx / dist;
+                    ny = dy / dist;
+                }
+
+                // Slide to Edge Logic (Target Radius)
+                const distanceToCover = shockwaveRadius - dist;
+
+                // Initial Velocity = (Distance / 10) * CrowdFactor
+                // "More enemies = pushed less" behavior.
+                const initialSpeed = (distanceToCover / 10) * crowdFactor;
+
+                // Sync duration (30 frames)
+                enemy.applyKnockback(nx * initialSpeed, ny * initialSpeed, 30);
+            }
+        }
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
-            enemy.update(playerBounds.centerX, playerBounds.centerY, speedMod);
+            let currentSpeedMod = speedMod;
+
+            // Stasis Field Logic
+            if (this.player.stasisUnlocked) {
+                const dx = (enemy.x + enemy.width / 2) - (this.player.x + this.player.width / 2);
+                const dy = (enemy.y + enemy.height / 2) - (this.player.y + this.player.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Dynamic Radius Check for Stasis
+                const stasisRadius = this.player.stasisRadius; // Assuming stasisRadius is already dynamic
+                if (dist < stasisRadius) {
+                    currentSpeedMod *= (1 - this.player.stasisSlow);
+                    // Visual hint? Enemy color tint is handled in shader/material usually, maybe we can just set it?
+                    // enemy.mesh.material.color.setHex(0xaa00ff); // Too expensive to swap every frame?
+                }
+            }
+
+            enemy.update(playerBounds.centerX, playerBounds.centerY, currentSpeedMod);
 
             // Enemy shooting
             if (enemy.canShoot()) {

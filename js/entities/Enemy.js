@@ -65,6 +65,11 @@ export class Enemy extends Entity {
         this.frozen = false;
         this.freezeTimer = 0;
 
+        // Knockback handling
+        this.knockbackVx = 0;
+        this.knockbackVy = 0;
+        this.knockbackTimer = 0;
+
         this.mesh = this.createMesh();
     }
 
@@ -97,6 +102,27 @@ export class Enemy extends Entity {
             this.vy = (dy / dist) * currentSpeed;
         }
 
+        // Apply knockback if active
+        if (this.knockbackTimer > 0) {
+            this.knockbackTimer--;
+            // Decay knockback
+            this.knockbackVx *= 0.9;
+            this.knockbackVy *= 0.9;
+            this.x += this.knockbackVx;
+            this.y += this.knockbackVy;
+
+            // Still allow movement but severely reduced
+            // or just Block movement? Block looks better for impact.
+            return;
+        }
+
+        if (dist > 0) {
+            // Apply speed modifier (e.g. weather slow)
+            const currentSpeed = this.speed * speedModifier;
+            this.vx = (dx / dist) * currentSpeed;
+            this.vy = (dy / dist) * currentSpeed;
+        }
+
         this.x += this.vx;
         this.y += this.vy;
 
@@ -119,8 +145,15 @@ export class Enemy extends Entity {
         return this.health <= 0;
     }
 
-    draw(ctx) {
-        // 2D logic removed for 3D
+    takeDamage(amount) {
+        this.health -= amount;
+        return this.health <= 0;
+    }
+
+    applyKnockback(vx, vy, duration = 10) {
+        this.knockbackVx = vx;
+        this.knockbackVy = vy;
+        this.knockbackTimer = duration; // frames
     }
 
     createMesh() {
