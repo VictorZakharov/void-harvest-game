@@ -1,5 +1,5 @@
 // ==================== ICON SYSTEM ====================
-import { MAX_SKILL_LEVEL, EXTRA_CHOICE_MAX_LEVEL, POLAR_VORTEX_RADIUS, POLAR_VORTEX_SLOW_BASE } from './constants.js';
+import { MAX_SKILL_LEVEL, EXTRA_CHOICE_MAX_LEVEL, POLAR_VORTEX_RADIUS, POLAR_VORTEX_SLOW_BASE, SKILL_FREEZE_CHANCE_PER_LEVEL } from './constants.js';
 
 export const ICONS = {
     damage: '<svg viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(45 12 12)"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="11" y="8" width="2" height="14" rx="0.5"/></g></svg>',
@@ -49,7 +49,6 @@ export const SKILLS = [
         name: 'Rapid Fire',
         baseValue: 15,
         unit: '%',
-        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'offensive',
         icon: ICONS.firerate,
@@ -63,7 +62,6 @@ export const SKILLS = [
         name: 'Movement Speed',
         baseValue: 8,
         unit: '%',
-        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'survival',
         icon: ICONS.speed,
@@ -76,7 +74,6 @@ export const SKILLS = [
         id: 'health',
         name: 'Max Health',
         baseValue: 30,
-        unit: 'HP',
         unit: 'HP',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'defensive',
@@ -92,7 +89,6 @@ export const SKILLS = [
         name: 'Multi-Shot',
         baseValue: 1,
         unit: 'projectile',
-        unit: 'projectile',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'offensive',
         icon: ICONS.multishot,
@@ -105,7 +101,6 @@ export const SKILLS = [
         id: 'piercing',
         name: 'Piercing Shots',
         baseValue: 1,
-        unit: 'pierce',
         unit: 'pierce',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'offensive',
@@ -120,7 +115,6 @@ export const SKILLS = [
         name: 'Bullet Velocity',
         baseValue: 25,
         unit: '%',
-        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'offensive',
         icon: ICONS.bulletspeed,
@@ -133,7 +127,6 @@ export const SKILLS = [
         id: 'range',
         name: 'Extended Range',
         baseValue: 50,
-        unit: '%',
         unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'offensive',
@@ -148,7 +141,6 @@ export const SKILLS = [
         name: 'Passive Heal',
         baseValue: 1,
         unit: 'HP/sec',
-        unit: 'HP/sec',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'defensive',
         icon: ICONS.regen,
@@ -160,14 +152,13 @@ export const SKILLS = [
     {
         id: 'freeze',
         name: 'Freeze Chance',
-        baseValue: 10,
-        unit: '%',
+        baseValue: Math.round(SKILL_FREEZE_CHANCE_PER_LEVEL * 100),
         unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'survival',
         icon: ICONS.freeze,
         apply: (player) => {
-            player.freezeChance += 0.1; // 10% per level
+            player.freezeChance += SKILL_FREEZE_CHANCE_PER_LEVEL;
             player.skills.freeze = (player.skills.freeze || 0) + 1;
         }
     },
@@ -175,7 +166,6 @@ export const SKILLS = [
         id: 'extrachoice',
         name: 'Extra Choice',
         baseValue: 1,
-        unit: 'slot',
         unit: 'slot',
         maxLevel: EXTRA_CHOICE_MAX_LEVEL,
         category: 'survival',
@@ -190,7 +180,6 @@ export const SKILLS = [
         name: 'Armor',
         baseValue: 1,
         unit: 'armor',
-        unit: 'armor',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'defensive',
         icon: ICONS.armor,
@@ -204,7 +193,6 @@ export const SKILLS = [
         name: 'Magnet Range',
         baseValue: 50,
         unit: '%',
-        unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'survival',
         icon: ICONS.magnet,
@@ -216,8 +204,7 @@ export const SKILLS = [
     {
         id: 'luck',
         name: 'Lucky Drops',
-        baseValue: 2,
-        unit: '%',
+        baseValue: 5,
         unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'survival',
@@ -231,7 +218,6 @@ export const SKILLS = [
         id: 'light',
         name: 'Light Radius',
         baseValue: 50,
-        unit: '%',
         unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'survival',
@@ -247,7 +233,7 @@ export const SKILLS = [
         id: "stasis",
         name: "Polar Vortex",
         description: `A freezing storm surrounds you, slowing nearby enemies within ${POLAR_VORTEX_RADIUS} units.`,
-        icon: "❄️",
+        icon: ICONS.stasis,
         tier: 1,
         maxLevel: 3,
         stat: "Slow",

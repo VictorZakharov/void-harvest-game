@@ -62,7 +62,6 @@ export class Enemy extends Entity {
 
         // Freeze effect
         this.frozen = false;
-        this.frozen = false;
         this.freezeTimer = 0;
 
         // Knockback handling
@@ -145,15 +144,15 @@ export class Enemy extends Entity {
         return this.health <= 0;
     }
 
-    takeDamage(amount) {
-        this.health -= amount;
-        return this.health <= 0;
-    }
-
     applyKnockback(vx, vy, duration = 10) {
         this.knockbackVx = vx;
         this.knockbackVy = vy;
         this.knockbackTimer = duration; // frames
+    }
+
+    freeze(duration = 120) {
+        this.frozen = true;
+        this.freezeTimer = Math.max(this.freezeTimer, duration);
     }
 
     createMesh() {
@@ -269,11 +268,21 @@ export class Enemy extends Entity {
             const v = Math.max(0, Math.min(1, visibility));
 
             if (this.bodyMesh) {
+                // Determine emissive color/intensity for frozen state
+                const emissiveColor = this.frozen ? 0x00ffff : 0x000000;
+                const emissiveIntensity = this.frozen ? 0.5 : 0;
+
                 // Recursively update opacity and color for ALL meshes in the group (Body, Eyes, Gun)
                 this.mesh.traverse((child) => {
                     if (child.isMesh && child.material) {
                         // Skip Health Bar (it handles its own opacity)
                         if (child.userData.isHealthBar) return;
+
+                        // Apply frozen visual feedback
+                        if (child.material.emissive) {
+                            child.material.emissive.setHex(emissiveColor);
+                            child.material.emissiveIntensity = emissiveIntensity;
+                        }
 
                         // Interpolate Opacity
                         // From 0.05 (Hidden) to 1.0 (Visible)
@@ -286,10 +295,10 @@ export class Enemy extends Entity {
 
                         if (child === this.bodyMesh) {
                             targetColor.lerp(new THREE.Color(this.baseColor), v);
-                        } else if (child.geometry && child.geometry.type === 'BoxGeometry' && child.geometry.parameters.width === 4) {
+                        } else if (child.geometry && child.geometry.type === 'BoxGeometry' && child.geometry.parameters && child.geometry.parameters.width === 4) {
                             // Eyes
                             targetColor.setHex(0x000000);
-                        } else if (child.geometry && child.geometry.parameters.width === 20) {
+                        } else if (child.geometry && child.geometry.parameters && child.geometry.parameters.width === 20) {
                             // Gun
                             const gunColor = this.type === 'ice' ? 0x88ccff : 0x333333;
                             targetColor.lerp(new THREE.Color(gunColor), v);
@@ -355,6 +364,4 @@ export class Enemy extends Entity {
             }
         }
     }
-
-
 }

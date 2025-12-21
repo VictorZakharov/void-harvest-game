@@ -122,7 +122,13 @@ export class BulletManager {
                                 this.callbacks.onEnemyDeath(enemy);
                             }
                         } else {
-                            this.callbacks.createParticles(enemy.x, enemy.y, '#ffff00', PARTICLE_COUNT_HIT);
+                            // Check for freeze chance
+                            if (player.freezeChance > 0 && Math.random() < player.freezeChance) {
+                                enemy.freeze(120); // 2 seconds at 60fps
+                                this.callbacks.createParticles(enemy.x, enemy.y, '#00ffff', 15);
+                            } else {
+                                this.callbacks.createParticles(enemy.x, enemy.y, '#ffff00', PARTICLE_COUNT_HIT);
+                            }
                         }
 
                         this.callbacks.onEnemyHit && this.callbacks.onEnemyHit(enemy, bullet.damage); // For stats maybe?

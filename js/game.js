@@ -109,6 +109,10 @@ export class Game {
 
     reset(commitHistory = false) {
         // Clear existing objects
+        if (this.player && this.player.visuals) {
+            this.player.visuals.dispose();
+        }
+
         if (this.enemies) {
             this.enemies.forEach(e => this.scene.remove(e.mesh));
             this.enemies.length = 0;
@@ -152,9 +156,9 @@ export class Game {
         }
 
         // Create fresh player
-        this.player = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-        if (this.scene && this.player.mesh) this.scene.add(this.player.mesh);
-        if (this.scene && this.player.vortexMesh) this.scene.add(this.player.vortexMesh);
+        this.player = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, this.scene);
+
+        // Update managers with new player instance
 
         // Update managers with new player instance
         if (this.itemManager) this.itemManager.player = this.player;

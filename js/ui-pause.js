@@ -2,7 +2,7 @@
 import { SKILLS, ICONS } from './skills.js';
 import {
     PLAYER_BASE_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_DAMAGE,
-    PLAYER_BASE_FIRE_RATE, BULLET_BASE_RANGE
+    PLAYER_BASE_FIRE_RATE, BULLET_BASE_RANGE, SKILL_FREEZE_CHANCE_PER_LEVEL
 } from './constants.js';
 
 export function showPauseScreen(game) {
@@ -301,8 +301,9 @@ export function showPauseScreen(game) {
                     scalingText = `Total: ${level} HP/kill (0 Base + Bonus)`;
                     break;
                 case 'freeze':
-                    currentBonusText = `${Math.round(level * 10)}% Freeze Chance`;
-                    scalingText = `Total: ${Math.round(level * 10)}% (0% Base + Bonus)`;
+                    const freezePct = Math.round(SKILL_FREEZE_CHANCE_PER_LEVEL * 100);
+                    currentBonusText = `${Math.round(level * freezePct)}% Freeze Chance`;
+                    scalingText = `Total: ${Math.round(level * freezePct)}% (0% Base + Bonus)`;
                     mechanicsText = 'Freezes enemies in place';
                     break;
                 case 'berserk':
@@ -319,9 +320,9 @@ export function showPauseScreen(game) {
                     mechanicsText = 'Flat damage reduction';
                     break;
                 case 'luck':
-                    // Base 5% (0.05), Level adds +2% (0.02)
-                    const totalLuck = 5 + level * 2;
-                    currentBonusText = `+${level * 2}% Health Drop Rate`;
+                    // Base 5% (0.05), Level adds +5% (0.05)
+                    const totalLuck = 5 + level * 5;
+                    currentBonusText = `+${level * 5}% Health Drop Rate`;
                     scalingText = `Total: ${totalLuck}% (5% Base + Bonus)`;
                     break;
                 case 'magnet':

@@ -83,6 +83,7 @@ export const SKILL_CHOICES_BASE = 3; // Default number of skill options
 export const SKILL_CHOICES_WITH_EXTRA = 4; // With "Extra Choice" skill
 export const MAX_SKILL_LEVEL = 3; // Maximum level for most skills
 export const EXTRA_CHOICE_MAX_LEVEL = 1; // Extra Choice is unique
+export const SKILL_FREEZE_CHANCE_PER_LEVEL = 0.17; // 17% per level
 
 // ============================================
 // PLAYER DEFAULTS
