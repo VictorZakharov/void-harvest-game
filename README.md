@@ -6,6 +6,7 @@ A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
 
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Complete gameplay guide with all stats and strategies
 - **[CLAUDE.md](CLAUDE.md)** - Maintenance guide for AI assistants and developers
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture, file map, and design patterns
 
 ## Features
 
@@ -66,28 +67,7 @@ The production build creates:
 
 ### File Structure
 
-```
-arpg-shooter/
-├── js/                    # Source files (modular)
-│   ├── main.js           # Entry point (imports CSS & Game)
-│   ├── constants.js      # Game constants
-│   ├── sprites.js        # Sprite generation
-│   ├── particles.js      # Particle system
-│   ├── entities.js       # Player, Enemy, Bullet, Item classes
-│   ├── input.js          # Input handler
-│   ├── skills.js         # Skills and upgrades
-│   ├── stats.js          # Stats tracking & persistence
-│   ├── ui.js             # UI management (modals, screens)
-│   └── game.js           # Main game class & loop
-├── dist/                  # Production build output (gitignored)
-│   ├── index.html        # HTML with hashed asset references
-│   ├── game.[hash].js    # Bundled & minified JS
-│   └── styles.[hash].css # CSS with content hash
-├── index.html            # Main HTML file (webpack template)
-├── styles.css            # Game styling (imported by JS)
-├── webpack.config.js     # Webpack configuration
-└── package.json          # Dependencies & scripts
-```
+For a complete and up-to-date file map with detailed descriptions, please refer to **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ## Game Systems
 
