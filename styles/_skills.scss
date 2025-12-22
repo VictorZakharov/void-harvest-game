@@ -185,84 +185,152 @@
 
 #meta-upgrades {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: v.$spacing-lg;
-    margin: v.$spacing-xl 0;
-    max-height: 400px;
-    overflow-y: auto;
+    // Removed margin and max-height to eliminate scrollbar
+    margin: 0;
+    max-height: none;
     padding: v.$spacing-xs;
 }
 
 .meta-upgrade {
     background: rgba(v.$color-primary, 0.1);
-    border: v.$border-width-md solid #666;
+    border: v.$border-width-md solid #444;
     padding: v.$spacing-lg;
-    border-radius: v.$spacing-xs;
-    cursor: pointer;
+    border-radius: v.$border-radius-lg;
+    cursor: default;
     transition: all v.$transition-base;
     pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 
+    // MAXED OUT STATE (Previously 'unlocked')
     &.unlocked {
-        border-color: v.$color-primary;
-        background: rgba(v.$color-primary, 0.2);
+        border-color: #444;
+        background: rgba(0, 0, 0, 0.4);
+        opacity: 0.6; // Greyed out look
+        box-shadow: none;
+        cursor: default;
 
         .meta-icon {
-            background: rgba(v.$color-primary, 0.4);
-            box-shadow: v.$glow-yellow;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #666;
+            color: #888;
+            box-shadow: none;
+        }
+
+        .meta-progress-fill {
+            background: #666; // Grey progress bar
+            box-shadow: none;
+        }
+
+        .maxed {
+            color: #888;
+            font-weight: bold;
+            text-shadow: none;
         }
     }
 
+    // AFFORDABLE STATE (Actionable)
     &.affordable:not(.unlocked) {
-        border-color: v.$color-success;
+        border-color: v.$color-primary; // Cyan
+        cursor: pointer;
 
         .meta-icon {
-            border-color: v.$color-success;
-            color: v.$color-success;
+            border-color: v.$color-primary;
+            color: v.$color-primary;
+        }
+
+        .cost {
+            color: v.$color-primary;
+            text-shadow: 0 0 5px rgba(v.$color-primary, 0.5);
+        }
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 10px rgba(v.$color-primary, 0.3);
+            background: rgba(v.$color-primary, 0.1);
         }
     }
 
-    &:hover:not(.unlocked) {
-        background: rgba(v.$color-primary, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 0 15px rgba(v.$color-primary, 0.4);
+    .meta-icon {
+        width: 50px; // Larger icon
+        height: 50px;
+        margin-bottom: v.$spacing-md;
+        color: #777;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        border: v.$border-width-md solid #555;
+        transition: all 0.3s ease;
+
+        svg {
+            width: 28px;
+            height: 28px;
+        }
+    }
+
+    .meta-content {
+        width: 100%;
     }
 
     h4 {
-        color: v.$color-primary;
-        margin-bottom: v.$spacing-xs;
+        color: v.$color-white;
+        margin: 0 0 5px 0;
+        font-size: 16px;
     }
 
-    p {
-        font-size: v.$font-size-base;
-        margin: v.$spacing-xs 0;
+    .description {
+        font-size: 13px;
+        color: #aaa;
+        min-height: 40px; // Ensure consistent height
+        margin-bottom: 15px;
+        line-height: 1.3;
     }
 
-    .cost {
-        color: v.$color-info;
-        font-weight: bold;
+    .meta-progress-container {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px;
+        border-radius: 6px;
+    }
+
+    .meta-row-spread {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 4px;
+        font-weight: 600;
+
+        .meta-label {
+            color: #888;
+        }
+
+        .cost {
+            color: #d1c4e9; // Light purple default
+        }
+    }
+
+    .meta-progress-track {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+
+        .meta-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7b1fa2, #e040fb); // Purple gradient
+            transition: width 0.5s ease;
+        }
     }
 }
 
-.meta-icon {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto v.$spacing-xs + v.$spacing-xs;
-    color: v.$color-primary;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(v.$color-primary, 0.2);
-    border-radius: v.$border-radius-round;
-    border: v.$border-width-md solid v.$color-primary;
-
-    svg {
-        width: v.$skill-icon-lg;
-        height: v.$skill-icon-lg;
-    }
-}
-
-#currency-text {
-    font-size: v.$font-size-title;
-    color: v.$color-info;
-    margin: v.$spacing-xl 0;
-}
+// Old currency text selector removed

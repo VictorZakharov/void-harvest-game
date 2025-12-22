@@ -9,7 +9,7 @@ export function showMetaUpgrades(game) {
     const container = document.getElementById('meta-upgrades');
     const currencyText = document.getElementById('currency-text');
 
-    currencyText.textContent = `Souls: ${game.totalSouls}`;
+    currencyText.textContent = `${game.totalSouls}`;
     container.innerHTML = '';
 
     // Check if any upgrades have been purchased
@@ -32,6 +32,7 @@ export function showMetaUpgrades(game) {
         const cost = upgrade.cost * (currentLevel + 1);
         const canAfford = game.totalSouls >= cost;
         const maxed = currentLevel >= upgrade.maxLevel;
+        const progressPct = (currentLevel / upgrade.maxLevel) * 100;
 
         const div = document.createElement('div');
         div.className = 'meta-upgrade';
@@ -40,10 +41,20 @@ export function showMetaUpgrades(game) {
 
         div.innerHTML = `
             <div class="meta-icon">${upgrade.icon}</div>
-            <h4>${upgrade.name}</h4>
-            <p>${upgrade.description}</p>
-            <p>Level: ${currentLevel}/${upgrade.maxLevel}</p>
-            ${!maxed ? `<p class="cost">Cost: ${cost} souls</p>` : '<p style="color: #00ff00;">MAX</p>'}
+            <div class="meta-content">
+                <h4>${upgrade.name}</h4>
+                <p class="description">${upgrade.description}</p>
+                
+                <div class="meta-progress-container">
+                    <div class="meta-row-spread">
+                        <span class="meta-label">Level ${currentLevel}/${upgrade.maxLevel}</span>
+                        ${!maxed ? `<span class="cost">${cost} Souls</span>` : '<span class="maxed">MAX</span>'}
+                    </div>
+                    <div class="meta-progress-track">
+                        <div class="meta-progress-fill" style="width: ${progressPct}%"></div>
+                    </div>
+                </div>
+            </div>
         `;
 
         if (!maxed && canAfford) {

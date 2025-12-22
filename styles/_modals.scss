@@ -24,6 +24,44 @@
 // Meta upgrades modal should be above other modals
 #meta-modal {
     z-index: v.$z-modal-meta;
+
+    // SAFE OVERRIDE: Strictly scoped to this modal
+    .modal-content {
+        padding: v.$spacing-sm v.$spacing-xl; // Tighter padding
+    }
+
+    .modal-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: v.$spacing-sm;
+
+        h2 {
+            margin: 0;
+            font-size: 24px;
+            color: v.$color-primary;
+            text-shadow: v.$text-shadow-glow;
+        }
+
+        .souls-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            svg {
+                filter: drop-shadow(0 0 4px #b388ff);
+            }
+
+            .souls-count {
+                color: #d1c4e9;
+                font-weight: bold;
+                font-size: 20px;
+                text-shadow: 0 0 5px #b388ff;
+                font-family: 'Courier New', monospace;
+            }
+        }
+    }
 }
 
 .modal-content {
