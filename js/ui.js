@@ -19,7 +19,7 @@ export class UIManager {
       shooter: true,
       ice: true
     };
-    this.customBiome = {value: null};
+    this.customBiome = { value: null };
     this.setupEventHandlers();
     this.setupSpeedControls();
     this.setupMainMenuEffects();
@@ -147,8 +147,8 @@ export class UIManager {
       }
 
       document.getElementById('custom-modal').classList.add('hidden');
-      this.game.customEnemies = {...this.customEnemies};
-      this.game.customSkills = {...this.customSkills}; // Pass selected skills
+      this.game.customEnemies = { ...this.customEnemies };
+      this.game.customSkills = { ...this.customSkills }; // Pass selected skills
       this.game.customBiome = this.customBiome.value; // Pass selected biome
       this.game.debugWeather = document.getElementById('debug-weather-check').checked;
       this.game.start();
@@ -174,7 +174,7 @@ export class UIManager {
         this.game.reset();
 
         // Restore enemy selection
-        this.customEnemies = {...wasCustom};
+        this.customEnemies = { ...wasCustom };
         this.renderCustomEnemySelection();
         this.renderCustomSkillSelection();
 
@@ -190,6 +190,18 @@ export class UIManager {
       document.getElementById('gameover-modal').classList.add('hidden');
       this.showMetaUpgrades();
     };
+
+    // Game Over Exit Buttons
+    const exitGameOver = () => {
+      document.getElementById('gameover-modal').classList.add('hidden');
+      this.game.reset();
+      this.game.state = 'start';
+      document.getElementById('start-screen').classList.remove('hidden');
+      this.updateMainMenuSouls();
+    };
+
+    document.getElementById('gameover-exit-btn').onclick = exitGameOver;
+    document.getElementById('close-gameover-x').onclick = exitGameOver;
 
     document.getElementById('reset-meta-btn').onclick = () => {
       this.showResetConfirmation();
@@ -231,8 +243,8 @@ export class UIManager {
         this.game.reset();
 
         // Restore enemy selection
-        this.customEnemies = {...wasCustom};
-        this.customBiome = {value: wasBiome};
+        this.customEnemies = { ...wasCustom };
+        this.customBiome = { value: wasBiome };
         this.renderCustomEnemySelection();
         this.renderCustomSkillSelection();
         this.renderCustomBiomeSelection();
@@ -251,6 +263,63 @@ export class UIManager {
       document.getElementById('start-screen').classList.remove('hidden');
       this.updateMainMenuSouls(); // Update when returning to menu
     };
+
+    // Keyboard Navigation (Escape to close overlays)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+
+        // 1. Reset Confirmation (Highest Priority)
+        const resetModal = document.getElementById('reset-confirm-modal');
+        if (resetModal && !resetModal.classList.contains('hidden')) {
+          resetModal.classList.add('hidden');
+          return;
+        }
+
+        // 2. Permanent Upgrades (Meta)
+        const metaModal = document.getElementById('meta-modal');
+        if (metaModal && !metaModal.classList.contains('hidden')) {
+          metaModal.classList.add('hidden');
+          this.updateMainMenuSouls();
+
+          if (this.game.state === 'gameover') {
+            document.getElementById('gameover-modal').classList.remove('hidden');
+          } else if (this.game.state === 'start') {
+            document.getElementById('start-screen').classList.remove('hidden');
+          }
+          return;
+        }
+
+        // 3. Custom Game Config
+        const customModal = document.getElementById('custom-modal');
+        if (customModal && !customModal.classList.contains('hidden')) {
+          customModal.classList.add('hidden');
+          document.getElementById('start-screen').classList.remove('hidden');
+          return;
+        }
+
+        // 4. Guide Modal
+        const guideModal = document.getElementById('guide-modal');
+        if (guideModal && !guideModal.classList.contains('hidden')) {
+          guideModal.classList.add('hidden');
+          if (this.game.state === 'start') {
+            document.getElementById('start-screen').classList.remove('hidden');
+          }
+          return;
+        }
+
+        // 5. Game Over Screen -> Main Menu
+        const gameoverModal = document.getElementById('gameover-modal');
+        if (gameoverModal && !gameoverModal.classList.contains('hidden')) {
+          // Reuse the exit logic
+          document.getElementById('gameover-modal').classList.add('hidden');
+          this.game.reset();
+          this.game.state = 'start';
+          document.getElementById('start-screen').classList.remove('hidden');
+          this.updateMainMenuSouls();
+          return;
+        }
+      }
+    });
   }
 
   // Delegate to imported functions
@@ -260,6 +329,8 @@ export class UIManager {
 
   showLevelUpScreen() {
     showLevelUpScreen(this.game);
+
+
   }
 
   showGameOverStats(souls, isVictory = false) {
@@ -306,7 +377,7 @@ export class UIManager {
     const customCard = customModal.querySelector('.modal-content');
 
     // Ensure cards keep 3D context
-    [ startCard, customCard ].forEach(card => {
+    [startCard, customCard].forEach(card => {
       if (card) {
         card.style.transformStyle = 'preserve-3d';
         card.style.transition = 'transform 0.1s ease-out';
@@ -318,6 +389,13 @@ export class UIManager {
     document.addEventListener('mousemove', (e) => {
       // Check active modal
       let activeCard = null;
+
+      // Disable main menu parallax if meta modal is open
+      const metaModal = document.getElementById('meta-modal');
+      if (metaModal && !metaModal.classList.contains('hidden')) {
+        return;
+      }
+
       if (!startScreen.classList.contains('hidden')) {
         activeCard = startCard;
       } else if (!customModal.classList.contains('hidden')) {
@@ -329,8 +407,8 @@ export class UIManager {
       if (rafId) return; // Throttle to frame rate
 
       rafId = requestAnimationFrame(() => {
-        const {clientX, clientY} = e;
-        const {innerWidth, innerHeight} = window;
+        const { clientX, clientY } = e;
+        const { innerWidth, innerHeight } = window;
 
         // Caclulate normalized position (-1 to 1)
         const cx = innerWidth / 2;

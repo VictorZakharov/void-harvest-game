@@ -60,6 +60,44 @@ export function showMetaUpgrades(game) {
     });
 
     modal.classList.remove('hidden');
+
+    // ==================== PARALLAX EFFECT ====================
+    // Apply to the main container (.modal-content) like Main Menu
+    const modalContent = modal.querySelector('.modal-content');
+
+    // Init style
+    modalContent.style.transition = 'transform 0.1s ease-out';
+    modalContent.style.transformStyle = 'preserve-3d';
+
+    let rafId = null;
+
+    modal.onmousemove = (e) => {
+        if (rafId) return;
+
+        rafId = requestAnimationFrame(() => {
+            const { clientX, clientY } = e;
+            const { innerWidth, innerHeight } = window;
+
+            // Calculate normalized position from center of screen (-1 to 1)
+            const cx = innerWidth / 2;
+            const cy = innerHeight / 2;
+
+            const nx = (clientX - cx) / cx;
+            const ny = (clientY - cy) / cy;
+
+            // Settings (Matches Main Menu)
+            const maxTilt = 5;
+
+            // Tilt Calculation
+            const rx = -ny * maxTilt; // Rotate X (Up/Down tilt)
+            const ry = nx * maxTilt;  // Rotate Y (Left/Right tilt)
+
+            // Apply to Modal Content
+            modalContent.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+            rafId = null;
+        });
+    };
 }
 
 export function showResetConfirmation(game) {
