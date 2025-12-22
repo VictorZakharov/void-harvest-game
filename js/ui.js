@@ -22,7 +22,7 @@ export class UIManager {
     this.customBiome = { value: null };
     this.setupEventHandlers();
     this.setupSpeedControls();
-    this.setupMainMenuEffects();
+    this.setupMainParallax();
     this.updateMainMenuSouls();
   }
 
@@ -370,67 +370,69 @@ export class UIManager {
     }
   }
 
-  setupMainMenuEffects() {
-    const startScreen = document.getElementById('start-screen');
-    const startCard = startScreen.querySelector('.modal-content');
-    const customModal = document.getElementById('custom-modal');
-    const customCard = customModal.querySelector('.modal-content');
+  setupMainParallax() {
+    // List of modals in priority order (Foreground -> Background)
+    // The system will only apply parallax to the FIRST visible modal found.
+    const parallaxTargets = [
+      'reset-confirm-modal', // Topmost
+      'guide-modal',
+      'meta-modal',
+      'gameover-modal',
+      'pause-modal',
+      'custom-modal',
+      'start-screen'          // Bottom (Main Menu)
+    ];
 
-    // Ensure cards keep 3D context
-    [startCard, customCard].forEach(card => {
-      if (card) {
-        card.style.transformStyle = 'preserve-3d';
-        card.style.transition = 'transform 0.1s ease-out';
+    // Cache elements
+    const modals = {};
+    parallaxTargets.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const content = el.querySelector('.modal-content');
+        if (content) {
+          // Init styles
+          content.style.transformStyle = 'preserve-3d';
+          content.style.transition = 'transform 0.1s ease-out';
+          modals[id] = { el, content };
+        }
       }
     });
 
     let rafId = null;
 
     document.addEventListener('mousemove', (e) => {
-      // Check active modal
-      let activeCard = null;
-
-      // Disable main menu parallax if meta modal is open
-      const metaModal = document.getElementById('meta-modal');
-      if (metaModal && !metaModal.classList.contains('hidden')) {
-        return;
-      }
-
-      if (!startScreen.classList.contains('hidden')) {
-        activeCard = startCard;
-      } else if (!customModal.classList.contains('hidden')) {
-        activeCard = customCard;
-      }
-
-      if (!activeCard) return;
-
-      if (rafId) return; // Throttle to frame rate
+      if (rafId) return;
 
       rafId = requestAnimationFrame(() => {
-        const { clientX, clientY } = e;
-        const { innerWidth, innerHeight } = window;
+        // Find the active modal (highest priority visible)
+        let activeTarget = null;
+        for (const id of parallaxTargets) {
+          const m = modals[id];
+          if (m && m.el && !m.el.classList.contains('hidden')) {
+            activeTarget = m;
+            break; // Stop at the first visible one
+          }
+        }
 
-        // Caclulate normalized position (-1 to 1)
-        const cx = innerWidth / 2;
-        const cy = innerHeight / 2;
+        if (activeTarget) {
+          const { clientX, clientY } = e;
+          const { innerWidth, innerHeight } = window;
 
-        const nx = (clientX - cx) / cx;
-        const ny = (clientY - cy) / cy;
+          // Normalized position (-1 to 1)
+          const cx = innerWidth / 2;
+          const cy = innerHeight / 2;
+          const nx = (clientX - cx) / cx;
+          const ny = (clientY - cy) / cy;
 
-        // Settings
-        const maxTilt = 5;
+          const maxTilt = 5;
+          const rx = -ny * maxTilt;
+          const ry = nx * maxTilt;
 
-        // Tilt Calculation
-        const rx = -ny * maxTilt; // Rotate X (Up/Down tilt)
-        const ry = nx * maxTilt;  // Rotate Y (Left/Right tilt)
-
-        // Apply to Active Card
-        activeCard.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+          activeTarget.content.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+        }
 
         rafId = null;
       });
     });
-
-    // Reset transforms when mouse leaves? Optional, but keeping simple for now.
   }
 }
