@@ -7,194 +7,194 @@
 
 // Custom Skill Selection
 #custom-skill-config {
-    display: flex;
-    flex-direction: column;
-    gap: v.$spacing-xl;
-    margin: v.$spacing-lg 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-xl;
+  margin: v.$spacing-lg 0;
 }
 
 .skill-category-section {
-    display: flex;
-    flex-direction: column;
-    gap: v.$spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-md;
 }
 
 .skill-category-header {
-    color: v.$color-primary;
-    font-size: v.$font-size-lg;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 1px solid rgba(v.$color-primary, 0.3);
-    padding-bottom: 5px;
-    margin-bottom: 5px;
+  color: v.$color-primary;
+  font-size: v.$font-size-lg;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(v.$color-primary, 0.3);
+  padding-bottom: 5px;
+  margin-bottom: 5px;
 }
 
 .skill-category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: v.$spacing-md;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: v.$spacing-md;
 }
 
 .custom-skill-item {
-    background: rgba(v.$color-primary, 0.1);
-    border: v.$border-width-md solid v.$color-primary;
-    border-radius: v.$border-radius-lg;
-    padding: v.$spacing-xs + v.$spacing-xs;
-    cursor: pointer;
-    transition: background v.$transition-fast, box-shadow v.$transition-fast, border-color v.$transition-fast;
-    pointer-events: all;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: v.$spacing-sm;
+  background: rgba(v.$color-primary, 0.1);
+  border: v.$border-width-md solid v.$color-primary;
+  border-radius: v.$border-radius-lg;
+  padding: v.$spacing-xs + v.$spacing-xs;
+  cursor: pointer;
+  transition: background v.$transition-fast, box-shadow v.$transition-fast, border-color v.$transition-fast;
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$spacing-sm;
+  position: relative;
+  user-select: none;
+
+  &:hover {
+    background: rgba(v.$color-primary, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(v.$color-primary, 0.4);
+  }
+
+  &:active {
+    box-shadow: 0 0 20px rgba(v.$color-primary, 0.6);
+  }
+
+  &.active {
+    border-color: v.$color-success;
+    background: rgba(v.$color-success, 0.15);
+  }
+
+  .skill-icon {
+    width: 60px;
+    height: 60px;
+    border-width: v.$border-width-md;
     position: relative;
-    user-select: none;
 
-    &:hover {
-        background: rgba(v.$color-primary, 0.2);
-        transform: translateY(-2px);
-        box-shadow: 0 0 15px rgba(v.$color-primary, 0.4);
+    svg {
+      width: v.$skill-icon-xl;
+      height: v.$skill-icon-xl;
     }
+  }
 
-    &:active {
-        box-shadow: 0 0 20px rgba(v.$color-primary, 0.6);
-    }
-
-    &.active {
-        border-color: v.$color-success;
-        background: rgba(v.$color-success, 0.15);
-    }
+  // Category overrides
+  &.offensive {
+    border-color: v.$skill-offensive;
+    background: rgba(v.$skill-offensive, 0.05); // Lower opacity
 
     .skill-icon {
-        width: 60px;
-        height: 60px;
-        border-width: v.$border-width-md;
-        position: relative;
-
-        svg {
-            width: v.$skill-icon-xl;
-            height: v.$skill-icon-xl;
-        }
+      color: v.$skill-offensive;
+      border-color: v.$skill-offensive;
     }
 
-    // Category overrides
-    &.offensive {
-        border-color: v.$skill-offensive;
-        background: rgba(v.$skill-offensive, 0.05); // Lower opacity
-
-        .skill-icon {
-            color: v.$skill-offensive;
-            border-color: v.$skill-offensive;
-        }
-
-        .custom-skill-name {
-            color: v.$skill-offensive;
-        }
-
-        // Ensure desc is readable
-        .custom-skill-desc .active-value {
-            color: v.$skill-offensive;
-        }
-
-        &.active,
-        &:hover {
-            border-color: v.$skill-offensive;
-            background: rgba(v.$skill-offensive, 0.15);
-        }
+    .custom-skill-name {
+      color: v.$skill-offensive;
     }
 
-    &.defensive {
-        border-color: v.$skill-defensive;
-        background: rgba(v.$skill-defensive, 0.05);
-
-        .skill-icon {
-            color: v.$skill-defensive;
-            border-color: v.$skill-defensive;
-        }
-
-        .custom-skill-name {
-            color: v.$skill-defensive;
-        }
-
-        .custom-skill-desc .active-value {
-            color: v.$skill-defensive;
-        }
-
-        &.active,
-        &:hover {
-            border-color: v.$skill-defensive;
-            background: rgba(v.$skill-defensive, 0.15);
-        }
+    // Ensure desc is readable
+    .custom-skill-desc .active-value {
+      color: v.$skill-offensive;
     }
 
-    &.survival {
-        border-color: v.$skill-survival;
-        background: rgba(v.$skill-survival, 0.05);
-
-        .skill-icon {
-            color: v.$skill-survival;
-            border-color: v.$skill-survival;
-        }
-
-        .custom-skill-name {
-            color: v.$skill-survival;
-        }
-
-        .custom-skill-desc .active-value {
-            color: v.$skill-survival;
-        }
-
-        &.active,
-        &:hover {
-            border-color: v.$skill-survival;
-            background: rgba(v.$skill-survival, 0.15);
-        }
+    &.active,
+    &:hover {
+      border-color: v.$skill-offensive;
+      background: rgba(v.$skill-offensive, 0.15);
     }
+  }
+
+  &.defensive {
+    border-color: v.$skill-defensive;
+    background: rgba(v.$skill-defensive, 0.05);
+
+    .skill-icon {
+      color: v.$skill-defensive;
+      border-color: v.$skill-defensive;
+    }
+
+    .custom-skill-name {
+      color: v.$skill-defensive;
+    }
+
+    .custom-skill-desc .active-value {
+      color: v.$skill-defensive;
+    }
+
+    &.active,
+    &:hover {
+      border-color: v.$skill-defensive;
+      background: rgba(v.$skill-defensive, 0.15);
+    }
+  }
+
+  &.survival {
+    border-color: v.$skill-survival;
+    background: rgba(v.$skill-survival, 0.05);
+
+    .skill-icon {
+      color: v.$skill-survival;
+      border-color: v.$skill-survival;
+    }
+
+    .custom-skill-name {
+      color: v.$skill-survival;
+    }
+
+    .custom-skill-desc .active-value {
+      color: v.$skill-survival;
+    }
+
+    &.active,
+    &:hover {
+      border-color: v.$skill-survival;
+      background: rgba(v.$skill-survival, 0.15);
+    }
+  }
 }
 
 .custom-skill-level-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    background: v.$color-magenta;
-    color: v.$color-white;
-    border-radius: v.$border-radius-round;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: v.$font-size-sm;
-    font-weight: bold;
-    border: v.$border-width-md solid v.$color-black;
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: v.$color-magenta;
+  color: v.$color-white;
+  border-radius: v.$border-radius-round;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: v.$font-size-sm;
+  font-weight: bold;
+  border: v.$border-width-md solid v.$color-black;
 }
 
 .custom-skill-name {
-    font-size: v.$font-size-sm;
-    color: v.$color-primary;
-    text-align: center;
-    line-height: 1.2;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: bold;
+  font-size: v.$font-size-sm;
+  color: v.$color-primary;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: bold;
 }
 
 .custom-skill-desc {
-    font-size: v.$font-size-md;
-    text-align: center;
-    line-height: 1.2;
-    margin-top: 2px;
-    font-weight: bold;
+  font-size: v.$font-size-md;
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 2px;
+  font-weight: bold;
 
-    .active-value {
-        color: v.$color-warning;
-    }
+  .active-value {
+    color: v.$color-warning;
+  }
 
-    .inactive-value {
-        color: #666;
-    }
+  .inactive-value {
+    color: #666;
+  }
 }
 
 // ============================================
@@ -202,135 +202,135 @@
 // ============================================
 
 #enemy-type-config {
-    display: flex;
-    flex-direction: row;
-    gap: v.$spacing-xs + v.$spacing-xs;
-    margin: v.$spacing-lg 0;
-    justify-content: flex-start;
+  display: flex;
+  flex-direction: row;
+  gap: v.$spacing-xs + v.$spacing-xs;
+  margin: v.$spacing-lg 0;
+  justify-content: flex-start;
 }
 
 .custom-enemy-item {
-    background: rgba(v.$color-white, 0.05);
-    border: v.$border-width-md solid #666;
-    border-radius: v.$border-radius-lg;
-    padding: v.$spacing-md;
-    cursor: pointer;
-    transition: background v.$transition-fast, box-shadow v.$transition-fast, border-color v.$transition-fast;
-    pointer-events: all;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: v.$spacing-sm;
-    position: relative;
-    user-select: none;
-    flex: 1;
-    min-width: 0;
+  background: rgba(v.$color-white, 0.05);
+  border: v.$border-width-md solid #666;
+  border-radius: v.$border-radius-lg;
+  padding: v.$spacing-md;
+  cursor: pointer;
+  transition: background v.$transition-fast, box-shadow v.$transition-fast, border-color v.$transition-fast;
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$spacing-sm;
+  position: relative;
+  user-select: none;
+  flex: 1;
+  min-width: 0;
 
-    &:hover {
-        background: rgba(v.$color-white, 0.1);
-        transform: translateY(-3px);
-        box-shadow: 0 0 15px rgba(v.$color-primary, 0.3);
-    }
+  &:hover {
+    background: rgba(v.$color-white, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(v.$color-primary, 0.3);
+  }
 
-    &:active {
-        box-shadow: 0 0 20px rgba(v.$color-primary, 0.5);
-    }
+  &:active {
+    box-shadow: 0 0 20px rgba(v.$color-primary, 0.5);
+  }
 
-    &.active {
-        border-color: v.$color-success;
-        background: rgba(v.$color-success, 0.1);
-    }
+  &.active {
+    border-color: v.$color-success;
+    background: rgba(v.$color-success, 0.1);
+  }
 
-    &:not(.active) .custom-enemy-status {
-        color: #666;
-    }
+  &:not(.active) .custom-enemy-status {
+    color: #666;
+  }
 }
 
 .enemy-icon {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(v.$color-black, 0.4);
-    border-radius: v.$border-radius-lg;
-    flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(v.$color-black, 0.4);
+  border-radius: v.$border-radius-lg;
+  flex-shrink: 0;
 }
 
 .enemy-emoji {
-    font-size: 36px;
+  font-size: 36px;
 }
 
 .custom-enemy-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    text-align: center;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+  width: 100%;
 }
 
 .custom-enemy-name {
-    font-size: v.$font-size-md;
-    font-weight: bold;
-    line-height: 1.2;
+  font-size: v.$font-size-md;
+  font-weight: bold;
+  line-height: 1.2;
 }
 
 .custom-enemy-desc {
-    font-size: v.$font-size-sm;
-    color: #999;
-    line-height: 1.2;
+  font-size: v.$font-size-sm;
+  color: #999;
+  line-height: 1.2;
 }
 
 .custom-enemy-status {
-    font-size: v.$font-size-title;
-    font-weight: bold;
-    color: v.$color-success;
+  font-size: v.$font-size-title;
+  font-weight: bold;
+  color: v.$color-success;
 }
 
 // ============================================
 // Enemy Selection Row
 // ============================================
 .enemy-selector-group {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    flex: 1;
-    gap: v.$spacing-sm;
-    margin: 0 !important; // Override ID margin
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  flex: 1;
+  gap: v.$spacing-sm;
+  margin: 0 !important; // Override ID margin
 
-    // Compact version for row layout
-    .custom-enemy-item {
-        padding: v.$spacing-sm;
-        margin: 0;
-        width: 100%; // Fill grid cell
+  // Compact version for row layout
+  .custom-enemy-item {
+    padding: v.$spacing-sm;
+    margin: 0;
+    width: 100%; // Fill grid cell
 
-        .enemy-icon {
-            width: 32px;
-            height: 32px;
+    .enemy-icon {
+      width: 32px;
+      height: 32px;
 
-            .enemy-emoji {
-                font-size: 18px;
-            }
-        }
-
-        .custom-enemy-name {
-            font-size: 12px;
-        }
-
-        .custom-enemy-desc {
-            display: none; // Hide description for compact row
-        }
-
-        .custom-enemy-status {
-            font-size: 16px;
-            position: absolute;
-            top: 2px;
-            right: 4px;
-        }
-
-        &:hover {
-            transform: translateY(-2px);
-        }
+      .enemy-emoji {
+        font-size: 18px;
+      }
     }
+
+    .custom-enemy-name {
+      font-size: 12px;
+    }
+
+    .custom-enemy-desc {
+      display: none; // Hide description for compact row
+    }
+
+    .custom-enemy-status {
+      font-size: 16px;
+      position: absolute;
+      top: 2px;
+      right: 4px;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
 }
 
 // ============================================
@@ -338,124 +338,132 @@
 // ============================================
 
 .biome-selector-group {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    flex: 1;
-    gap: v.$spacing-sm;
-    // justify-content is irrelevant for grid with 1fr columns
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  flex: 1;
+  gap: v.$spacing-sm;
 
-    // Compact version of custom-enemy-item for biomes
-    .custom-enemy-item {
-        padding: v.$spacing-sm;
-        margin: 0;
-        width: 100%;
+  // Compact version of custom-enemy-item for biomes
+  // Should NOT inherit the massive 100px size from enemy-selector-group
+  .custom-enemy-item {
+    padding: v.$spacing-sm;
+    margin: 0;
+    width: 100%;
 
-        .enemy-icon {
-            width: 32px;
-            height: 32px;
+    .enemy-icon {
+      width: 50px; // Standard size for biomes
+      height: 50px;
+      background: rgba(0, 0, 0, 0.3); // Darker default
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: v.$border-radius-md;
+      margin: 0 auto v.$spacing-sm auto; // Center horizontally
 
-            .enemy-emoji {
-                font-size: 18px;
-            }
-        }
-
-        .custom-enemy-name {
-            font-size: 12px;
-        }
-
-        .custom-enemy-desc {
-            display: none; // Hide description for compact row
-        }
-
-        .custom-enemy-status {
-            font-size: 16px;
-            position: absolute;
-            top: 2px;
-            right: 4px;
-        }
-
-        &:hover {
-            transform: translateY(-2px);
-        }
+      .enemy-emoji {
+        font-size: 24px; // Larger emoji for biome
+      }
     }
+
+    .custom-enemy-name {
+      font-size: 11px;
+      text-align: center; // Center text under icon
+    }
+
+    .custom-enemy-desc {
+      display: none;
+    }
+
+    .custom-enemy-status {
+      font-size: 16px;
+      position: absolute;
+      top: 2px;
+      right: 4px;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
 }
+
 
 // ============================================
 // Sci-Fi Checkbox
 // ============================================
 
 .sci-fi-checkbox-wrapper {
-    display: flex;
-    align-items: center;
-    position: relative;
+  display: flex;
+  align-items: center;
+  position: relative;
 
-    input[type="checkbox"].sci-fi-checkbox {
+  input[type="checkbox"].sci-fi-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+
+    + label {
+      position: relative;
+      padding-left: 35px;
+      cursor: pointer;
+      color: v.$color-primary;
+      font-family: v.$font-family;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: bold;
+      user-select: none;
+      transition: all 0.3s;
+      text-shadow: 0 0 5px rgba(v.$color-primary, 0.4);
+
+      &::before {
+        content: '';
         position: absolute;
-        opacity: 0;
-        pointer-events: none;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 2px solid v.$color-primary;
+        border-radius: 4px;
+        box-shadow: 0 0 5px rgba(v.$color-primary, 0.3);
+        transition: all 0.3s ease;
+      }
 
-        +label {
-            position: relative;
-            padding-left: 35px;
-            cursor: pointer;
-            color: v.$color-primary;
-            font-family: v.$font-family;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-            user-select: none;
-            transition: all 0.3s;
-            text-shadow: 0 0 5px rgba(v.$color-primary, 0.4);
-
-            &::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 24px;
-                height: 24px;
-                background: rgba(0, 0, 0, 0.4);
-                border: 2px solid v.$color-primary;
-                border-radius: 4px;
-                box-shadow: 0 0 5px rgba(v.$color-primary, 0.3);
-                transition: all 0.3s ease;
-            }
-
-            &::after {
-                content: '✓';
-                position: absolute;
-                left: 5px;
-                top: 50%;
-                transform: translateY(-50%) scale(0);
-                font-size: 18px;
-                color: v.$color-primary;
-                font-weight: bold;
-                transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-                text-shadow: 0 0 8px v.$color-primary;
-            }
-        }
-
-        &:checked+label {
-            color: v.$color-white;
-
-            &::before {
-                background: rgba(v.$color-primary, 0.2);
-                box-shadow: 0 0 10px rgba(v.$color-primary, 0.6);
-                border-color: #fff;
-            }
-
-            &::after {
-                transform: translateY(-50%) scale(1);
-            }
-        }
-
-        &:hover+label::before {
-            border-color: v.$color-white;
-            box-shadow: 0 0 8px rgba(v.$color-primary, 0.5);
-        }
+      &::after {
+        content: '✓';
+        position: absolute;
+        left: 5px;
+        top: 50%;
+        transform: translateY(-50%) scale(0);
+        font-size: 18px;
+        color: v.$color-primary;
+        font-weight: bold;
+        transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        text-shadow: 0 0 8px v.$color-primary;
+      }
     }
+
+    &:checked + label {
+      color: v.$color-white;
+
+      &::before {
+        background: rgba(v.$color-primary, 0.2);
+        box-shadow: 0 0 10px rgba(v.$color-primary, 0.6);
+        border-color: #fff;
+      }
+
+      &::after {
+        transform: translateY(-50%) scale(1);
+      }
+    }
+
+    &:hover + label::before {
+      border-color: v.$color-white;
+      box-shadow: 0 0 8px rgba(v.$color-primary, 0.5);
+    }
+  }
 }
 
 // ============================================
@@ -464,72 +472,72 @@
 
 // Themed Scrollbar
 .modal-content {
-    &::-webkit-scrollbar {
-        width: 10px;
-    }
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
 
-    &::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: v.$border-radius-sm;
-    }
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: v.$border-radius-sm;
+  }
 
-    &::-webkit-scrollbar-thumb {
-        background: v.$color-primary;
-        border-radius: v.$border-radius-sm;
-        box-shadow: 0 0 5px rgba(v.$color-primary, 0.5);
+  &::-webkit-scrollbar-thumb {
+    background: v.$color-primary;
+    border-radius: v.$border-radius-sm;
+    box-shadow: 0 0 5px rgba(v.$color-primary, 0.5);
 
-        &:hover {
-            background: color.adjust(v.$color-primary, $lightness: 10%);
-        }
+    &:hover {
+      background: color.adjust(v.$color-primary, $lightness: 10%);
     }
+  }
 }
 
 // Sticky Close Button
 .modal-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 25px;
-    font-size: 32px;
-    color: v.$color-primary;
-    cursor: pointer;
-    line-height: 1;
-    z-index: 10;
-    transition: all 0.3s;
-    font-family: Arial, sans-serif; // Clean X
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  font-size: 32px;
+  color: v.$color-primary;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 10;
+  transition: all 0.3s;
+  font-family: Arial, sans-serif; // Clean X
 
-    &:hover {
-        color: v.$color-white;
-        text-shadow: 0 0 10px v.$color-primary;
-        transform: scale(1.1);
-    }
+  &:hover {
+    color: v.$color-white;
+    text-shadow: 0 0 10px v.$color-primary;
+    transform: scale(1.1);
+  }
 }
 
 // Modal Footer (Game Speed & Start)
 .modal-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: v.$spacing-xxl;
-    padding-top: v.$spacing-lg;
-    border-top: 1px solid rgba(v.$color-white, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: v.$spacing-xxl;
+  padding-top: v.$spacing-lg;
+  border-top: 1px solid rgba(v.$color-white, 0.1);
 }
 
 .game-speed-control {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    align-items: flex-start; // Ensure left alignment
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start; // Ensure left alignment
 
-    // label styles removed to match main screen inline styles
+  // label styles removed to match main screen inline styles
 
-    .speed-value {
-        color: v.$color-white;
-        font-weight: bold;
-        float: right;
-    }
+  .speed-value {
+    color: v.$color-white;
+    font-weight: bold;
+    float: right;
+  }
 }
 
 // Override button margin to fit footer
 #start-custom-btn {
-    margin: 0 !important;
+  margin: 0 !important;
 }
