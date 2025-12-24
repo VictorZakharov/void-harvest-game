@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ENEMY_SPRITE_COLORS } from '../constants.js';
+import { EnemyMeshFactory } from './EnemyMeshFactory.js';
 
 /**
  * Handles all Three.js visual representations for an Enemy.
@@ -28,152 +29,26 @@ export class EnemyVisuals {
      * Creates the main visual group for the enemy.
      * @returns {THREE.Group}
      */
+    /**
+     * Creates the main visual group for the enemy.
+     * @returns {THREE.Group}
+     */
     createMesh() {
         this.animTime = 0;
-        const enemy = this.enemy;
-        const color = ENEMY_SPRITE_COLORS[enemy.type].main;
 
-        // Stick Figure Materials
-        const skinMat = new THREE.MeshStandardMaterial({ color: color });
-        const headMat = new THREE.MeshStandardMaterial({ color: color }); // Head matches body color
+        const factoryResult = EnemyMeshFactory.create(this.enemy);
 
-        // Group for entire enemy
-        const group = new THREE.Group();
+        this.torso = factoryResult.torso;
+        this.head = factoryResult.head;
+        this.leftArm = factoryResult.leftArm;
+        this.rightArm = factoryResult.rightArm;
+        this.leftLeg = factoryResult.leftLeg;
+        this.rightLeg = factoryResult.rightLeg;
+        this.healthBar = factoryResult.healthBar;
+        this.bodyMesh = factoryResult.bodyMesh;
+        this.baseColor = factoryResult.baseColor;
 
-        // --- Torso ---
-        const isTank = enemy.type === 'tank';
-        const torsoWidth = isTank ? 12 : 4;
-        const torsoDepth = isTank ? 12 : 4;
-
-        const torsoGeo = new THREE.BoxGeometry(torsoWidth, 25, torsoDepth);
-        this.torso = new THREE.Mesh(torsoGeo, skinMat);
-        this.torso.position.y = 40;
-
-        this.torso.castShadow = true;
-        group.add(this.torso);
-        this.bodyMesh = this.torso; // Reference for coloring
-        this.baseColor = color;
-
-        // --- Head ---
-        const headGeo = new THREE.SphereGeometry(8, 16, 16);
-        this.head = new THREE.Mesh(headGeo, headMat);
-        this.head.position.y = 15;
-        this.head.castShadow = false; // Disable head shadow to reduce artifacts
-        this.torso.add(this.head);
-
-        // --- Eyes ---
-        const eyeGeo = new THREE.SphereGeometry(1.5, 8, 8);
-        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-
-        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-        leftEye.position.set(-3, 2, 7);
-        this.head.add(leftEye);
-
-        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-        rightEye.position.set(3, 2, 7);
-        this.head.add(rightEye);
-
-        // --- Limbs Helper ---
-        const createLimb = (w, h, d, x, y, z) => {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mesh = new THREE.Mesh(geo, skinMat);
-            const container = new THREE.Group();
-            container.position.set(x, y, z);
-            mesh.position.y = -h / 2;
-            mesh.castShadow = false; // Disable limb shadows to simplify and fix artifacts
-            container.add(mesh);
-            return { container, mesh };
-        };
-
-        const armLength = 18;
-        const legLength = 28;
-
-        // Limbs attached to torso
-        // Calculate offsets based on torso width to ensure limbs do not clip
-        const armXOffset = isTank ? 10 : 6;
-        const legXOffset = isTank ? 6 : 4;
-
-        const lArm = createLimb(3, armLength, 3, -armXOffset, 10, 0);
-        this.leftArm = lArm.container;
-        this.torso.add(this.leftArm);
-
-        const rArm = createLimb(3, armLength, 3, armXOffset, 10, 0);
-        this.rightArm = rArm.container;
-        this.torso.add(this.rightArm);
-
-        const lLeg = createLimb(3, legLength, 3, -legXOffset, -12, 0);
-        this.leftLeg = lLeg.container;
-        this.torso.add(this.leftLeg);
-
-        const rLeg = createLimb(3, legLength, 3, legXOffset, -12, 0);
-        this.rightLeg = rLeg.container;
-        this.torso.add(this.rightLeg);
-
-        // --- Weapon (Shooters/Ice) ---
-        if (enemy.type === 'shooter' || enemy.type === 'ice') {
-            const gunColor = enemy.type === 'ice' ? 0x88ccff : 0x333333;
-            const gunGeo = new THREE.BoxGeometry(4, 4, 15);
-            const gunMat = new THREE.MeshStandardMaterial({ color: gunColor });
-            const gun = new THREE.Mesh(gunGeo, gunMat);
-
-            // Attached to right arm, pointing forward -> Gun aligned with arm
-            gun.position.set(2, -armLength, 0);
-            gun.rotation.x = Math.PI / 2;
-            this.rightArm.add(gun);
-
-            // Raise right arm for shooters
-            this.rightArm.rotation.x = -Math.PI / 2;
-        }
-
-        // --- Scale ---
-        // Adjust scale based on enemy type
-        let scale = 0.85; // Default match player size
-        if (enemy.type === 'tank') scale = 1.2;
-        if (enemy.type === 'fast') scale = 0.7;
-
-        group.scale.set(scale, scale, scale);
-
-
-        // Health Bar (Billboard Group)
-        const hpGroup = new THREE.Group();
-        hpGroup.position.set(0, 70, 0); // Above head (new height ~63)
-
-        const createPillGeo = (w, h) => {
-            const shape = new THREE.Shape();
-            const r = h / 2;
-            shape.moveTo(r, -r);
-            shape.lineTo(w - r, -r);
-            shape.absarc(w - r, 0, r, -Math.PI / 2, Math.PI / 2, false);
-            shape.lineTo(r, r);
-            shape.absarc(r, 0, r, Math.PI / 2, Math.PI * 1.5, false);
-            return new THREE.ShapeGeometry(shape);
-        };
-
-        const bgGeo = createPillGeo(54, 12);
-        const bgMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 });
-        const bg = new THREE.Mesh(bgGeo, bgMat);
-        bg.position.x = -27;
-        bg.userData.isHealthBar = true;
-        bg.castShadow = false; // Prevent health bar shadow on ground
-        hpGroup.add(bg);
-        hpGroup.bg = bg;
-
-        const fgGeo = createPillGeo(50, 10);
-        const fgMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
-        const fg = new THREE.Mesh(fgGeo, fgMat);
-        fg.userData.isHealthBar = true;
-        fg.position.z = 1;
-        fg.position.x = -25;
-        fg.castShadow = false; // Prevent health bar shadow on ground
-        hpGroup.add(fg);
-        hpGroup.foreground = fg;
-        hpGroup.fg = fg;
-
-        hpGroup.visible = false;
-        group.add(hpGroup);
-        this.healthBar = hpGroup;
-
-        return group;
+        return factoryResult.group;
     }
 
 

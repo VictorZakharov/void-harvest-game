@@ -1,6 +1,59 @@
 import * as THREE from 'three';
 
 export class TextureGenerator {
+    static generateDust() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256; // Square for cloud
+        const ctx = canvas.getContext('2d');
+
+        // Draw a soft cloud-like puff
+        const rad = 128;
+        const grad = ctx.createRadialGradient(rad, rad, 0, rad, rad, rad);
+        grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.4)'); // Soft center
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)'); // Transparent edge
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Add some noise for texture so it's not too perfect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const r = Math.random() * 30 + 10;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        return texture;
+    }
+
+    static generateSnow() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        // Draw a soft circle
+        const rad = 32;
+        const grad = ctx.createRadialGradient(rad, rad, 0, rad, rad, rad);
+        grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+        grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
+        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(rad, rad, rad, 0, Math.PI * 2);
+        ctx.fill();
+
+        const texture = new THREE.CanvasTexture(canvas);
+        return texture;
+    }
+
     static generateGround(biomeType) {
         const size = 512;
         const canvas = document.createElement('canvas');

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WEATHER_TYPES } from './biomes.js';
+import { TextureGenerator } from './texture-generator.js';
 
 export class WeatherSystem {
     constructor(scene) {
@@ -12,8 +13,8 @@ export class WeatherSystem {
         this.windVector = new THREE.Vector3(-20, 0, 0); // Default Left
 
         // Textures for Weather
-        this.dustTexture = this.createDustTexture();
-        this.snowTexture = this.createSnowTexture();
+        this.dustTexture = TextureGenerator.generateDust();
+        this.snowTexture = TextureGenerator.generateSnow();
 
         // Configuration per weather type
         this.configs = {
@@ -53,58 +54,7 @@ export class WeatherSystem {
         };
     }
 
-    createDustTexture() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256; // Square for cloud
-        const ctx = canvas.getContext('2d');
 
-        // Draw a soft cloud-like puff
-        const rad = 128;
-        const grad = ctx.createRadialGradient(rad, rad, 0, rad, rad, rad);
-        grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.4)'); // Soft center
-        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
-        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)'); // Transparent edge
-
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 256, 256);
-
-        // Add some noise for texture so it's not too perfect
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-        for (let i = 0; i < 50; i++) {
-            const x = Math.random() * 256;
-            const y = Math.random() * 256;
-            const r = Math.random() * 30 + 10;
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        const texture = new THREE.CanvasTexture(canvas);
-        return texture;
-    }
-
-    createSnowTexture() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-
-        // Draw a soft circle
-        const rad = 32;
-        const grad = ctx.createRadialGradient(rad, rad, 0, rad, rad, rad);
-        grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
-        grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
-        grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(rad, rad, rad, 0, Math.PI * 2);
-        ctx.fill();
-
-        const texture = new THREE.CanvasTexture(canvas);
-        return texture;
-    }
 
     startWeather(type) {
         if (this.activeType === type) return;
