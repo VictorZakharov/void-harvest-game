@@ -1,37 +1,26 @@
 // ==================== HUD UPDATES ====================
 import { SKILLS } from './skills.js';
 
-export function updateHUD(game) {
-    const healthBar = document.getElementById('health-bar');
-    const healthText = document.getElementById('health-text');
-    const xpBar = document.getElementById('xp-bar');
-    const levelText = document.getElementById('level-text');
-    const timeVal = document.getElementById('time-val');
-    const killsVal = document.getElementById('kills-val');
-    const soulsBankedText = document.getElementById('souls-banked-text');
-    const soulsRunText = document.getElementById('souls-run-text');
-    const waveVal = document.getElementById('wave-val');
-    const waveIcons = document.getElementById('wave-icons');
-
+export function updateHUD(game, dom) {
     const healthPercent = (game.player.health / game.player.maxHealth) * 100;
-    healthBar.style.width = healthPercent + '%';
-    healthText.textContent = `${Math.max(0, Math.floor(game.player.health))}/${game.player.maxHealth}`;
+    dom.healthBar.style.width = healthPercent + '%';
+    dom.setText(dom.healthText, `${Math.max(0, Math.floor(game.player.health))}/${game.player.maxHealth}`);
 
     const xpPercent = (game.player.xp / game.player.xpToLevel) * 100;
-    xpBar.style.width = xpPercent + '%';
-    levelText.textContent = `Lv ${game.player.level}`;
+    dom.xpBar.style.width = xpPercent + '%';
+    dom.setText(dom.levelText, `Lv ${game.player.level}`);
 
     const seconds = Math.floor(game.gameTime / 60);
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    timeVal.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+    dom.setText(dom.timeVal, `${minutes}:${secs.toString().padStart(2, '0')}`);
 
-    killsVal.textContent = `${game.kills}`;
+    dom.setText(dom.killsVal, `${game.kills}`);
 
-    if (soulsBankedText && soulsRunText) {
-        soulsBankedText.textContent = `${game.totalSouls}`;
+    if (dom.soulsBankedText && dom.soulsRunText) {
+        dom.setText(dom.soulsBankedText, `${game.totalSouls}`);
         const runSouls = game.getRunSouls ? game.getRunSouls() : Math.floor(game.kills / 5);
-        soulsRunText.textContent = `(+${runSouls})`;
+        dom.setText(dom.soulsRunText, `(+${runSouls})`);
     }
 
     // Determine which enemies can spawn this wave
@@ -74,12 +63,11 @@ export function updateHUD(game) {
         }
     }
 
-    waveVal.textContent = `${game.wave}`;
-    if (waveIcons) waveIcons.innerHTML = enemyIconsHtml;
+    dom.setText(dom.waveVal, `${game.wave}`);
+    if (dom.waveIcons) dom.setHTML(dom.waveIcons, enemyIconsHtml);
 
     // Update status effects
-    const statusEffectsContainer = document.getElementById('status-effects');
-    statusEffectsContainer.innerHTML = '';
+    dom.setHTML(dom.statusEffects, '');
 
     // Ice slow effect
     if (game.player.slowEffects.length > 0) {
@@ -87,7 +75,7 @@ export function updateHUD(game) {
         iceEffect.className = 'status-effect ice';
         iceEffect.textContent = `❄ ${game.player.slowEffects.length}`;
         iceEffect.title = `Slowed ${Math.round(game.player.slowEffects.reduce((sum, e) => sum + e.amount, 0) * 100)}%`;
-        statusEffectsContainer.appendChild(iceEffect);
+        dom.statusEffects.appendChild(iceEffect);
     }
 
     // Passive Heal (Regen)
@@ -98,7 +86,7 @@ export function updateHUD(game) {
         regenEffect.className = 'status-effect passive';
         regenEffect.innerHTML = `<div class="status-icon">${regenSkill.icon}</div><span class="status-level">${regenLevel}</span>`;
         regenEffect.title = `Passive Heal: ${game.player.healthRegen} HP per second`;
-        statusEffectsContainer.appendChild(regenEffect);
+        dom.statusEffects.appendChild(regenEffect);
     }
 
     // Vampiric Touch
@@ -109,7 +97,7 @@ export function updateHUD(game) {
         vampireEffect.className = 'status-effect passive';
         vampireEffect.innerHTML = `<div class="status-icon">${vampireSkill.icon}</div><span class="status-level">${vampireLevel}</span>`;
         vampireEffect.title = `Vampiric Touch: ${game.player.vampire} HP per kill`;
-        statusEffectsContainer.appendChild(vampireEffect);
+        dom.statusEffects.appendChild(vampireEffect);
     }
 
     // Armor
@@ -120,7 +108,7 @@ export function updateHUD(game) {
         armorEffect.className = 'status-effect passive';
         armorEffect.innerHTML = `<div class="status-icon">${armorSkill.icon}</div><span class="status-level">${armorLevel}</span>`;
         armorEffect.title = `Armor: -${game.player.armor} damage reduction`;
-        statusEffectsContainer.appendChild(armorEffect);
+        dom.statusEffects.appendChild(armorEffect);
     }
 
     // Berserk Mode (only show when active)
@@ -135,13 +123,12 @@ export function updateHUD(game) {
             const damageBonus = Math.round(game.player.berserkBonus * 100);
             berserkEffect.innerHTML = `<div class="status-icon">${berserkSkill.icon}</div><span class="status-level">${berserkLevel}</span>`;
             berserkEffect.title = `Berserk Mode: +${damageBonus}% damage`;
-            statusEffectsContainer.appendChild(berserkEffect);
+            dom.statusEffects.appendChild(berserkEffect);
         }
     }
 
     // Update active skills
-    const activeSkillsContainer = document.getElementById('active-skills');
-    activeSkillsContainer.innerHTML = '';
+    dom.setHTML(dom.activeSkills, '');
 
     // Separate skills into custom (grey) and earned (colored)
     const customSkills = [];
@@ -177,6 +164,6 @@ export function updateHUD(game) {
             </div>
         `;
         skillBadge.title = `${skillDef.name} (Level ${level}/${skillDef.maxLevel})${isCustomSkill ? ' - Starting skill' : ''}`;
-        activeSkillsContainer.appendChild(skillBadge);
+        dom.activeSkills.appendChild(skillBadge);
     });
 }

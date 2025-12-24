@@ -1,16 +1,12 @@
 // ==================== META PROGRESSION SCREENS ====================
 import { META_UPGRADES } from './skills.js';
 
-export function showMetaUpgrades(game) {
+export function showMetaUpgrades(game, dom) {
     // Stop screen shake when viewing upgrades
     game.camera.shake = 0;
 
-    const modal = document.getElementById('meta-modal');
-    const container = document.getElementById('meta-upgrades');
-    const currencyText = document.getElementById('currency-text');
-
-    currencyText.textContent = `${game.totalSouls}`;
-    container.innerHTML = '';
+    dom.setText(dom.currencyText, `${game.totalSouls}`);
+    dom.setHTML(dom.metaUpgrades, '');
 
     // Check if any upgrades have been purchased
     let hasUpgrades = false;
@@ -22,10 +18,9 @@ export function showMetaUpgrades(game) {
     }
 
     // Enable/disable reset button
-    const resetBtn = document.getElementById('reset-meta-btn');
-    resetBtn.disabled = !hasUpgrades;
-    resetBtn.style.opacity = hasUpgrades ? '1' : '0.5';
-    resetBtn.style.cursor = hasUpgrades ? 'pointer' : 'not-allowed';
+    dom.resetMetaBtn.disabled = !hasUpgrades;
+    dom.resetMetaBtn.style.opacity = hasUpgrades ? '1' : '0.5';
+    dom.resetMetaBtn.style.cursor = hasUpgrades ? 'pointer' : 'not-allowed';
 
     META_UPGRADES.forEach(upgrade => {
         const currentLevel = game.metaProgress.upgrades[upgrade.id] || 0;
@@ -63,19 +58,19 @@ export function showMetaUpgrades(game) {
                 game.metaProgress.upgrades[upgrade.id] = currentLevel + 1;
                 game.metaProgress.souls = game.totalSouls;
                 game.saveMetaProgress();
-                showMetaUpgrades(game);
+                showMetaUpgrades(game, dom);
             };
         }
 
-        container.appendChild(div);
+        dom.metaUpgrades.appendChild(div);
     });
 
-    modal.classList.remove('hidden');
+    dom.show(dom.metaModal);
 
 
 }
 
-export function showResetConfirmation(game) {
+export function showResetConfirmation(game, dom) {
     // Calculate total souls that will be refunded
     let soulsSpent = 0;
     for (let upgrade of META_UPGRADES) {
@@ -84,13 +79,13 @@ export function showResetConfirmation(game) {
     }
 
     // Show refund amount in the modal
-    document.getElementById('refund-amount').textContent = `You will receive ${soulsSpent} souls back`;
+    dom.setText(dom.refundAmount, `You will receive ${soulsSpent} souls back`);
 
     // Show confirmation modal
-    document.getElementById('reset-confirm-modal').classList.remove('hidden');
+    dom.show(dom.resetConfirmModal);
 }
 
-export function performMetaReset(game) {
+export function performMetaReset(game, dom) {
     // Calculate total souls spent
     let soulsSpent = 0;
     for (let upgrade of META_UPGRADES) {
@@ -107,7 +102,7 @@ export function performMetaReset(game) {
 
     // Save and refresh
     game.saveMetaProgress();
-    showMetaUpgrades(game);
+    showMetaUpgrades(game, dom);
 
     // Update main menu button if UI manager is available
     if (game.ui && game.ui.updateMainMenuSouls) {

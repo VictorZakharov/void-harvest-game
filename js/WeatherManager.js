@@ -11,9 +11,11 @@ import { WEATHER_TYPES } from './biomes.js';
 export class WeatherManager {
     /**
      * @param {WeatherSystem} weatherSystem - The component that handles visual weather effects (particles, etc).
+     * @param {Object} dom - The DOMCache instance for UI element access.
      */
-    constructor(weatherSystem) {
+    constructor(weatherSystem, dom) {
         this.weatherSystem = weatherSystem;
+        this.dom = dom;
         this.weatherState = 'none'; // 'none' or 'active'
         this.weatherTimer = 0;
         this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
@@ -29,19 +31,18 @@ export class WeatherManager {
     update(player, currentBiome, defaultFogDensity, timeScale = 1.0) {
         if (!currentBiome || currentBiome.weather === WEATHER_TYPES.NONE) return null;
 
-        const warningUI = document.getElementById('weather-warning');
         let newFogDensity = null;
 
         if (this.weatherState === 'none') {
             this.nextWeatherTimer -= timeScale;
 
             if (this.nextWeatherTimer <= WEATHER_WARNING_TIME) {
-                if (warningUI) {
-                    warningUI.classList.remove('hidden');
-                    warningUI.textContent = `WARNING: ${currentBiome.weather.toUpperCase()} APPROACHING`;
+                if (this.dom.weatherWarning) {
+                    this.dom.show(this.dom.weatherWarning);
+                    this.dom.setText(this.dom.weatherWarning, `WARNING: ${currentBiome.weather.toUpperCase()} APPROACHING`);
                 }
             } else {
-                if (warningUI) warningUI.classList.add('hidden');
+                if (this.dom.weatherWarning) this.dom.hide(this.dom.weatherWarning);
             }
 
             if (this.nextWeatherTimer <= 0) {
@@ -49,7 +50,7 @@ export class WeatherManager {
                 newFogDensity = currentBiome.weatherFogDensity || defaultFogDensity * 3;
             }
         } else if (this.weatherState === 'active') {
-            if (warningUI) warningUI.classList.add('hidden');
+            if (this.dom.weatherWarning) this.dom.hide(this.dom.weatherWarning);
 
             this.weatherTimer -= timeScale;
 

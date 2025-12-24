@@ -6,11 +6,13 @@ import { showMetaUpgrades, showResetConfirmation, performMetaReset } from './ui-
 import { showGuide } from './ui-modals.js';
 import { showPauseScreen, resumeGame } from './ui-pause.js';
 import { CustomGameUI } from './ui-custom.js';
+import { DOMCache } from './DOMCache.js';
 
 export class UIManager {
   constructor(game) {
     this.game = game;
-    this.customGameUI = new CustomGameUI(game);
+    this.dom = new DOMCache();
+    this.customGameUI = new CustomGameUI(game, this.dom);
     this.customSkills = {};
     this.customEnemies = {
       basic: true,
@@ -78,25 +80,16 @@ export class UIManager {
   }
 
   updateMainMenuSouls() {
-    const display = document.getElementById('main-souls-display');
-    const count = document.getElementById('main-souls-count');
-
-    if (display && count) {
+    if (this.dom.mainSoulsDisplay && this.dom.mainSoulsCount) {
       const souls = this.game.totalSouls || 0;
-      count.textContent = souls;
-
-      // Only show if we have souls or history of souls? 
-      // User requested "indicate unspent souls", implies we show 0 if they spent them?
-      // "indicate unspent souls to user" - likely show 0 if they validly have 0.
-      // Let's show it always if the UI is active, or maybe hide if 0 and never played?
-      // Simpler: Always show.
-      display.classList.remove('hidden');
+      this.dom.setText(this.dom.mainSoulsCount, souls);
+      this.dom.show(this.dom.mainSoulsDisplay);
     }
   }
 
   setupEventHandlers() {
-    document.getElementById('start-btn').onclick = () => {
-      document.getElementById('start-screen').classList.add('hidden');
+    this.dom.startBtn.onclick = () => {
+      this.dom.hide(this.dom.startScreen);
       this.game.debugWeather = false;
       // Clear any previous custom settings so we get a pure random start
       this.game.customEnemies = null;
@@ -105,68 +98,67 @@ export class UIManager {
       this.game.start();
     };
 
-    document.getElementById('meta-btn').onclick = () => {
+    this.dom.metaBtn.onclick = () => {
       this.showMetaUpgrades();
     };
 
-    document.getElementById('guide-btn').onclick = () => {
+    this.dom.guideBtn.onclick = () => {
       this.showGuide();
     };
 
-    document.getElementById('close-guide-btn').onclick = () => {
-      document.getElementById('guide-modal').classList.add('hidden');
+    this.dom.closeGuideBtn.onclick = () => {
+      this.dom.hide(this.dom.guideModal);
 
       // Return to start screen
       if (this.game.state === 'start') {
-        document.getElementById('start-screen').classList.remove('hidden');
+        this.dom.show(this.dom.startScreen);
       }
     };
 
-    document.getElementById('close-guide-x').onclick = () => {
-      document.getElementById('guide-modal').classList.add('hidden');
+    this.dom.closeGuideX.onclick = () => {
+      this.dom.hide(this.dom.guideModal);
 
       // Return to start screen
       if (this.game.state === 'start') {
-        document.getElementById('start-screen').classList.remove('hidden');
+        this.dom.show(this.dom.startScreen);
       }
     };
 
-    document.getElementById('custom-btn').onclick = () => {
-      document.getElementById('start-screen').classList.add('hidden');
+    this.dom.customBtn.onclick = () => {
+      this.dom.hide(this.dom.startScreen);
       this.renderCustomEnemySelection();
       this.renderCustomSkillSelection();
       this.renderCustomBiomeSelection();
-      document.getElementById('custom-modal').classList.remove('hidden');
+      this.dom.show(this.dom.customModal);
     };
 
-    document.getElementById('start-custom-btn').onclick = () => {
+    this.dom.startCustomBtn.onclick = () => {
       // Check that at least one type is selected
       if (!Object.values(this.customEnemies).some(v => v)) {
         alert('Please select at least one enemy type!');
         return;
       }
 
-      document.getElementById('custom-modal').classList.add('hidden');
+      this.dom.hide(this.dom.customModal);
       this.game.customEnemies = { ...this.customEnemies };
       this.game.customSkills = { ...this.customSkills }; // Pass selected skills
       this.game.customBiome = this.customBiome.value; // Pass selected biome
-      this.game.debugWeather = document.getElementById('debug-weather-check').checked;
+      this.game.debugWeather = this.dom.debugWeatherCheck.checked;
       this.game.start();
     };
 
     // Close Button (X)
-    const closeBtn = document.getElementById('close-custom-modal');
-    if (closeBtn) {
-      closeBtn.onclick = () => {
-        document.getElementById('custom-modal').classList.add('hidden');
-        document.getElementById('start-screen').classList.remove('hidden'); // Return to start
+    if (this.dom.closeCustomModal) {
+      this.dom.closeCustomModal.onclick = () => {
+        this.dom.hide(this.dom.customModal);
+        this.dom.show(this.dom.startScreen); // Return to start
       };
     }
 
     // Custom Game Speed Buttons are handled globally by setupSpeedControls()
 
-    document.getElementById('restart-btn').onclick = () => {
-      document.getElementById('gameover-modal').classList.add('hidden');
+    this.dom.restartBtn.onclick = () => {
+      this.dom.hide(this.dom.gameoverModal);
 
       // If custom game, return to custom config screen
       if (this.game.customEnemies) {
@@ -178,7 +170,7 @@ export class UIManager {
         this.renderCustomEnemySelection();
         this.renderCustomSkillSelection();
 
-        document.getElementById('custom-modal').classList.remove('hidden');
+        this.dom.show(this.dom.customModal);
       } else {
         this.game.debugWeather = false;
         this.game.reset();
@@ -186,55 +178,55 @@ export class UIManager {
       }
     };
 
-    document.getElementById('upgrades-btn').onclick = () => {
-      document.getElementById('gameover-modal').classList.add('hidden');
+    this.dom.upgradesBtn.onclick = () => {
+      this.dom.hide(this.dom.gameoverModal);
       this.showMetaUpgrades();
     };
 
     // Game Over Exit Buttons
     const exitGameOver = () => {
-      document.getElementById('gameover-modal').classList.add('hidden');
+      this.dom.hide(this.dom.gameoverModal);
       this.game.reset();
       this.game.state = 'start';
-      document.getElementById('start-screen').classList.remove('hidden');
+      this.dom.show(this.dom.startScreen);
       this.updateMainMenuSouls();
     };
 
-    document.getElementById('gameover-exit-btn').onclick = exitGameOver;
-    document.getElementById('close-gameover-x').onclick = exitGameOver;
+    this.dom.gameoverExitBtn.onclick = exitGameOver;
+    this.dom.closeGameoverX.onclick = exitGameOver;
 
-    document.getElementById('reset-meta-btn').onclick = () => {
+    this.dom.resetMetaBtn.onclick = () => {
       this.showResetConfirmation();
     };
 
-    document.getElementById('confirm-reset-btn').onclick = () => {
-      document.getElementById('reset-confirm-modal').classList.add('hidden');
+    this.dom.confirmResetBtn.onclick = () => {
+      this.dom.hide(this.dom.resetConfirmModal);
       this.performMetaReset();
     };
 
-    document.getElementById('cancel-reset-btn').onclick = () => {
-      document.getElementById('reset-confirm-modal').classList.add('hidden');
+    this.dom.cancelResetBtn.onclick = () => {
+      this.dom.hide(this.dom.resetConfirmModal);
     };
 
-    document.getElementById('close-meta-btn').onclick = () => {
-      document.getElementById('meta-modal').classList.add('hidden');
+    this.dom.closeMetaBtn.onclick = () => {
+      this.dom.hide(this.dom.metaModal);
       this.updateMainMenuSouls(); // Update count on close
 
       // Return to appropriate screen
       if (this.game.state === 'gameover') {
-        document.getElementById('gameover-modal').classList.remove('hidden');
+        this.dom.show(this.dom.gameoverModal);
       } else if (this.game.state === 'start') {
-        document.getElementById('start-screen').classList.remove('hidden');
+        this.dom.show(this.dom.startScreen);
       }
     };
 
     // Pause screen buttons
-    document.getElementById('resume-btn').onclick = () => {
+    this.dom.resumeBtn.onclick = () => {
       this.resumeGame();
     };
 
-    document.getElementById('restart-pause-btn').onclick = () => {
-      document.getElementById('pause-modal').classList.add('hidden');
+    this.dom.restartPauseBtn.onclick = () => {
+      this.dom.hide(this.dom.pauseModal);
 
       // If custom game, return to custom config screen
       if (this.game.customEnemies) {
@@ -249,18 +241,18 @@ export class UIManager {
         this.renderCustomSkillSelection();
         this.renderCustomBiomeSelection();
 
-        document.getElementById('custom-modal').classList.remove('hidden');
+        this.dom.show(this.dom.customModal);
       } else {
         this.game.reset();
         this.game.start();
       }
     };
 
-    document.getElementById('exit-pause-btn').onclick = () => {
-      document.getElementById('pause-modal').classList.add('hidden');
+    this.dom.exitPauseBtn.onclick = () => {
+      this.dom.hide(this.dom.pauseModal);
       this.game.reset();
       this.game.state = 'start';
-      document.getElementById('start-screen').classList.remove('hidden');
+      this.dom.show(this.dom.startScreen);
       this.updateMainMenuSouls(); // Update when returning to menu
     };
 
@@ -269,52 +261,47 @@ export class UIManager {
       if (e.key === 'Escape') {
 
         // 1. Reset Confirmation (Highest Priority)
-        const resetModal = document.getElementById('reset-confirm-modal');
-        if (resetModal && !resetModal.classList.contains('hidden')) {
-          resetModal.classList.add('hidden');
+        if (this.dom.resetConfirmModal && !this.dom.resetConfirmModal.classList.contains('hidden')) {
+          this.dom.hide(this.dom.resetConfirmModal);
           return;
         }
 
         // 2. Permanent Upgrades (Meta)
-        const metaModal = document.getElementById('meta-modal');
-        if (metaModal && !metaModal.classList.contains('hidden')) {
-          metaModal.classList.add('hidden');
+        if (this.dom.metaModal && !this.dom.metaModal.classList.contains('hidden')) {
+          this.dom.hide(this.dom.metaModal);
           this.updateMainMenuSouls();
 
           if (this.game.state === 'gameover') {
-            document.getElementById('gameover-modal').classList.remove('hidden');
+            this.dom.show(this.dom.gameoverModal);
           } else if (this.game.state === 'start') {
-            document.getElementById('start-screen').classList.remove('hidden');
+            this.dom.show(this.dom.startScreen);
           }
           return;
         }
 
         // 3. Custom Game Config
-        const customModal = document.getElementById('custom-modal');
-        if (customModal && !customModal.classList.contains('hidden')) {
-          customModal.classList.add('hidden');
-          document.getElementById('start-screen').classList.remove('hidden');
+        if (this.dom.customModal && !this.dom.customModal.classList.contains('hidden')) {
+          this.dom.hide(this.dom.customModal);
+          this.dom.show(this.dom.startScreen);
           return;
         }
 
         // 4. Guide Modal
-        const guideModal = document.getElementById('guide-modal');
-        if (guideModal && !guideModal.classList.contains('hidden')) {
-          guideModal.classList.add('hidden');
+        if (this.dom.guideModal && !this.dom.guideModal.classList.contains('hidden')) {
+          this.dom.hide(this.dom.guideModal);
           if (this.game.state === 'start') {
-            document.getElementById('start-screen').classList.remove('hidden');
+            this.dom.show(this.dom.startScreen);
           }
           return;
         }
 
         // 5. Game Over Screen -> Main Menu
-        const gameoverModal = document.getElementById('gameover-modal');
-        if (gameoverModal && !gameoverModal.classList.contains('hidden')) {
+        if (this.dom.gameoverModal && !this.dom.gameoverModal.classList.contains('hidden')) {
           // Reuse the exit logic
-          document.getElementById('gameover-modal').classList.add('hidden');
+          this.dom.hide(this.dom.gameoverModal);
           this.game.reset();
           this.game.state = 'start';
-          document.getElementById('start-screen').classList.remove('hidden');
+          this.dom.show(this.dom.startScreen);
           this.updateMainMenuSouls();
           return;
         }
@@ -324,49 +311,48 @@ export class UIManager {
 
   // Delegate to imported functions
   updateHUD() {
-    updateHUD(this.game);
+    updateHUD(this.game, this.dom);
   }
 
   showLevelUpScreen() {
-    showLevelUpScreen(this.game);
+    showLevelUpScreen(this.game, this.dom);
 
 
   }
 
   showGameOverStats(souls, isVictory = false) {
-    showGameOverStats(this.game, souls, isVictory);
+    showGameOverStats(this.game, this.dom, souls, isVictory);
   }
 
   showResetConfirmation() {
-    showResetConfirmation(this.game);
+    showResetConfirmation(this.game, this.dom);
   }
 
   performMetaReset() {
-    performMetaReset(this.game);
+    performMetaReset(this.game, this.dom);
   }
 
   showMetaUpgrades() {
-    showMetaUpgrades(this.game);
+    showMetaUpgrades(this.game, this.dom);
   }
 
   showPauseScreen() {
-    showPauseScreen(this.game);
+    showPauseScreen(this.game, this.dom);
   }
 
   resumeGame() {
-    resumeGame(this.game);
+    resumeGame(this.game, this.dom);
   }
 
   showGuide() {
-    showGuide();
+    showGuide(this.dom);
   }
 
 
   showFrozenMessage(show) {
-    const el = document.getElementById('frozen-message');
-    if (el) {
-      if (show) el.classList.remove('hidden');
-      else el.classList.add('hidden');
+    if (this.dom.frozenMessage) {
+      if (show) this.dom.show(this.dom.frozenMessage);
+      else this.dom.hide(this.dom.frozenMessage);
     }
   }
 

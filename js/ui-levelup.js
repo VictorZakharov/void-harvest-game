@@ -2,7 +2,7 @@
 import { SKILLS } from './skills.js';
 import { SKILL_CHOICES_BASE, SKILL_CHOICES_WITH_EXTRA } from './constants.js';
 
-export function showLevelUpScreen(game) {
+export function showLevelUpScreen(game, dom) {
     game.state = 'paused';
 
     // State for this level-up instance
@@ -45,17 +45,11 @@ export function showLevelUpScreen(game) {
         return choices;
     };
 
-    const modal = document.getElementById('levelup-modal');
-    const choicesContainer = document.getElementById('skill-choices');
-    const modalContent = modal.querySelector('.modal-content');
-
-    // Cleanup previous reroll button if it exists
-    const existingBtn = document.getElementById('reroll-btn');
-    if (existingBtn) existingBtn.remove();
+    // [DELETED] Cleanup previous reroll button logic (handled by static HTML now)
 
     // Render Function
     const render = (skills) => {
-        choicesContainer.innerHTML = '';
+        dom.setHTML(dom.skillChoices, '');
 
         skills.forEach(skill => {
             const currentLevel = game.player.skills[skill.id] || 0;
@@ -105,94 +99,83 @@ export function showLevelUpScreen(game) {
                 game.ui.updateHUD();
                 if (game.updateGlobalLights) game.updateGlobalLights();
 
-                modal.classList.add('hidden');
+                dom.hide(dom.levelupModal);
 
-                // Cleanup Reroll Button
-                const btn = document.getElementById('reroll-btn');
-                if (btn) btn.remove();
+                // [DELETED] Cleanup Reroll Button logic
 
                 game.setFrozen(true);
             };
-            choicesContainer.appendChild(div);
+            dom.skillChoices.appendChild(div);
         });
 
         // Reroll Button Logic
-        let rerollBtn = document.getElementById('reroll-btn');
-        if (!rerollBtn) {
-            rerollBtn = document.createElement('button');
-            rerollBtn.id = 'reroll-btn';
-            // Use standard .btn style (blue/cyan theme) instead of custom .btn-reroll
-            rerollBtn.className = 'btn btn-large';
-            rerollBtn.style.marginTop = '20px'; // Add spacing manually since we removed custom CSS
-            rerollBtn.style.display = 'block';
-            rerollBtn.style.marginLeft = 'auto';
-            rerollBtn.style.marginRight = 'auto';
-            modalContent.appendChild(rerollBtn);
-        }
+        const rerollBtn = dom.rerollBtn;
+        if (rerollBtn) {
 
-        rerollBtn.textContent = rerollUsed ? 'Reroll Used' : 'Reroll';
-        rerollBtn.disabled = rerollUsed;
+            rerollBtn.textContent = rerollUsed ? 'Reroll Used' : 'Reroll';
+            rerollBtn.disabled = rerollUsed;
 
-        rerollBtn.onclick = () => {
-            if (rerollUsed || isAnimating) return;
-            rerollUsed = true;
-            isAnimating = true;
+            rerollBtn.onclick = () => {
+                if (rerollUsed || isAnimating) return;
+                rerollUsed = true;
+                isAnimating = true;
 
-            // Phase 1: Rotate Out (0 -> 90deg)
-            const oldCards = Array.from(choicesContainer.children);
-            oldCards.forEach(card => {
-                card.classList.add('flip-out');
-                card.style.transform = 'skewY(0deg) rotateY(90deg)'; // Rotate to edge
-            });
-
-            // Wait for rotation to finish (400ms matches CSS)
-            setTimeout(() => {
-                // Reroll Logic - Get new skills
-                const excludeIds = new Set(skills.map(s => s.id));
-                const newSkills = selectSkills(excludeIds);
-
-                // render() destroys old DOM nodes and creates new ones
-                render(newSkills);
-
-                // Phase 2: Rotate In (-90deg -> 0)
-                const newCards = Array.from(choicesContainer.children);
-                newCards.forEach(card => {
-                    // Set initial state: rotated -90deg (the "back" of the flip)
-                    // We must disable transition momentarily to set this position instantly
-                    card.style.transition = 'none';
-                    card.style.transform = 'skewY(0deg) rotateY(-90deg)';
+                // Phase 1: Rotate Out (0 -> 90deg)
+                const oldCards = Array.from(dom.skillChoices.children);
+                oldCards.forEach(card => {
+                    card.classList.add('flip-out');
+                    card.style.transform = 'skewY(0deg) rotateY(90deg)'; // Rotate to edge
                 });
 
-                // Force Reflow
-                void choicesContainer.offsetWidth;
-
-                // Animate to 0
-                newCards.forEach(card => {
-                    // Re-enable transition using our CSS class
-                    card.style.transition = '';
-                    card.classList.add('flip-in');
-
-                    // Trigger the animation
-                    card.style.transform = 'skewY(0deg) rotateY(0deg)';
-                });
-
-                // cleanup after Phase 2 (400ms)
+                // Wait for rotation to finish (400ms matches CSS)
                 setTimeout(() => {
+                    // Reroll Logic - Get new skills
+                    const excludeIds = new Set(skills.map(s => s.id));
+                    const newSkills = selectSkills(excludeIds);
+
+                    // render() destroys old DOM nodes and creates new ones
+                    render(newSkills);
+
+                    // Phase 2: Rotate In (-90deg -> 0)
+                    const newCards = Array.from(dom.skillChoices.children);
                     newCards.forEach(card => {
-                        card.classList.remove('flip-in');
-                        // Reset transform to be clean for parallax
-                        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(0.90) translateZ(0px)';
+                        // Set initial state: rotated -90deg (the "back" of the flip)
+                        // We must disable transition momentarily to set this position instantly
+                        card.style.transition = 'none';
+                        card.style.transform = 'skewY(0deg) rotateY(-90deg)';
                     });
 
-                    isAnimating = false;
+                    // Force Reflow
+                    void dom.skillChoices.offsetWidth;
 
-                    if (lastMousePos.x !== null) {
-                        updateCardsTransforms(lastMousePos.x, lastMousePos.y);
-                    }
+                    // Animate to 0
+                    newCards.forEach(card => {
+                        // Re-enable transition using our CSS class
+                        card.style.transition = '';
+                        card.classList.add('flip-in');
+
+                        // Trigger the animation
+                        card.style.transform = 'skewY(0deg) rotateY(0deg)';
+                    });
+
+                    // cleanup after Phase 2 (400ms)
+                    setTimeout(() => {
+                        newCards.forEach(card => {
+                            card.classList.remove('flip-in');
+                            // Reset transform to be clean for parallax
+                            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(0.90) translateZ(0px)';
+                        });
+
+                        isAnimating = false;
+
+                        if (lastMousePos.x !== null) {
+                            updateCardsTransforms(lastMousePos.x, lastMousePos.y);
+                        }
+                    }, 400);
+
                 }, 400);
-
-            }, 400);
-        };
+            };
+        } // End rerollBtn check
 
         // Parallax Update
         updateParallaxRects();
@@ -219,7 +202,7 @@ export function showLevelUpScreen(game) {
 
     const updateParallaxRects = () => {
         setTimeout(() => {
-            const cards = choicesContainer.children;
+            const cards = dom.skillChoices.children;
             cardRects = Array.from(cards).map(card => {
                 const rect = card.getBoundingClientRect();
                 return {
@@ -236,14 +219,14 @@ export function showLevelUpScreen(game) {
         }, 50);
     };
 
-    modal.onmousemove = (e) => {
+    dom.levelupModal.onmousemove = (e) => {
         lastMousePos.x = e.clientX;
         lastMousePos.y = e.clientY;
 
         if (rafId || isAnimating) return; // Block parallax during animation
 
         rafId = requestAnimationFrame(() => {
-            if (cardRects.length === 0 && choicesContainer.children.length > 0) {
+            if (cardRects.length === 0 && dom.skillChoices.children.length > 0) {
                 updateParallaxRects(); // Safety init
             }
 
@@ -256,5 +239,5 @@ export function showLevelUpScreen(game) {
     const initialSkills = selectSkills();
     render(initialSkills);
 
-    modal.classList.remove('hidden');
+    dom.show(dom.levelupModal);
 }

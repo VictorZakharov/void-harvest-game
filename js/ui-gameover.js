@@ -1,14 +1,11 @@
 // ==================== GAME OVER SCREEN ====================
 
-export function showGameOverStats(game, souls, isVictory = false) {
+export function showGameOverStats(game, dom, souls, isVictory = false) {
     // Load previous run stats
     const prevStats = game.loadPreviousStats();
 
     // Save current run stats
     game.saveCurrentStats();
-
-    const modal = document.getElementById('gameover-modal');
-    const statsDiv = document.getElementById('final-stats');
 
     const seconds = Math.floor(game.gameTime / 60);
     const minutes = Math.floor(seconds / 60);
@@ -93,6 +90,6 @@ export function showGameOverStats(game, souls, isVictory = false) {
         ` : ''}
     `;
 
-    statsDiv.innerHTML = html;
-    modal.classList.remove('hidden');
+    dom.setHTML(dom.finalStats, html);
+    dom.show(dom.gameoverModal);
 }

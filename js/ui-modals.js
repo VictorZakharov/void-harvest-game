@@ -3,12 +3,10 @@ import { SKILLS } from './skills.js';
 
 
 
-export function showGuide() {
-    document.getElementById('start-screen').classList.add('hidden');
-    const modal = document.getElementById('guide-modal');
-    const content = document.getElementById('guide-content');
+export function showGuide(dom) {
+    dom.hide(dom.startScreen);
 
-    content.innerHTML = `
+    dom.setHTML(dom.guideContent, `
         <div class="guide-intro">
             <p style="font-size: 16px; color: #fff;">
                 <strong>Welcome, Survivor.</strong>
@@ -243,12 +241,12 @@ export function showGuide() {
                 Good luck, Survivor. 🎯
             </p>
         </div>
-    `;
+    `);
 
-    modal.classList.remove('hidden');
+    dom.show(dom.guideModal);
 
     // Scroll to top when opening guide
-    const modalContent = modal.querySelector('.modal-content');
+    const modalContent = dom.guideModal.querySelector('.modal-content');
     if (modalContent) {
         modalContent.scrollTop = 0;
     }

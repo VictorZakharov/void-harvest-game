@@ -11,10 +11,9 @@ import { UISkillDetail } from './ui/UISkillDetail.js';
  * Displays the pause screen with current run information and player stats.
  * Orchestrates rendering using specialized UI components.
  * @param {Object} game - The main game instance.
+ * @param {Object} dom - The DOMCache instance.
  */
-export function showPauseScreen(game) {
-    const modal = document.getElementById('pause-modal');
-    const statsDiv = document.getElementById('pause-stats');
+export function showPauseScreen(game, dom) {
 
     // Time calculations
     const seconds = Math.floor(game.gameTime / 60);
@@ -145,16 +144,17 @@ export function showPauseScreen(game) {
     }
 
     html += skillsHtml;
-    statsDiv.innerHTML = html;
-    modal.classList.remove('hidden');
+    dom.setHTML(dom.pauseStats, html);
+    dom.show(dom.pauseModal);
 }
 
 /**
  * Resumes the game and hides the pause modal.
  * @param {Object} game - The main game instance.
+ * @param {Object} dom - The DOMCache instance.
  */
-export function resumeGame(game) {
-    document.getElementById('pause-modal').classList.add('hidden');
+export function resumeGame(game, dom) {
+    dom.hide(dom.pauseModal);
     game.state = 'playing';
     game.lastTime = performance.now();
 }

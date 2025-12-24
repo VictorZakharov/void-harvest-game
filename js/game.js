@@ -32,14 +32,6 @@ import { WeatherManager } from './WeatherManager.js';
 
 export class Game {
   constructor() {
-    this.canvas = document.getElementById('gameCanvas');
-    this.canvas.width = CANVAS_WIDTH;
-    this.canvas.height = CANVAS_HEIGHT;
-
-    this.input = new InputHandler(this.canvas);
-    this.state = 'start'; // start, playing, paused, gameover
-    this.gameLoopRunning = false;
-
     this.persistence = new PersistenceManager();
     this.metaProgress = this.persistence.loadMetaProgress();
     this.totalSouls = this.metaProgress.souls || 0;
@@ -47,6 +39,13 @@ export class Game {
     this.timeScale = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 1.0;
 
     this.ui = new UIManager(this);
+    this.canvas = this.ui.dom.gameCanvas;
+    this.canvas.width = CANVAS_WIDTH;
+    this.canvas.height = CANVAS_HEIGHT;
+
+    this.input = new InputHandler(this.ui.dom.gameCanvas);
+    this.state = 'start'; // start, playing, paused, gameover
+    this.gameLoopRunning = false;
 
     // Initialize stats early for managers
     this.stats = this.persistence.stats;
@@ -77,7 +76,7 @@ export class Game {
 
     // Initialize Weather System
     this.weatherSystem = new WeatherSystem(this.scene);
-    this.weather = new WeatherManager(this.weatherSystem);
+    this.weather = new WeatherManager(this.weatherSystem, this.ui.dom);
 
     // Field Boundaries
     const boundaryGeo = new THREE.BufferGeometry().setFromPoints([
@@ -87,7 +86,7 @@ export class Game {
       new THREE.Vector3(0, 2, CANVAS_HEIGHT),
       new THREE.Vector3(0, 2, 0)
     ]);
-    const boundaryMat = new THREE.LineBasicMaterial({color: 0x00ffff, linewidth: 2});
+    const boundaryMat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
     const boundaryLine = new THREE.Line(boundaryGeo, boundaryMat);
     this.scene.add(boundaryLine);
 
@@ -180,7 +179,7 @@ export class Game {
     this.wave = 1;
 
     // Reset camera
-    this.camera = {shake: 0};
+    this.camera = { shake: 0 };
 
     // Reset input state
     if (this.input) {
@@ -306,7 +305,7 @@ export class Game {
 
   handleFrozenState() {
     let hasResumeInput = false;
-    [ 'w', 'a', 's', 'd' ].forEach(k => {
+    ['w', 'a', 's', 'd'].forEach(k => {
       if (this.input.keys[k]) {
         const ignored = this.manualFreeze && this.ignoreKeys && this.ignoreKeys.has(k);
         if (!ignored) hasResumeInput = true;
@@ -438,7 +437,7 @@ export class Game {
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < shockwaveRadius) {
-        affectedEnemies.push({enemy, dist, dx, dy});
+        affectedEnemies.push({ enemy, dist, dx, dy });
         totalResistance += (enemy.health || 30);
       }
     }
@@ -448,7 +447,7 @@ export class Game {
     if (crowdFactor < 0.2) crowdFactor = 0.2;
 
     for (const item of affectedEnemies) {
-      const {enemy, dist, dx, dy} = item;
+      const { enemy, dist, dx, dy } = item;
       let nx, ny;
       if (dist < 1) {
         const angle = Math.random() * Math.PI * 2;
@@ -589,7 +588,7 @@ export class Game {
       this.setFrozen(true);
       this.manualFreeze = true;
       this.ignoreKeys = new Set();
-      [ 'w', 'a', 's', 'd' ].forEach(k => {
+      ['w', 'a', 's', 'd'].forEach(k => {
         if (this.input.keys[k]) this.ignoreKeys.add(k);
       });
       this.ignoreMouse = this.input.mouseDown;

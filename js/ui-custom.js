@@ -4,15 +4,15 @@ import { BIOMES } from './biomes.js';
 import { UI3DRenderer } from './ui/UI3DRenderer.js';
 
 export class CustomGameUI {
-  constructor(game) {
+  constructor(game, dom) {
     this.game = game;
+    this.dom = dom;
     this.renderer3D = null;
   }
 
   renderSkillSelection(customSkills, callback) {
-    const container = document.getElementById('custom-skill-config');
-    if (!container) return;
-    container.innerHTML = '';
+    if (!this.dom.customSkillConfig) return;
+    this.dom.setHTML(this.dom.customSkillConfig, '');
 
     const categories = [
       {id: 'offensive', name: 'Attack'},
@@ -111,14 +111,13 @@ export class CustomGameUI {
       });
 
       section.appendChild(grid);
-      container.appendChild(section);
+      this.dom.customSkillConfig.appendChild(section);
     });
   }
 
   renderEnemySelection(customEnemies, callback) {
-    const container = document.getElementById('enemy-type-config');
-    if (!container) return;
-    container.innerHTML = '';
+    if (!this.dom.enemyTypeConfig) return;
+    this.dom.setHTML(this.dom.enemyTypeConfig, '');
 
     // Initialize renderer if needed
     if (!this.renderer3D) {
@@ -134,14 +133,13 @@ export class CustomGameUI {
     ];
 
     // Handle Select All Checkbox
-    const selectAllCb = document.getElementById('enemy-select-all');
-    if (selectAllCb) {
+    if (this.dom.enemySelectAll) {
       // Check if all are currently selected
       const allSelected = enemies.every(e => customEnemies[e.id]);
-      selectAllCb.checked = allSelected;
+      this.dom.enemySelectAll.checked = allSelected;
 
       // Override onclick to prevent multiple listeners accumulation (simple approach)
-      selectAllCb.onclick = (e) => {
+      this.dom.enemySelectAll.onclick = (e) => {
         // e.target.checked is the NEW state after click
         const newState = e.target.checked;
         enemies.forEach(enemy => {
@@ -180,16 +178,15 @@ export class CustomGameUI {
         callback();
       });
 
-      container.appendChild(enemyDiv);
+      this.dom.enemyTypeConfig.appendChild(enemyDiv);
     });
   }
 
   renderBiomeSelection(currentRef, callback) {
     // currentRef is an object { value: 'biomeId' or null } to allow mutation
-    const container = document.getElementById('custom-biome-config');
-    if (!container) return;
+    if (!this.dom.customBiomeConfig) return;
 
-    container.innerHTML = '';
+    this.dom.setHTML(this.dom.customBiomeConfig, '');
 
     // Add "Random" option
     const randomDiv = document.createElement('div');
@@ -212,7 +209,7 @@ export class CustomGameUI {
       currentRef.value = null;
       callback();
     };
-    container.appendChild(randomDiv);
+    this.dom.customBiomeConfig.appendChild(randomDiv);
 
 
     Object.values(BIOMES).forEach(biome => {
@@ -248,7 +245,7 @@ export class CustomGameUI {
         callback();
       };
 
-      container.appendChild(div);
+      this.dom.customBiomeConfig.appendChild(div);
     });
   }
 }
