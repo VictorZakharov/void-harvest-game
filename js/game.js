@@ -29,6 +29,7 @@ import { RenderingManager } from './RenderingManager.js';
 import { LightingManager } from './LightingManager.js';
 import { PersistenceManager } from './PersistenceManager.js';
 import { WeatherManager } from './WeatherManager.js';
+import { PhysicsSystem } from './systems/PhysicsSystem.js';
 
 export class Game {
   constructor() {
@@ -55,6 +56,7 @@ export class Game {
     this.scene = this.rendering.scene; // Helper reference
 
     this.lighting = new LightingManager(this.scene);
+    this.physicsSystem = new PhysicsSystem(this); // Physics & Collision
 
     this.init3D();
 
@@ -378,7 +380,7 @@ export class Game {
     let speedMod = (this.weather && this.weather.weatherState === 'active') ? (1 - WEATHER_SLOW_AMOUNT) : 1;
 
     if (this.player.triggerShockwave) {
-      this.handleShockwave();
+      this.physicsSystem.handleShockwave();
     }
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -407,11 +409,10 @@ export class Game {
       if (enemy.canShoot()) {
         this.bulletManager.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
       }
-
-      if (enemy.collidesWith(this.player)) {
-        this.handlePlayerCollision(enemy, i);
-      }
     }
+
+    // Pass 2: Physics & Collision
+    this.physicsSystem.update(dt);
 
     this.bulletManager.update(this.player, this.enemies, this.timeScale);
     this.itemManager.update(this.timeScale);
@@ -422,69 +423,7 @@ export class Game {
     this.ui.updateHUD();
   }
 
-  handleShockwave() {
-    this.player.triggerShockwave = false;
-    this.particleManager.create(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, '#00ffff', 50);
 
-    const shockwaveRadius = (this.player.shockwaveForce || 10) * 10;
-    const affectedEnemies = [];
-    let totalResistance = 0;
-
-    for (let i = 0; i < this.enemies.length; i++) {
-      const enemy = this.enemies[i];
-      const dx = (enemy.x + enemy.width / 2) - (this.player.x + this.player.width / 2);
-      const dy = (enemy.y + enemy.height / 2) - (this.player.y + this.player.height / 2);
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < shockwaveRadius) {
-        affectedEnemies.push({ enemy, dist, dx, dy });
-        totalResistance += (enemy.health || 30);
-      }
-    }
-
-    const baseResistance = 100;
-    let crowdFactor = totalResistance > baseResistance ? baseResistance / totalResistance : 1.0;
-    if (crowdFactor < 0.2) crowdFactor = 0.2;
-
-    for (const item of affectedEnemies) {
-      const { enemy, dist, dx, dy } = item;
-      let nx, ny;
-      if (dist < 1) {
-        const angle = Math.random() * Math.PI * 2;
-        nx = Math.cos(angle);
-        ny = Math.sin(angle);
-      } else {
-        nx = dx / dist;
-        ny = dy / dist;
-      }
-      const distanceToCover = shockwaveRadius - dist;
-      const initialSpeed = (distanceToCover / 10) * crowdFactor;
-      enemy.applyKnockback(nx * initialSpeed, ny * initialSpeed, 30);
-    }
-  }
-
-  handlePlayerCollision(enemy, index) {
-    const blocked = this.player.shieldActive;
-    if (!blocked) {
-      this.stats.damageReceived[enemy.type] += enemy.damage;
-    }
-
-    if (this.player.takeDamage(enemy.damage)) {
-      this.gameOver();
-      return;
-    }
-
-    if (!blocked) {
-      this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
-      this.camera.shake = 10;
-    } else {
-      this.particleManager.create(enemy.x, enemy.y, '#00ffff', 10);
-      this.camera.shake = 5;
-    }
-
-    enemy.dispose(this.scene);
-    this.enemies.splice(index, 1);
-  }
 
   /**
    * Renders the 3D scene, updating fog, camera, and all visible meshes.
