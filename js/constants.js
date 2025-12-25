@@ -68,6 +68,8 @@ export const ENEMY_SPRITE_COLORS = {
     }
 };
 
+export const SHOOTER_STOP_RANGE = 300;
+
 // ============================================
 // PROGRESSION & XP
 // ============================================

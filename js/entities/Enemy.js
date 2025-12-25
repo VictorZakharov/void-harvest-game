@@ -1,5 +1,6 @@
 import {
-    XP_ITEM_BASE_VALUE
+    XP_ITEM_BASE_VALUE,
+    SHOOTER_STOP_RANGE
 } from '../constants.js';
 import { SpriteGenerator } from '../sprites.js';
 import { Entity } from './Entity.js';
@@ -118,7 +119,14 @@ export class Enemy extends Entity {
         // Calculate angle to player
         this.angle = Math.atan2(dy, dx);
 
-        if (dist > 0) {
+        let shouldMove = true;
+        if ((this.type === 'shooter' || this.type === 'ice') && dist <= SHOOTER_STOP_RANGE) {
+            shouldMove = false;
+            this.vx = 0;
+            this.vy = 0;
+        }
+
+        if (dist > 0 && shouldMove) {
             const currentSpeed = this.speed * speedModifier;
             this.vx = (dx / dist) * currentSpeed;
             this.vy = (dy / dist) * currentSpeed;
