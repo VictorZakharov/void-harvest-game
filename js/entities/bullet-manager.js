@@ -82,7 +82,12 @@ export class BulletManager {
      */
     createEnemyBullet(enemy, targetX, targetY) {
         const bounds = enemy.getBounds();
-        const angle = Math.atan2(targetY - bounds.centerY, targetX - bounds.centerX);
+        // Use enemy's current angle (which includes spread/jitter) for shooters
+        // Fallback to targeting calculation for others or if angle isn't set
+        let angle = enemy.angle;
+        if (angle === undefined) {
+            angle = Math.atan2(targetY - bounds.centerY, targetX - bounds.centerX);
+        }
 
         let startX = bounds.centerX;
         let startY = bounds.centerY;
@@ -151,8 +156,8 @@ export class BulletManager {
                 if (bullet.collidesWith(player)) {
                     if (bullet.enemyType === 'ice') {
                         player.slowEffects.push({
-                            amount: 0.15,
-                            timer: 60
+                            amount: 0.25,
+                            timer: 120
                         });
                         this.callbacks.createParticles(player.x, player.y, '#66ccff', 8);
                     } else {

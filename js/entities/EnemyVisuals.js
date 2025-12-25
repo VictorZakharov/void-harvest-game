@@ -109,6 +109,26 @@ export class EnemyVisuals {
             if (this.torso) {
                 this.torso.position.y = 40 + Math.abs(Math.sin(time)) * 2;
             }
+        } else if (enemy.isKneeling) {
+            // Kneeling pose
+            if (this.torso) {
+                this.torso.position.y = 20; // Lower body further
+            }
+            // "Combat Kneel": Left foot forward, Right knee down (leg back)
+            // Since we have stick legs:
+            // Left leg: Slight bend forward (negative)
+            // Right leg: Bend backward (positive) - roughly parallel to ground or slightly down
+
+            lLegRot = -0.5; // Slight forward
+            rLegRot = 1.2;  // Back/Under (Knee down)
+
+            // Adjust positions if needed? Limbs pivot from top.
+            // If I rotate right leg back, it sticks out behind torso. That's fine for "kneeling".
+        } else {
+            // Standing still
+            if (this.torso) {
+                this.torso.position.y = 40;
+            }
         }
 
         if (this.leftLeg) this.leftLeg.rotation.x = lLegRot;

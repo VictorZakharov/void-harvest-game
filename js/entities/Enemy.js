@@ -55,8 +55,8 @@ export class Enemy extends Entity {
                 this.shootTimer = 0;
                 this.shootRate = 180;
                 this.width = this.height = 32;
-                this.slowAmount = 0.15;
-                this.slowDuration = 60;
+                this.slowAmount = 0.25;
+                this.slowDuration = 120;
                 break;
         }
 
@@ -119,17 +119,25 @@ export class Enemy extends Entity {
         // Calculate angle to player
         this.angle = Math.atan2(dy, dx);
 
-        let shouldMove = true;
-        if ((this.type === 'shooter' || this.type === 'ice') && dist <= SHOOTER_STOP_RANGE) {
-            shouldMove = false;
-            this.vx = 0;
-            this.vy = 0;
+        // Movement logic
+        // Default to moving
+        let allowedToMove = true;
+
+        // Shooter logic overrides movement
+        if ((this.type === 'shooter' || this.type === 'ice') && this.shooterState !== undefined && this.shooterState !== 0) {
+            allowedToMove = false;
         }
 
-        if (dist > 0 && shouldMove) {
+        if (dist > 0 && allowedToMove) {
             const currentSpeed = this.speed * speedModifier;
             this.vx = (dx / dist) * currentSpeed;
             this.vy = (dy / dist) * currentSpeed;
+        } else {
+            // Stop if too close or not allowed
+            if (allowedToMove) {
+                // Close range stop for non-shooters? No, others chase.
+                // Just resetting vx/vy if we shouldn't move
+            }
         }
 
         // Apply knockback if active
@@ -147,9 +155,96 @@ export class Enemy extends Entity {
         this.x += this.vx; // vx already has speedModifier which includes timeScale (checked in Game.js)
         this.y += this.vy;
 
-        // Shooter and ice enemy shooting timer
-        if ((this.type === 'shooter' || this.type === 'ice') && this.shootTimer !== undefined) {
-            this.shootTimer += timeScale;
+        // Shooter and ice enemy logic
+        // States: 
+        // 0: Moving/Approaching (Default)
+        // 1: Aiming (Stopped, Kneeling, Waiting)
+        // 2: Shooting (Burst)
+        // 3: Cooldown (Waiting to Aim again)
+
+        if (this.type === 'shooter' || this.type === 'ice') {
+            // Initialize state if missing
+            if (this.shooterState === undefined) {
+                this.shooterState = 0; // 0=Move, 1=Aim, 2=Shoot, 3=Cooldown
+                this.stateTimer = 0;
+                this.burstCount = 0;
+                this.isKneeling = false;
+            }
+
+            // Dist check logic
+            const inRange = dist <= SHOOTER_STOP_RANGE;
+
+            switch (this.shooterState) {
+                case 0: // MOVING
+                    if (inRange) {
+                        this.shooterState = 1; // Start Aiming
+                        this.stateTimer = 60; // 1 second aim time
+                        this.isKneeling = true;
+                        this.vx = 0;
+                        this.vy = 0;
+                    }
+                    // Movement logic is handled above by general update if not handled here
+                    // But we need to ensure we don't move if we just switched to Aiming
+                    if (this.shooterState !== 0) {
+                        this.vx = 0;
+                        this.vy = 0;
+                    }
+                    else if (inRange) {
+                        // Fallback safety, though the if(inRange) above should catch it
+                        this.vx = 0;
+                        this.vy = 0;
+                    }
+                    break;
+
+                case 1: // AIMING
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.isKneeling = true;
+                    this.stateTimer -= timeScale;
+
+                    if (!inRange) {
+                        // Player ran away, resume chase
+                        this.shooterState = 0;
+                        this.isKneeling = false;
+                    } else if (this.stateTimer <= 0) {
+                        // Aim finished, start shooting
+                        this.shooterState = 2; // Shooting
+                        this.burstCount = 0;
+                        this.stateTimer = 0; // Ready to shoot immediately
+                    }
+                    break;
+
+                case 2: // SHOOTING
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.isKneeling = true;
+                    this.stateTimer -= timeScale;
+
+                    // Shooting logic is handled in canShoot(), this state just manages the burst flow
+                    // Actually, canShoot() needs to look at this state.
+                    if (this.burstCount >= 3) {
+                        this.shooterState = 3; // Cooldown
+                        this.stateTimer = this.shootRate;
+                    }
+                    break;
+
+                case 3: // COOLDOWN
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.isKneeling = true; // Stay kneeling in cooldown? Or stand up? 
+                    // "kneel... aim... shoot... kneel happens instantly"
+                    // If they stay in range, keeping them kneeling makes sense.
+
+                    this.stateTimer -= timeScale;
+                    if (!inRange) {
+                        this.shooterState = 0;
+                        this.isKneeling = false;
+                    } else if (this.stateTimer <= 0) {
+                        this.shooterState = 1; // Back to Aiming
+                        this.stateTimer = 60;
+                    }
+                    break;
+            }
         }
     }
 
@@ -158,9 +253,19 @@ export class Enemy extends Entity {
      * @returns {boolean}
      */
     canShoot() {
-        if ((this.type === 'shooter' || this.type === 'ice') && this.shootTimer >= this.shootRate) {
-            this.shootTimer = 0;
-            return true;
+        if (this.type === 'shooter' || this.type === 'ice') {
+            if (this.shooterState === 2 && this.stateTimer <= 0) {
+                this.burstCount++;
+                this.stateTimer = 18; // Slow down burst (approx 0.3s between shots)
+
+                // Apply random angular spread to the shot
+                // The updated angle will be used by the BulletManager when collecting projectile data
+                const spread = 0.25; // Approx 14 degrees spread (+/- 7 degrees)
+                this.angle += (Math.random() - 0.5) * spread;
+
+                return true;
+            }
+            return false;
         }
         return false;
     }
