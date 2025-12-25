@@ -257,6 +257,64 @@ export class PlayerVisuals {
         p.mesh.rotation.y = -p.angle;
       });
     }
+
+    // Freeze Visuals
+    // Check if player has slow effects
+    const totalSlow = this.player.slowEffects.reduce((sum, effect) => sum + effect.amount, 0);
+    // Cap at 1.0 for intensity calculation
+    const freezeIntensity = Math.min(1.0, totalSlow);
+    const isFullyFrozen = totalSlow >= 1.0;
+
+    if (this.mesh) {
+      // Defines which parts should be frozen based on state
+      const shouldFreeze = (child) => {
+        if (freezeIntensity <= 0) return false;
+        if (isFullyFrozen) return true; // Freeze everything
+
+        // Partial freeze: Only legs
+        // Check if this child is part of the legs hierarchy
+        let parent = child.parent;
+        while (parent) {
+          if (parent === this.leftLeg || parent === this.rightLeg || child === this.leftLeg || child === this.rightLeg) {
+            return true;
+          }
+          if (parent === this.mesh) break; // Optimization
+          parent = parent.parent;
+        }
+        return false;
+      };
+
+      this.mesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          // Initialize original color if not saved
+          if (!child.userData.originalColor) {
+            child.userData.originalColor = child.material.color.clone();
+            if (child.material.emissive) {
+              child.userData.originalEmissive = child.material.emissive.clone();
+              child.userData.originalEmissiveIntensity = child.material.emissiveIntensity;
+            }
+          }
+
+          if (shouldFreeze(child)) {
+            // Mix original color with Cyan based on intensity
+            const targetColor = new THREE.Color(0x00ffff);
+            child.material.color.copy(child.userData.originalColor).lerp(targetColor, freezeIntensity * 0.8);
+
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x00ffff);
+              child.material.emissiveIntensity = freezeIntensity; // Glow stronger as you freeze
+            }
+          } else {
+            // Restore original
+            child.material.color.copy(child.userData.originalColor);
+            if (child.material.emissive) {
+              child.material.emissive.copy(child.userData.originalEmissive);
+              child.material.emissiveIntensity = child.userData.originalEmissiveIntensity;
+            }
+          }
+        }
+      });
+    }
   }
 
   /**

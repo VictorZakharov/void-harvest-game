@@ -7,15 +7,21 @@ export const SKILLS = [
     {
         id: 'damage',
         name: 'Increased Damage',
-        description: 'Increases your total damage output by 20% (multiplicative).',
-        baseValue: 20,
+        description: 'Increases your total damage output by 50% (Additive).',
+        baseValue: 50,
         unit: '%',
         maxLevel: MAX_SKILL_LEVEL,
         category: 'offensive',
         icon: ICONS.damage,
         apply: (player) => {
-            player.damage *= 1.2;
-            player.skills.damage = (player.skills.damage || 0) + 1;
+            // "50/100/150" logic (Additive 50% per level)
+            // Multiplicative equivalent: Current * (NewTotal / OldTotal)
+            const currentLvl = player.skills.damage || 0;
+            const oldMult = 1 + (0.5 * currentLvl);
+            const newMult = 1 + (0.5 * (currentLvl + 1));
+
+            player.damage = (player.damage / oldMult) * newMult;
+            player.skills.damage = currentLvl + 1;
         }
     },
     {

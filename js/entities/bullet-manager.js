@@ -160,6 +160,7 @@ export class BulletManager {
                             timer: 120
                         });
                         this.callbacks.createParticles(player.x, player.y, '#66ccff', 8);
+                        // Ice bullets deal NO initial damage, only DoT via stacks (handled in Player.js)
                     } else {
                         this.stats.damageReceived.bullet += bullet.damage;
                         if (player.takeDamage(bullet.damage)) {

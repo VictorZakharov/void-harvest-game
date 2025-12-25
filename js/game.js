@@ -359,6 +359,11 @@ export class Game {
     // Pass timeScale to player update
     this.player.update(this.input, target.x, target.z, this.rendering.camYaw || 0, this.timeScale);
 
+    if (this.player.health <= 0) {
+      this.gameOver();
+      return;
+    }
+
     if (this.player.shoot(this.input.mouseDown)) {
       this.bulletManager.createPlayerBullets(this.player);
     }

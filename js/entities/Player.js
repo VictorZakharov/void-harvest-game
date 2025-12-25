@@ -214,6 +214,25 @@ export class Player extends Entity {
       }
     }
 
+    // Freeze DoT Logic
+    // Only apply damage if FULLY frozen (movement speed reduced by 100% or more)
+    const totalSlow = this.slowEffects.reduce((sum, e) => sum + e.amount, 0);
+
+    if (totalSlow >= 1.0) {
+      if (this.freezeDoTTimer === undefined) this.freezeDoTTimer = 0;
+      this.freezeDoTTimer += timeScale;
+
+      // 0.2 seconds = 12 frames (at 60fps)
+      if (this.freezeDoTTimer >= 12) {
+        this.freezeDoTTimer = 0;
+        // Damage scaling: 1 damage per stack (Same DPS as 5 dmg/sec, but smoother ticks)
+        const damage = this.slowEffects.length * 1;
+        this.takeDamage(damage);
+      }
+    } else {
+      this.freezeDoTTimer = 0;
+    }
+
 
   }
 
