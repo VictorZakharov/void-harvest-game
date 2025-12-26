@@ -26,10 +26,12 @@ import { StatsManager } from './stats.js';
 import * as THREE from 'three';
 
 import { RenderingManager } from './RenderingManager.js';
+import { EnemyInstancedRenderer } from './entities/EnemyInstancedRenderer.js';
 import { LightingManager } from './LightingManager.js';
 import { PersistenceManager } from './PersistenceManager.js';
 import { WeatherManager } from './WeatherManager.js';
 import { PhysicsSystem } from './systems/PhysicsSystem.js';
+import { SpatialHash } from './systems/SpatialHash.js';
 
 export class Game {
   constructor() {
@@ -56,6 +58,10 @@ export class Game {
     this.scene = this.rendering.scene; // Helper reference
 
     this.lighting = new LightingManager(this.scene);
+    // Initialize Instanced Renderer
+    // Capacity 15000 to handle high spawn rate stress tests without buffer overflow
+    this.instancedRenderer = new EnemyInstancedRenderer(this.rendering.scene, 15000); // Support up to 3000 enemies
+    this.spatialHash = new SpatialHash(150); // Cell size approx max enemy size + speed buffer
     this.physicsSystem = new PhysicsSystem(this); // Physics & Collision
 
     this.init3D();
@@ -98,7 +104,7 @@ export class Game {
     // MANAGERS
     this.particleManager = new ParticleManager(this.scene);
     this.enemySpawner = new EnemySpawner(this.scene, this.enemies);
-    this.bulletManager = new BulletManager(this.scene, this.stats, {
+    this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
       createExplosion: (x, y, c, r) => this.particleManager.createExplosion(x, y, c, r),
       onGameOver: () => this.gameOver(),
@@ -179,6 +185,7 @@ export class Game {
     this.difficultyTimer = 0;
     this.gameTime = 0;
     this.kills = 0;
+    this.frameCount = 0;
     this.wave = 1;
 
     // Reset camera
@@ -253,13 +260,24 @@ export class Game {
     const savedCustomSkills = this.customSkills;
     const savedCustomBiome = this.customBiome;
     const savedDebugWeather = this.debugWeather;
+    const savedSpawnRate = this.customSpawnRate;
+    const savedMaxEnemies = this.customMaxEnemies;
 
     this.reset(true);
 
     this.customEnemies = savedCustomEnemies;
     this.customSkills = savedCustomSkills;
     this.customBiome = savedCustomBiome;
+    this.customBiome = savedCustomBiome;
     this.debugWeather = savedDebugWeather;
+    this.debugPerf = this.customDebugPerf; // Persist debug flag
+    this.customSpawnRate = savedSpawnRate;
+    this.customMaxEnemies = savedMaxEnemies;
+
+    // Apply Custom Spawn Rate (Interval in seconds)
+    if (this.customSpawnRate) {
+      this.spawnRate = this.customSpawnRate * 60;
+    }
 
     if (this.customBiome) {
       this.currentBiome = BIOMES[this.customBiome.toUpperCase()] || BIOMES.NEUTRAL;
@@ -281,10 +299,27 @@ export class Game {
     const dt = now - this.lastTime;
     this.lastTime = now;
 
+    // In gameLoop
     if (this.input.escapePressed) {
       this.input.escapePressed = false;
       this.togglePause();
+
     }
+
+    // --- FPS Calculation ---
+    if (!this.fpsTime) this.fpsTime = now;
+    if (!this.frames) this.frames = 0;
+
+    this.frames++;
+    if (now >= this.fpsTime + 1000) {
+      this.fps = this.frames; // Update FPS property for debug dump
+      if (this.ui && this.ui.updateFPS) this.ui.updateFPS(this.frames); // Update UI if method exists
+      else if (this.ui && this.ui.dom && this.ui.dom.fpsCounter) this.ui.dom.setText(this.ui.dom.fpsCounter, 'FPS: ' + this.frames);
+
+      this.frames = 0;
+      this.fpsTime = now;
+    }
+    // -----------------------
 
     if (this.input.spacePressed) {
       this.input.spacePressed = false;
@@ -295,12 +330,40 @@ export class Game {
       this.handleFrozenState();
     }
 
+    // Initialize perf stats if missing
+    if (!this.perfStats) this.perfStats = { logic: 0, render: 0, count: 0 };
+
+    let t1, t2, t3;
+
     if (this.state === 'playing') {
+      t1 = performance.now();
       this.update(dt);
+      t2 = performance.now();
     }
 
     if (this.state !== 'start') {
+      if (!t2) t2 = performance.now(); // Handle case where update wasn't called (paused)
       this.render3D(dt);
+      t3 = performance.now();
+    }
+
+    // Accumulate stats if playing (ignore paused frames for stats usually, but here we capture everything)
+    if (t1 && t3) {
+      this.perfStats.logic += (t2 - t1);
+      this.perfStats.render += (t3 - t2);
+      this.perfStats.count++;
+    }
+
+    // FPS Calculation
+    this.frameCount++;
+    this.fpsTimer = (this.fpsTimer || 0) + dt;
+    if (this.fpsTimer >= 500) { // Update every 500ms
+      const fps = Math.round((this.frameCount * 1000) / this.fpsTimer);
+      if (this.ui && this.ui.dom && this.ui.dom.fpsCounter) {
+        this.ui.dom.fpsCounter.textContent = `FPS: ${fps}`;
+      }
+      this.frameCount = 0;
+      this.fpsTimer = 0;
     }
 
     requestAnimationFrame(() => this.gameLoop());
@@ -337,15 +400,20 @@ export class Game {
    */
   update(dt) {
     // Apply time scaling to the entire update step
-    // For gameplay simulation (movement, timers), we use this factor.
+    // Standardize to ~144 FPS (6.94ms) to restore original fast paced feel
+    // (Previous logic was implicit 144hz dependent, so we target that baseline)
+    const TARGET_DT = 6.944;
+    const safeDt = Math.min(dt, 100); // Cap at 100ms
+    const dtFactor = safeDt / TARGET_DT;
+
+    // Effective Scale = TimeScale (User setting) * DT Correction (Frame variance)
+    const effectiveScale = this.timeScale * dtFactor;
 
     // Advance game time by the scaled amount
-    // Integers timers (like spawnTimer) are now floats or accumulated.
-
-    this.gameTime += this.timeScale;
+    this.gameTime += effectiveScale;
 
     if (this.weather) {
-      const newFog = this.weather.update(this.player, this.currentBiome, DEFAULT_FOG_DENSITY, this.timeScale);
+      const newFog = this.weather.update(this.player, this.currentBiome, DEFAULT_FOG_DENSITY, effectiveScale);
       if (newFog !== null) this.baseFogDensity = newFog;
     }
 
@@ -357,8 +425,8 @@ export class Game {
     const target = this.rendering.getMouseWorldPosition(this.input.mouseX, this.input.mouseY);
     this.lighting.update(target, this.player);
 
-    // Pass timeScale to player update
-    this.player.update(this.input, target.x, target.z, this.rendering.camYaw || 0, this.timeScale);
+    // Pass effectiveScale to player update
+    this.player.update(this.input, target.x, target.z, this.rendering.camYaw || 0, effectiveScale);
 
     if (this.player.health <= 0) {
       this.gameOver();
@@ -369,17 +437,26 @@ export class Game {
       this.bulletManager.createPlayerBullets(this.player);
     }
 
-    this.spawnTimer += this.timeScale;
+    this.spawnTimer += effectiveScale;
     if (this.spawnTimer >= this.spawnRate) {
       this.spawnTimer = 0;
-      this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
+
+      // Check max enemies limit
+      const maxEnemies = this.customMaxEnemies || 9999;
+      if (this.enemies.length < maxEnemies) {
+        this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
+      }
     }
 
-    this.difficultyTimer += this.timeScale;
+    this.difficultyTimer += effectiveScale;
+    // Only increase difficulty (spawn rate decrease) if NOT using custom spawn rate
     if (this.difficultyTimer >= WAVE_DURATION) {
       this.difficultyTimer = 0;
-      this.spawnRate = Math.max(MIN_SPAWN_RATE, this.spawnRate - SPAWN_RATE_DECREASE);
       this.wave++;
+
+      if (!this.customSpawnRate) {
+        this.spawnRate = Math.max(MIN_SPAWN_RATE, this.spawnRate - SPAWN_RATE_DECREASE);
+      }
     }
 
     const playerBounds = this.player.getBounds();
@@ -388,6 +465,19 @@ export class Game {
     if (this.player.triggerShockwave) {
       this.physicsSystem.handleShockwave();
     }
+
+    // Populate Spatial Hash
+    // Populate Spatial Hash
+    this.spatialHash.clear();
+    for (const enemy of this.enemies) {
+      this.spatialHash.insert(enemy);
+    }
+
+    // Standard update loop (No sorting needed anymore for LOD, but sorting back-to-front or front-to-back can help overdraw)
+    // Let's keep it simple and just iterate.
+    // If overdraw is a concern, sorting front-to-back (closest first) is good.
+    // But Array.sort is O(N log N).
+    // Let's just iterate backwards for removal safety.
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
@@ -408,9 +498,10 @@ export class Game {
       }
 
       // Apply Global Time Scale to Enemy Speed
-      currentSpeedMod *= this.timeScale;
+      // We use effectiveScale here to include both TimeScale and DT correction
+      // enemy.update expects a timeScale factor.
 
-      enemy.update(playerBounds.centerX, playerBounds.centerY, currentSpeedMod, this.timeScale);
+      enemy.update(playerBounds.centerX, playerBounds.centerY, currentSpeedMod, effectiveScale);
 
       if (enemy.canShoot()) {
         this.bulletManager.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
@@ -418,10 +509,13 @@ export class Game {
     }
 
     // Pass 2: Physics & Collision
-    this.physicsSystem.update(dt);
+    // Physics system likely uses raw DT? Or should it use scaled DT?
+    // If BulletManager uses 'timeScale', it probably expects a multiplier, not MS.
+    // PhysicsSystem in JS usually likes MS.
+    this.physicsSystem.update(dt * this.timeScale); // Slow down physics if game is slow? 
 
-    this.bulletManager.update(this.player, this.enemies, this.timeScale);
-    this.itemManager.update(this.timeScale);
+    this.bulletManager.update(this.player, this.enemies, effectiveScale);
+    this.itemManager.update(effectiveScale);
     this.particleManager.update();
 
     if (this.camera.shake > 0) this.camera.shake--;
@@ -442,37 +536,21 @@ export class Game {
 
     // Calculate animation delta (0 if paused/frozen)
     const animDelta = (this.state === 'playing' ? this.timeScale : 0) * dt;
-
     this.player.updateMesh(animDelta);
 
-    this.enemies.forEach(e => {
-      let visibility = 0;
-      if (target) {
-        const dCursor = Math.sqrt((e.x - target.x) ** 2 + (e.y - target.z) ** 2);
-        const radiusMultiplier = this.player ? (1 + this.player.lightRadiusBonus) : 1;
-        const lightHeight = 300 * radiusMultiplier;
-        const cEnd = lightHeight * Math.tan(Math.PI / 3);
-        const cStart = lightHeight * Math.tan(Math.PI / 6);
+    // Update Instanced Renderer (Batches all enemies)
+    // We pass player and cursorTarget for visibility/culling logic (Fog of War)
+    // Note: 'cursorTarget' is declared again here due to scope; ensuring freshness for culling.
+    const cursorTargetForCull = this.lighting.getCursorTarget();
+    this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
-        if (dCursor < cEnd) {
-          if (dCursor < cStart) visibility = 1.0;
-          else visibility = 1.0 - ((dCursor - cStart) / (cEnd - cStart));
-        }
-      }
-
-      if (visibility < 1.0 && this.bulletManager) {
-        for (let b of this.bulletManager.bullets) {
-          if (!b.isPlayer) continue;
-          const dB = Math.sqrt((e.x - b.x) ** 2 + (e.y - b.y) ** 2);
-          if (dB < 150) {
-            visibility = Math.max(visibility, 1.0 - (dB / 150));
-            if (visibility >= 1.0) break;
-          }
-        }
-      }
-
-      e.updateMesh(visibility, this.currentBiome?.fogColor || 0x000000, this.rendering.camera3D, animDelta);
-    });
+    // Update Overlay Visuals (Heath Bars)
+    // Only update active enemies closer to camera? For now, simple loop is fast enough.
+    // Optimization: Skips invisible health bars internally.
+    const cam3D = this.rendering.camera3D;
+    for (const enemy of this.enemies) {
+      if (enemy.visuals) enemy.visuals.update(animDelta, cam3D);
+    }
 
     this.bulletManager.updateMeshes();
     this.itemManager.updateMeshes();
@@ -583,4 +661,5 @@ export class Game {
   getRunSouls() {
     return Math.floor(this.kills / 5);
   }
+
 }

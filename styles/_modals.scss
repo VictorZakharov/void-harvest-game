@@ -15,6 +15,7 @@
     justify-content: center;
     align-items: center;
     z-index: v.$z-modal;
+    pointer-events: auto; // Ensure modal captures scroll/clicks
 
     &.hidden {
         display: none;

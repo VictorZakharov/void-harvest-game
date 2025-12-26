@@ -9,6 +9,7 @@ export class BulletManager {
     /**
      * @param {THREE.Scene} scene - The Three.js scene to add bullet meshes to.
      * @param {Object} stats - The game stats object for tracking shots fired and damage.
+     * @param {SpatialHash} spatialHash - Spatial hash for optimized collision detection.
      * @param {Object} callbacks - Dictionary of callback functions.
      * @param {Function} callbacks.createParticles - Function to spawn particles (x, y, color, count).
      * @param {Function} callbacks.createExplosion - Function to spawn explosion ring (x, y, color, radius).
@@ -17,9 +18,10 @@ export class BulletManager {
      * @param {Function} [callbacks.onEnemyDeath] - Optional callback when an enemy is killed by a bullet.
      * @param {Function} [callbacks.onEnemyHit] - Optional callback when an enemy is hit (enemy, damage).
      */
-    constructor(scene, stats, callbacks) {
+    constructor(scene, stats, spatialHash, callbacks) {
         this.scene = scene;
         this.stats = stats;
+        this.spatialHash = spatialHash;
         this.callbacks = callbacks;
         this.bullets = [];
     }
@@ -124,7 +126,10 @@ export class BulletManager {
             }
 
             if (bullet.isPlayer) {
-                for (const enemy of enemies) {
+                // Optimize: Query only nearby enemies using Spatial Hash
+                const nearbyEnemies = this.spatialHash.query(bullet.x, bullet.y, bullet.width || 8, bullet.height || 8);
+
+                for (const enemy of nearbyEnemies) {
                     if (enemy.health > 0 && !bullet.hitEnemies.has(enemy) && bullet.collidesWith(enemy)) {
                         bullet.hitEnemies.add(enemy);
 
@@ -158,7 +163,16 @@ export class BulletManager {
                                 this.callbacks.createExplosion(ex, ey, '#ff5500', player.splashRadius);
                             }
 
-                            for (const other of enemies) {
+                            // Optimize: Query enemies in splash radius
+                            // Radius * 2 for width/height box
+                            const splashEnemies = this.spatialHash.query(
+                                ex - player.splashRadius,
+                                ey - player.splashRadius,
+                                player.splashRadius * 2,
+                                player.splashRadius * 2
+                            );
+
+                            for (const other of splashEnemies) {
                                 if (other === enemy || other.health <= 0) continue;
 
                                 const dx = other.x - enemy.x;

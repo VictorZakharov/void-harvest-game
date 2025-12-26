@@ -60,7 +60,10 @@ export class DOMCache {
         this.enemySelectAll = document.getElementById('enemy-select-all');
         this.customSkillConfig = document.getElementById('custom-skill-config');
         this.customBiomeConfig = document.getElementById('custom-biome-config');
+        this.customBiomeConfig = document.getElementById('custom-biome-config');
         this.debugWeatherCheck = document.getElementById('debug-weather-check');
+        this.customSpawnRateInput = document.getElementById('custom-spawn-rate');
+        this.customMaxEnemiesInput = document.getElementById('custom-max-enemies');
 
         // HUD Elements
         this.healthBar = document.getElementById('health-bar');
@@ -82,7 +85,10 @@ export class DOMCache {
 
         // Main Menu Souls Display
         this.mainSoulsDisplay = document.getElementById('main-souls-display');
+        this.mainSoulsDisplay = document.getElementById('main-souls-display');
+        this.mainSoulsDisplay = document.getElementById('main-souls-display');
         this.mainSoulsCount = document.getElementById('main-souls-count');
+        this.fpsCounter = document.getElementById('fps-counter');
 
         // Game Canvas
         this.gameCanvas = document.getElementById('gameCanvas');

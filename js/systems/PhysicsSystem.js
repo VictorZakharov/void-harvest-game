@@ -9,15 +9,22 @@ export class PhysicsSystem {
         if (!this.game.player || !this.game.enemies) return;
 
         // Check Enemy-Player Collisions
-        for (let i = this.game.enemies.length - 1; i >= 0; i--) {
-            const enemy = this.game.enemies[i];
-            if (enemy.collidesWith(this.game.player)) {
-                this.handlePlayerCollision(enemy, i);
+        // Optimize: Only check enemies near the player
+        const player = this.game.player;
+        const potentialCollisions = this.game.spatialHash.query(player.x, player.y, player.width, player.height);
+
+        for (const enemy of potentialCollisions) {
+            if (enemy.collidesWith(player)) {
+                // We need the index to remove from main array? 
+                // game.enemies.splice(index, 1) is used in handlePlayerCollision
+                // This makes it tricky if we don't have the index.
+                // Let's find index or change handlePlayerCollision to use indexOf
+                this.handlePlayerCollision(enemy);
             }
         }
     }
 
-    handlePlayerCollision(enemy, index) {
+    handlePlayerCollision(enemy) {
         const { player, stats, particleManager, camera, scene, enemies } = this.game;
 
         const blocked = player.shieldActive;
@@ -39,7 +46,10 @@ export class PhysicsSystem {
         }
 
         enemy.dispose(scene);
-        enemies.splice(index, 1);
+        const index = enemies.indexOf(enemy);
+        if (index > -1) {
+            enemies.splice(index, 1);
+        }
     }
 
     handleShockwave() {
@@ -49,11 +59,20 @@ export class PhysicsSystem {
         particleManager.create(player.x + player.width / 2, player.y + player.height / 2, '#00ffff', 50);
 
         const shockwaveRadius = (player.shockwaveForce || 10) * 10;
+        const rSq = shockwaveRadius * shockwaveRadius;
+
+        // Optimize: Use Spatial Hash for shockwave
+        const areaEnemies = this.game.spatialHash.query(
+            player.x - shockwaveRadius,
+            player.y - shockwaveRadius,
+            shockwaveRadius * 2,
+            shockwaveRadius * 2
+        );
+
         const affectedEnemies = [];
         let totalResistance = 0;
 
-        for (let i = 0; i < enemies.length; i++) {
-            const enemy = enemies[i];
+        for (const enemy of areaEnemies) {
             const dx = (enemy.x + enemy.width / 2) - (player.x + player.width / 2);
             const dy = (enemy.y + enemy.height / 2) - (player.y + player.height / 2);
             const dist = Math.sqrt(dx * dx + dy * dy);

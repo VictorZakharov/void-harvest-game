@@ -8,8 +8,8 @@
 // CANVAS & LAYOUT
 // ============================================
 
-export const CANVAS_WIDTH = 3000;
-export const CANVAS_HEIGHT = 3000;
+export const CANVAS_WIDTH = 4500;
+export const CANVAS_HEIGHT = 4500;
 export const BASE_CAMERA_HEIGHT = 800; // Reference height for fog density scaling
 
 // ============================================

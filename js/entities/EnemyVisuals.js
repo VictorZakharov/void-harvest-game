@@ -33,25 +33,43 @@ export class EnemyVisuals {
      * Creates the main visual group for the enemy.
      * @returns {THREE.Group}
      */
+    /**
+     * Creates the main visual group for the enemy.
+     * @returns {THREE.Group}
+     */
     createMesh() {
-        this.animTime = 0;
+        const group = new THREE.Group();
 
-        const factoryResult = EnemyMeshFactory.create(this.enemy);
+        // --- Health Bar ---
+        // Simple billboard style
+        // Dimensions increased for visibility
+        const hbWidth = 24;
+        const hbHeight = 5.0; // Thicker as requested
 
-        this.torso = factoryResult.torso;
-        this.head = factoryResult.head;
-        this.leftArm = factoryResult.leftArm;
-        this.rightArm = factoryResult.rightArm;
-        this.leftLeg = factoryResult.leftLeg;
-        this.rightLeg = factoryResult.rightLeg;
-        this.healthBar = factoryResult.healthBar;
-        this.bodyMesh = factoryResult.bodyMesh;
-        this.baseColor = factoryResult.baseColor;
+        // Background (Dark)
+        const bgGeo = new THREE.PlaneGeometry(hbWidth, hbHeight);
+        const bgMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+        this.hbStats = { bgMat }; // Cache for updates
+        const bg = new THREE.Mesh(bgGeo, bgMat);
+        bg.position.y = 70; // Float above head
 
-        return factoryResult.group;
+        // Foreground (Green/Red)
+        const fgGeo = new THREE.PlaneGeometry(hbWidth - 0.4, hbHeight - 0.4);
+        fgGeo.translate((hbWidth - 0.4) / 2, 0, 0); // Pivot left for scaling
+        const fgMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 1.0 });
+        this.hbStats.fgMat = fgMat;
+        const fg = new THREE.Mesh(fgGeo, fgMat);
+        fg.position.set(-(hbWidth - 0.4) / 2, 0, 0.1); // Relative to bg center
+
+        bg.add(fg);
+        group.add(bg);
+
+        this.healthBar = bg;
+        this.healthBar.foreground = fg; // Ref for scaling
+        this.healthBar.visible = false; // Hidden by default
+
+        return group;
     }
-
-
 
     /**
      * Updates the visuals based on external visibility, fog, and current camera.
@@ -60,149 +78,35 @@ export class EnemyVisuals {
      * @param {THREE.Camera} camera - Active game camera for billboarding.
      * @param {number} dt - Delta time in milliseconds since last frame.
      */
-    update(visibility = 1.0, fogColor = 0x333333, camera = null, dt = 16) {
-        if (!this.mesh) return;
-
+    update(dt, camera) {
         const enemy = this.enemy;
+
+        // Position the group at the enemy's location.
+        // We DO NOT rotate the group, so that child billboards can align with camera easily.
         this.mesh.position.set(enemy.x + enemy.width / 2, 0, enemy.y + enemy.height / 2);
-        // Correct rotation: Model faces +Z. Game angle 0 is +X.
-        this.mesh.rotation.y = -enemy.angle + Math.PI / 2;
 
-        // Animation
-        const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy);
-        const isMoving = speed > 0.1 && !enemy.frozen;
-
-        // Initialize animTime if missing 
-        if (this.animTime === undefined) {
-            const seed = (enemy.x + enemy.y) * 0.1;
-            this.animTime = seed;
-        }
-
-        // Accumulate time (scaled by game speed) for animation
-        // 0.015 factor normalizes dt (in ms) to animation time units
-        this.animTime += dt * 0.015;
-
-        const time = this.animTime;
-
-        // Pose
-        let lLegRot = 0;
-        let rLegRot = 0;
-        let lArmRot = 0;
-        let rArmRot = 0;
-
-        if (enemy.type === 'shooter' || enemy.type === 'ice') {
-            rArmRot = -Math.PI / 2; // Keep holding gun up
-        }
-
-        if (isMoving) {
-            lLegRot = Math.sin(time) * 0.8;
-            rLegRot = Math.sin(time + Math.PI) * 0.8;
-            lArmRot = Math.sin(time + Math.PI) * 0.6;
-
-            if (enemy.type !== 'shooter' && enemy.type !== 'ice') {
-                rArmRot = Math.sin(time) * 0.6;
-            } else {
-                // Bob aim
-                rArmRot += Math.sin(time) * 0.1;
-            }
-
-            if (this.torso) {
-                this.torso.position.y = 40 + Math.abs(Math.sin(time)) * 2;
-            }
-        } else if (enemy.isKneeling) {
-            // Kneeling pose
-            if (this.torso) {
-                this.torso.position.y = 20; // Lower body further
-            }
-            // "Combat Kneel": Left foot forward, Right knee down (leg back)
-            // Since we have stick legs:
-            // Left leg: Slight bend forward (negative)
-            // Right leg: Bend backward (positive) - roughly parallel to ground or slightly down
-
-            lLegRot = -0.5; // Slight forward
-            rLegRot = 1.2;  // Back/Under (Knee down)
-
-            // Adjust positions if needed? Limbs pivot from top.
-            // If I rotate right leg back, it sticks out behind torso. That's fine for "kneeling".
-        } else {
-            // Standing still
-            if (this.torso) {
-                this.torso.position.y = 40;
-            }
-        }
-
-        if (this.leftLeg) this.leftLeg.rotation.x = lLegRot;
-        if (this.rightLeg) this.rightLeg.rotation.x = rLegRot;
-        if (this.leftArm) this.leftArm.rotation.x = lArmRot;
-        if (this.rightArm) this.rightArm.rotation.x = rArmRot;
-
-
-        // Visibility & Fog Logic
-        const v = Math.max(0, Math.min(1, visibility));
-
-        if (this.bodyMesh && this.bodyMesh.material) {
-            this.mesh.traverse((child) => {
-                if (child.isMesh && child.material && !child.userData.isHealthBar && !child.userData.ignoreVisibility) {
-                    const targetOpacity = 0.05 + (0.95 * v);
-                    child.material.transparent = true;
-                    child.material.opacity = targetOpacity;
-
-                    // Emissive for Freeze
-                    if (child.material.emissive) {
-                        const emissiveColor = enemy.frozen ? 0x00ffff : 0x000000;
-                        const emissiveIntensity = enemy.frozen ? 0.5 : 0;
-                        child.material.emissive.setHex(emissiveColor);
-                        child.material.emissiveIntensity = emissiveIntensity;
-                    }
-
-                    // Simple Fog/Visibility Color Lerp
-                    // Only base color for most parts? 
-                    // Let's keep original colors but fade to black if hidden?
-                    // Original logic faded to black.
-
-                    // Just set color directly for now, complicated lerps might be overkill for stick figures
-                    // unless we want that "fade in from darkness" effect.
-                    // Let's preserve the existing "fade to black" logic roughly.
-                }
-            });
-        }
-
-        // ... (Health Bar logic remains same, just ensuring position is correct)
+        // --- Health Bar Logic ---
         if (this.healthBar) {
             const isDamaged = enemy.health < enemy.maxHealth;
-            const shouldBeVisible = (v > 0.5 && isDamaged && enemy.health > 0);
-            const targetOpacity = shouldBeVisible ? 1.0 : 0.0;
+            // Only show if damaged and alive
+            const shouldBeVisible = (isDamaged && enemy.health > 0);
 
-            if (shouldBeVisible && !this.wasDamaged) {
-                this.hbOpacity = 1.0;
-            } else if (this.hbOpacity < targetOpacity) {
-                this.hbOpacity = Math.min(this.hbOpacity + 0.02, targetOpacity);
-            } else if (this.hbOpacity > targetOpacity) {
-                this.hbOpacity = Math.max(this.hbOpacity - 0.02, targetOpacity);
-            }
-
-            this.wasDamaged = isDamaged;
-
-            if (this.hbOpacity > 0.01) {
+            if (shouldBeVisible) {
                 this.healthBar.visible = true;
-                if (this.healthBar.bg) this.healthBar.bg.material.opacity = this.hbOpacity * 0.5; // Transparent background
-                if (this.healthBar.fg) this.healthBar.fg.material.opacity = this.hbOpacity;
 
-                const pct = enemy.health / enemy.maxHealth;
+                // Update Health Percent
+                const pct = Math.max(0, enemy.health / enemy.maxHealth);
                 this.healthBar.foreground.scale.x = pct;
 
+                // Color tint (Green -> Red)
+                const hue = pct * 0.3; // 0.3 = Green, 0 = Red
+                this.healthBar.foreground.material.color.setHSL(hue, 1, 0.5);
+
+                // Billboard: Align with Screen Plane
                 if (camera) {
-                    const camDir = new THREE.Vector3();
-                    camera.getWorldDirection(camDir);
-                    const target = new THREE.Vector3();
-                    this.healthBar.getWorldPosition(target);
-                    target.sub(camDir.multiplyScalar(100));
-                    this.healthBar.lookAt(target);
-                } else {
-                    this.healthBar.rotation.order = 'YXZ';
-                    this.healthBar.rotation.y = enemy.angle;
-                    this.healthBar.rotation.x = -Math.PI / 4;
+                    this.healthBar.quaternion.copy(camera.quaternion);
                 }
+
             } else {
                 this.healthBar.visible = false;
             }

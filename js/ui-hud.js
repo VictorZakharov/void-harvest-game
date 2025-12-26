@@ -23,44 +23,39 @@ export function updateHUD(game, dom) {
         dom.setText(dom.soulsRunText, `(+${runSouls})`);
     }
 
+    // Count active enemies by type
+    const counts = { basic: 0, fast: 0, shooter: 0, tank: 0, ice: 0 };
+    if (game.enemies) { // Ensure enemies array exists
+        for (const enemy of game.enemies) {
+            if (counts[enemy.type] !== undefined) {
+                counts[enemy.type]++;
+            }
+        }
+    }
+
     // Determine which enemies can spawn this wave
     const wave = game.wave;
     let enemyIconsHtml = '';
 
+    // Helper to generate icon HTML with count
+    const getIcon = (type) => `<span class="enemy-indicator ${type}">● <span style="font-size: 0.8em; color: #fff;">${counts[type]}</span></span>`;
+
     // Custom game mode: show only enabled enemies
     if (game.customEnemies) {
-        if (game.customEnemies.basic) {
-            enemyIconsHtml += '<span class="enemy-indicator basic">●</span> ';
-        }
-        if (game.customEnemies.fast) {
-            enemyIconsHtml += '<span class="enemy-indicator fast">●</span> ';
-        }
-        if (game.customEnemies.shooter) {
-            enemyIconsHtml += '<span class="enemy-indicator shooter">●</span> ';
-        }
-        if (game.customEnemies.tank) {
-            enemyIconsHtml += '<span class="enemy-indicator tank">●</span> ';
-        }
-        if (game.customEnemies.ice) {
-            enemyIconsHtml += '<span class="enemy-indicator ice">●</span> ';
-        }
+        if (game.customEnemies.basic) enemyIconsHtml += getIcon('basic') + ' ';
+        if (game.customEnemies.fast) enemyIconsHtml += getIcon('fast') + ' ';
+        if (game.customEnemies.shooter) enemyIconsHtml += getIcon('shooter') + ' ';
+        if (game.customEnemies.tank) enemyIconsHtml += getIcon('tank') + ' ';
+        if (game.customEnemies.ice) enemyIconsHtml += getIcon('ice') + ' ';
         enemyIconsHtml = enemyIconsHtml.trim();
     } else {
         // Normal mode: show enemies based on wave progression
-        enemyIconsHtml = '<span class="enemy-indicator basic">●</span>';
+        enemyIconsHtml = getIcon('basic');
 
-        if (wave >= 3) {
-            enemyIconsHtml += ' <span class="enemy-indicator fast">●</span>';
-        }
-        if (wave >= 5) {
-            enemyIconsHtml += ' <span class="enemy-indicator shooter">●</span>';
-        }
-        if (wave >= 7) {
-            enemyIconsHtml += ' <span class="enemy-indicator tank">●</span>';
-        }
-        if (wave >= 8) {
-            enemyIconsHtml += ' <span class="enemy-indicator ice">●</span>';
-        }
+        if (wave >= 3) enemyIconsHtml += ' ' + getIcon('fast');
+        if (wave >= 5) enemyIconsHtml += ' ' + getIcon('shooter');
+        if (wave >= 7) enemyIconsHtml += ' ' + getIcon('tank');
+        if (wave >= 8) enemyIconsHtml += ' ' + getIcon('ice');
     }
 
     dom.setText(dom.waveVal, `${game.wave}`);

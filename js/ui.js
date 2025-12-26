@@ -94,7 +94,10 @@ export class UIManager {
       // Clear any previous custom settings so we get a pure random start
       this.game.customEnemies = null;
       this.game.customSkills = null;
+      this.game.customSkills = null;
       this.game.customBiome = null;
+      this.game.customSpawnRate = null;
+      this.game.customMaxEnemies = null;
       this.game.start();
     };
 
@@ -143,7 +146,15 @@ export class UIManager {
       this.game.customEnemies = { ...this.customEnemies };
       this.game.customSkills = { ...this.customSkills }; // Pass selected skills
       this.game.customBiome = this.customBiome.value; // Pass selected biome
-      this.game.debugWeather = this.dom.debugWeatherCheck.checked;
+      this.game.customBiome = this.customBiome.value; // Pass selected biome
+      this.game.debugWeather = this.dom.debugWeatherCheck.checked; // Existing
+
+      const rateVal = parseFloat(this.dom.customSpawnRateInput.value);
+      this.game.customSpawnRate = isNaN(rateVal) ? null : rateVal;
+
+      const maxVal = parseInt(this.dom.customMaxEnemiesInput.value);
+      this.game.customMaxEnemies = isNaN(maxVal) ? null : maxVal;
+
       this.game.start();
     };
 

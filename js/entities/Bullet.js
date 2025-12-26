@@ -52,50 +52,58 @@ export class Bullet extends Entity {
     }
 
     createMesh() {
-        const color = this.isPlayer ? 0xffff00 : (this.enemyType === 'ice' ? 0x66ccff : 0xff0000);
+        // Initialize Static Cache if needed
+        if (!Bullet.geometry) {
+            // Tracer Geometry: Long thin box. Length 40, Width 2, Height 2.
+            Bullet.geometry = new THREE.BoxGeometry(40, 2, 2);
+
+            // Floor Glow Geometry: Horizontal plane
+            Bullet.glowGeometry = new THREE.PlaneGeometry(1, 1);
+
+            Bullet.materials = {};
+            Bullet.glowMaterials = {};
+        }
+
         const colorStr = this.isPlayer ? '#ffff00' : (this.enemyType === 'ice' ? '#66ccff' : '#ff0000');
-        const map = SpriteGenerator.createGradientTexture(64, colorStr);
+        const colorHex = this.isPlayer ? 0xffff00 : (this.enemyType === 'ice' ? 0x66ccff : 0xff0000);
 
-        // Refactor: Return a Group
-        const group = new THREE.Group();
-        // group.add(sprite); // REMOVED: User wants only streaks, no "orb/circle" sprite
-
-        // Add Fake Floor Light (Horizontal Plane) to illuminate ground cheaply
-        // Real PointLights caused massive lag. This Additive Plane mimics light on the floor.
-        if (this.isPlayer) {
-            // Horizontal plane, lying flat on the ground
-            const glowGeo = new THREE.PlaneGeometry(1, 1);
-            const glowMat = new THREE.MeshBasicMaterial({
-                map: new THREE.CanvasTexture(map), // Reuse the gradient
-                color: color,
+        // Cache Material
+        if (!Bullet.materials[colorStr]) {
+            Bullet.materials[colorStr] = new THREE.MeshBasicMaterial({
+                color: colorHex,
                 transparent: true,
-                opacity: 0.6, // Increased from 0.3 to restore contrast/glow (safe due to elongated shape)
-                blending: THREE.AdditiveBlending, // Reverted to Additive for "Light" look (prevents muddy "crap" look on dark ground)
+                opacity: 1.0,
+                blending: THREE.NormalBlending,
+            });
+        }
+
+        // Cache Glow Material and Texture
+        if (this.isPlayer && !Bullet.glowMaterials[colorStr]) {
+            const map = SpriteGenerator.createGradientTexture(64, colorStr);
+            Bullet.glowMaterials[colorStr] = new THREE.MeshBasicMaterial({
+                map: new THREE.CanvasTexture(map),
+                color: colorHex,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
-            const floorGlow = new THREE.Mesh(glowGeo, glowMat);
+        }
 
-            // Bullet is at Y=10. Ground is at Y=0.
-            // Place closer to ground (relative Y = -9.5 puts it at Abs Y = 0.5)
-            // Scale to be elongated streak (X axis is forward) instead of circle
+        const group = new THREE.Group();
+
+        // Add Fake Floor Light (Horizontal Plane)
+        if (this.isPlayer) {
+            const floorGlow = new THREE.Mesh(Bullet.glowGeometry, Bullet.glowMaterials[colorStr]);
+            // Bullet is at Y=10. Ground is at Y=0. Relative Y = -9.5 puts it at Abs Y = 0.5
             floorGlow.position.set(0, -9.5, 0);
             floorGlow.rotation.x = -Math.PI / 2;
-            floorGlow.scale.set(140, 50, 1); // Oval streak (Length 140, Width 50)
-
+            floorGlow.scale.set(140, 50, 1);
             group.add(floorGlow);
         }
 
-        // Tracer Geometry
-        // Long thin box. Length 40, Width 2, Height 2.
-        const tracerGeo = new THREE.BoxGeometry(40, 2, 2);
-        const tracerMat = new THREE.MeshBasicMaterial({
-            color: color,
-            transparent: true,
-            opacity: 1.0, // Increased from 0.8 to 1.0 for maximum visibility/pop
-            blending: THREE.NormalBlending, // Changed to Normal to preserve Yellow color on White snow (Additive makes it white)
-        });
-        const tracer = new THREE.Mesh(tracerGeo, tracerMat);
-
+        // Tracer
+        const tracer = new THREE.Mesh(Bullet.geometry, Bullet.materials[colorStr]);
         group.add(tracer);
 
         return group;

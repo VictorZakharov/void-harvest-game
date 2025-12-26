@@ -321,6 +321,18 @@
     svg {
         filter: drop-shadow(0 0 4px v.$color-info);
     }
+
+    #fps-counter {
+        margin-left: 10px;
+        font-size: 14px;
+        font-family: v.$font-family;
+        font-weight: bold;
+        color: #fff; // High contrast
+        background: rgba(0, 0, 0, 0.7); // Semi-transparent black background
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 1px;
+    }
 }
 
 #wave-stats {

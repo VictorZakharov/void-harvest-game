@@ -36,6 +36,7 @@
                             <polyline points="12 6 12 12 16 14" />
                         </svg>
                         <span id="time-val">0:00</span>
+                        <span id="fps-counter">FPS: 60</span>
                     </div>
                     <div id="wave-stats">
                         <span class="stat-label">WAVE</span>
@@ -62,304 +63,339 @@
                 <div class="frozen-text">GAME FROZEN</div>
                 <div class="frozen-sub">MOVE OR ATTACK TO RESUME</div>
             </div>
-        </div>
 
-        <!-- Pause Modal -->
-        <div id="pause-modal" class="modal hidden">
-            <div class="modal-content">
-                <h2>Game Paused</h2>
-                <div id="pause-stats"></div>
-                <button id="resume-btn" class="btn btn-large">Resume (ESC)</button>
-                <button id="restart-pause-btn" class="btn">Restart</button>
-                <button id="exit-pause-btn" class="btn">Exit to Main Menu</button>
+            <!-- FPS Counter Removed -->
+
+            <!-- Pause Modal -->
+            <div id="pause-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Game Paused</h2>
+                    <div id="pause-stats"></div>
+                    <button id="resume-btn" class="btn btn-large">Resume (ESC)</button>
+                    <button id="restart-pause-btn" class="btn">Restart</button>
+                    <button id="exit-pause-btn" class="btn">Exit to Main Menu</button>
+                </div>
             </div>
-        </div>
 
-        <!-- Weather Warning (Independent of panels) -->
-        <div id="weather-warning" class="hidden">WARNING: WEATHER APPROACHING</div>
+            <!-- Weather Warning (Independent of panels) -->
+            <div id="weather-warning" class="hidden">WARNING: WEATHER APPROACHING</div>
 
-        <!-- HUD (Heads-Up Display) -->
-        <!-- game-ui container removed as it was unused and hidden -->
+            <!-- HUD (Heads-Up Display) -->
+            <!-- game-ui container removed as it was unused and hidden -->
 
-        <!-- Level Up Modal -->
-        <div id="levelup-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 1100px;">
-                <h2>Level Up!</h2>
-                <p style="font-size: 18px;">Choose an upgrade:</p>
-                <div id="skill-choices"></div>
-                <button id="reroll-btn" class="btn btn-large"
-                    style="margin: 20px auto 0 auto; display: block;">Reroll</button>
+            <!-- Level Up Modal -->
+            <div id="levelup-modal" class="modal hidden">
+                <div class="modal-content" style="max-width: 1100px;">
+                    <h2>Level Up!</h2>
+                    <p style="font-size: 18px;">Choose an upgrade:</p>
+                    <div id="skill-choices"></div>
+                    <button id="reroll-btn" class="btn btn-large"
+                        style="margin: 20px auto 0 auto; display: block;">Reroll</button>
+                </div>
             </div>
-        </div>
 
-        <!-- Game Over Modal -->
-        <div id="gameover-modal" class="modal hidden">
-            <div class="modal-content">
-                <h2>Game Over</h2>
-                <div id="final-stats"></div>
-                <button id="restart-btn" class="btn">Play Again</button>
-                <button id="upgrades-btn" class="btn">View Upgrades</button>
-                <button id="gameover-exit-btn" class="btn" style="background: #444; margin-top: 10px;">Return to Main
-                    Menu</button>
+            <!-- Game Over Modal -->
+            <div id="gameover-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Game Over</h2>
+                    <div id="final-stats"></div>
+                    <button id="restart-btn" class="btn">Play Again</button>
+                    <button id="upgrades-btn" class="btn">View Upgrades</button>
+                    <button id="gameover-exit-btn" class="btn" style="background: #444; margin-top: 10px;">Return to
+                        Main
+                        Menu</button>
+                </div>
+                <span id="close-gameover-x" class="modal-close-btn">&times;</span>
             </div>
-            <span id="close-gameover-x" class="modal-close-btn">&times;</span>
-        </div>
 
-        <!-- Meta Progression Modal -->
-        <div id="meta-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header-row">
-                    <h2>Permanent Upgrades</h2>
-                    <div class="souls-display">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #b388ff;">
-                            <path
-                                d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
-                        </svg>
-                        <span id="currency-text" class="souls-count">0</span>
+            <!-- Meta Progression Modal -->
+            <div id="meta-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header-row">
+                        <h2>Permanent Upgrades</h2>
+                        <div class="souls-display">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #b388ff;">
+                                <path
+                                    d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                            </svg>
+                            <span id="currency-text" class="souls-count">0</span>
+                        </div>
+                    </div>
+                    <div id="meta-upgrades"></div>
+                    <button id="reset-meta-btn" class="btn" style="background: #665555;">Reset All</button>
+                    <button id="close-meta-btn" class="btn">Close</button>
+                </div>
+            </div>
+
+            <!-- Reset Confirmation Modal -->
+            <div id="reset-confirm-modal" class="modal hidden" style="z-index: 1001;">
+                <div class="modal-content" style="max-width: 500px; text-align: center;">
+                    <h2 style="color: #ff8844; margin-bottom: 20px;">⚠️ Reset All Upgrades?</h2>
+                    <p style="font-size: 18px; margin: 20px 0;">This will reset all permanent upgrades to level 0.</p>
+                    <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;">
+                    </p>
+                    <p style="color: #aaa; margin-bottom: 30px;">This action cannot be undone.</p>
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes,
+                            Reset
+                        </button>
+                        <button id="cancel-reset-btn" class="btn" style="min-width: 120px;">Cancel</button>
                     </div>
                 </div>
-                <div id="meta-upgrades"></div>
-                <button id="reset-meta-btn" class="btn" style="background: #665555;">Reset All</button>
-                <button id="close-meta-btn" class="btn">Close</button>
             </div>
-        </div>
 
-        <!-- Reset Confirmation Modal -->
-        <div id="reset-confirm-modal" class="modal hidden" style="z-index: 1001;">
-            <div class="modal-content" style="max-width: 500px; text-align: center;">
-                <h2 style="color: #ff8844; margin-bottom: 20px;">⚠️ Reset All Upgrades?</h2>
-                <p style="font-size: 18px; margin: 20px 0;">This will reset all permanent upgrades to level 0.</p>
-                <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;">
-                </p>
-                <p style="color: #aaa; margin-bottom: 30px;">This action cannot be undone.</p>
-                <div style="display: flex; gap: 20px; justify-content: center;">
-                    <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes,
-                        Reset
+            <!-- Start Screen -->
+            <div id="start-screen" class="modal">
+                <div class="modal-content">
+                    <button id="meta-btn" class="btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M12 19V5M5 12l7-7 7 7" />
+                        </svg>
+                        Upgrades
+                        <div id="main-souls-display" class="souls-display hidden">
+                            <span class="separator">|</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #b388ff;">
+                                <path
+                                    d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                            </svg>
+                            <span id="main-souls-count">0</span>
+                        </div>
                     </button>
-                    <button id="cancel-reset-btn" class="btn" style="min-width: 120px;">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Start Screen -->
-        <div id="start-screen" class="modal">
-            <div class="modal-content">
-                <button id="meta-btn" class="btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        style="vertical-align: middle; margin-right: 6px;">
-                        <path d="M12 19V5M5 12l7-7 7 7" />
-                    </svg>
-                    Upgrades
-                    <div id="main-souls-display" class="souls-display hidden">
-                        <span class="separator">|</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #b388ff;">
-                            <path
-                                d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                    <button id="guide-btn" class="btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                         </svg>
-                        <span id="main-souls-count">0</span>
-                    </div>
-                </button>
-                <button id="guide-btn" class="btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        style="vertical-align: middle; margin-right: 6px;">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                    </svg>
-                    Guide
-                </button>
-                <h1>Void Harvest</h1>
-                <p>Survive waves of enemies and become stronger!</p>
-                <div class="controls-info">
-                    <p style="margin-bottom: 15px;"><strong>Controls:</strong></p>
-                    <div class="controls-visual">
-                        <div class="keyboard-section">
-                            <div class="keyboard-row">
-                                <div class="key esc">ESC</div>
+                        Guide
+                    </button>
+                    <h1>Void Harvest</h1>
+                    <p>Survive waves of enemies and become stronger!</p>
+                    <div class="controls-info">
+                        <p style="margin-bottom: 15px;"><strong>Controls:</strong></p>
+                        <div class="controls-visual">
+                            <div class="keyboard-section">
+                                <div class="keyboard-row">
+                                    <div class="key esc">ESC</div>
+                                </div>
+                                <div class="key-label" style="margin-top: 3px;">Pause</div>
                             </div>
-                            <div class="key-label" style="margin-top: 3px;">Pause</div>
-                        </div>
-                        <div class="keyboard-section">
-                            <div class="keyboard-row">
-                                <div class="key space">SPACE</div>
+                            <div class="keyboard-section">
+                                <div class="keyboard-row">
+                                    <div class="key space">SPACE</div>
+                                </div>
+                                <div class="key-label" style="margin-top: 3px;">Freeze</div>
                             </div>
-                            <div class="key-label" style="margin-top: 3px;">Freeze</div>
-                        </div>
-                        <div class="keyboard-section">
-                            <div class="keyboard-row">
-                                <div style="width: 50px;"></div>
-                                <div class="key">W</div>
-                                <div style="width: 50px;"></div>
+                            <div class="keyboard-section">
+                                <div class="keyboard-row">
+                                    <div style="width: 50px;"></div>
+                                    <div class="key">W</div>
+                                    <div style="width: 50px;"></div>
+                                </div>
+                                <div class="keyboard-row">
+                                    <div class="key">A</div>
+                                    <div class="key">S</div>
+                                    <div class="key">D</div>
+                                </div>
+                                <div class="key-label">Movement</div>
                             </div>
-                            <div class="keyboard-row">
-                                <div class="key">A</div>
-                                <div class="key">S</div>
-                                <div class="key">D</div>
-                            </div>
-                            <div class="key-label">Movement</div>
-                        </div>
-                        <div class="mouse-section infographic">
-                            <!-- Left Callout: Aim -->
-                            <div class="callout aim">
-                                <span class="label">Aim & Shoot</span>
-                                <div class="connector">
-                                    <div class="line"></div>
-                                    <div class="dot"></div>
+                            <div class="mouse-section infographic">
+                                <!-- Left Callout: Aim -->
+                                <div class="callout aim">
+                                    <span class="label">Aim & Shoot</span>
+                                    <div class="connector">
+                                        <div class="line"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Center: Mouse -->
+                                <div class="mouse">
+                                    <div class="mouse-buttons">
+                                        <div class="mouse-button left"></div>
+                                        <div class="mouse-button right"></div>
+                                    </div>
+                                    <div class="mouse-wheel"></div>
+                                </div>
+
+                                <!-- Right Callouts: Zoom & Orbit -->
+                                <div class="callout zoom">
+                                    <div class="connector">
+                                        <div class="line"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <span class="label">Zoom</span>
+                                </div>
+
+                                <div class="callout orbit">
+                                    <div class="connector">
+                                        <div class="line"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <span class="label">Orbit</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <!-- Start Screen Actions Footer -->
+                    <div class="start-actions"
+                        style="margin-top: 30px; display: flex; align-items: flex-end; justify-content: space-between; width: 100%; box-sizing: border-box;">
 
-                            <!-- Center: Mouse -->
-                            <div class="mouse">
-                                <div class="mouse-buttons">
-                                    <div class="mouse-button left"></div>
-                                    <div class="mouse-button right"></div>
-                                </div>
-                                <div class="mouse-wheel"></div>
-                            </div>
-
-                            <!-- Right Callouts: Zoom & Orbit -->
-                            <div class="callout zoom">
-                                <div class="connector">
-                                    <div class="line"></div>
-                                    <div class="dot"></div>
-                                </div>
-                                <span class="label">Zoom</span>
-                            </div>
-
-                            <div class="callout orbit">
-                                <div class="connector">
-                                    <div class="line"></div>
-                                    <div class="dot"></div>
-                                </div>
-                                <span class="label">Orbit</span>
+                        <!-- Speed Controls (Left) -->
+                        <div class="speed-controls-group" style="text-align: left;">
+                            <div class="label-mono">Game Speed</div>
+                            <div class="speed-controls" style="display: flex; gap: 5px;">
+                                <button id="speed-slow-btn" class="btn btn-small speed-btn"
+                                    data-speed="0.5">Slow</button>
+                                <button id="speed-med-btn" class="btn btn-small speed-btn"
+                                    data-speed="0.75">Med</button>
+                                <button id="speed-fast-btn" class="btn btn-small speed-btn"
+                                    data-speed="1.0">Fast</button>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <!-- Start Screen Actions Footer -->
-                <div class="start-actions"
-                    style="margin-top: 30px; display: flex; align-items: flex-end; justify-content: space-between; width: 100%; box-sizing: border-box;">
 
-                    <!-- Speed Controls (Left) -->
-                    <div class="speed-controls-group" style="text-align: left;">
-                        <div class="label-mono">Game Speed</div>
-                        <div class="speed-controls" style="display: flex; gap: 5px;">
-                            <button id="speed-slow-btn" class="btn btn-small speed-btn" data-speed="0.5">Slow</button>
-                            <button id="speed-med-btn" class="btn btn-small speed-btn" data-speed="0.75">Med</button>
-                            <button id="speed-fast-btn" class="btn btn-small speed-btn" data-speed="1.0">Fast</button>
-                        </div>
-                    </div>
+                        <!-- Main Actions (Right) -->
+                        <div class="main-buttons-group"
+                            style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
 
-                    <!-- Main Actions (Right) -->
-                    <div class="main-buttons-group"
-                        style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+                            <div class="split-btn-group">
+                                <button id="start-btn" class="btn btn-large split-main">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                                        <path d="M20 7h-7L10 2 7 7H0l6 5-2 7 6-4 6 4-2-7z" />
+                                        <path d="M14 7h7l-6 5 2 7-6-4" />
+                                    </svg>
+                                    Start Game
+                                </button>
 
-                        <div class="split-btn-group">
-                            <button id="start-btn" class="btn btn-large split-main">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                                    <path d="M20 7h-7L10 2 7 7H0l6 5-2 7 6-4 6 4-2-7z" />
-                                    <path d="M14 7h7l-6 5 2 7-6-4" />
-                                </svg>
-                                Start Game
-                            </button>
+                                <button id="custom-btn" class="btn btn-large split-action" title="Custom Game Settings">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path
+                                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                    </svg>
+                                </button>
+                            </div>
 
-                            <button id="custom-btn" class="btn btn-large split-action" title="Custom Game Settings">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <circle cx="12" cy="12" r="3" />
-                                    <path
-                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                                </svg>
-                            </button>
                         </div>
 
                     </div>
 
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Guide Modal -->
-        <div id="guide-modal" class="modal hidden">
-            <div class="modal-content"
-                style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
-                <button id="close-guide-x" class="close-x" aria-label="Close">&times;</button>
-                <h2>Survivor's Guide</h2>
-                <div id="guide-content"></div>
-                <button id="close-guide-btn" class="btn">Close</button>
-            </div>
-        </div>
-
-        <!-- Custom Game Config Modal -->
-        <div id="custom-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-                <h2>Custom Game Configuration</h2>
-
-                <div class="custom-config-row" style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
-                    <!-- Label Column (Left) -->
-                    <div
-                        style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
-                        <h3 style="color: #00ffff; margin: 0; text-align: right;">Enemy Types</h3>
-
-                        <!-- Select All Checkbox -->
-                        <div class="sci-fi-checkbox-wrapper">
-                            <input type="checkbox" id="enemy-select-all" class="sci-fi-checkbox">
-                            <label for="enemy-select-all">Select All</label>
-                        </div>
-                    </div>
-
-                    <!-- Enemy Options (Center/Right) -->
-                    <div id="enemy-type-config" class="enemy-selector-group">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <div class="custom-config-row" style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
-                    <!-- Label Column (Left) -->
-                    <div
-                        style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
-                        <h3 style="color: #00ffff; margin: 0; text-align: right;">Biome Selection</h3>
-
-                        <!-- Debug Checkbox moved here -->
-                        <div class="sci-fi-checkbox-wrapper">
-                            <input type="checkbox" id="debug-weather-check" class="sci-fi-checkbox">
-                            <label for="debug-weather-check" style="font-size: 12px;">Debug Weather</label>
-                        </div>
-                    </div>
-
-                    <!-- Biome Options (Center) -->
-                    <div id="custom-biome-config" class="biome-selector-group">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>
-                <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease.
-                    Click
-                    at max level to reset.</p>
-                <div id="custom-skill-config"></div>
-
-                <!-- Footer with Speed Slider and Start Button -->
-                <!-- Footer with Speed Buttons and Start Button -->
-                <div class="modal-footer">
-                    <div class="game-speed-control">
-                        <div class="label-mono">Game Speed</div>
-                        <div class="speed-controls" style="display: flex; gap: 5px;">
-                            <button class="btn btn-small speed-btn" data-speed="0.5">Slow</button>
-                            <button class="btn btn-small speed-btn" data-speed="0.75">Med</button>
-                            <button class="btn btn-small speed-btn" data-speed="1.0">Fast</button>
-                        </div>
-                    </div>
-
-                    <button id="start-custom-btn" class="btn btn-large">Start Custom Game</button>
-                    <!-- removed cancel button -->
                 </div>
             </div>
-            <!-- Sticky Close X -->
-            <span id="close-custom-modal" class="modal-close-btn">&times;</span>
+
+            <!-- Guide Modal -->
+            <div id="guide-modal" class="modal hidden">
+                <div class="modal-content"
+                    style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
+                    <button id="close-guide-x" class="close-x" aria-label="Close">&times;</button>
+                    <h2>Survivor's Guide</h2>
+                    <div id="guide-content"></div>
+                    <button id="close-guide-btn" class="btn">Close</button>
+                </div>
+            </div>
+
+            <!-- Custom Game Config Modal -->
+            <div id="custom-modal" class="modal hidden">
+                <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                    <h2>Custom Game Configuration</h2>
+
+                    <div class="custom-config-row"
+                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
+                        <!-- Label Column (Left) -->
+                        <div
+                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
+                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Enemy Types</h3>
+
+                            <!-- Select All Checkbox -->
+                            <div class="sci-fi-checkbox-wrapper">
+                                <input type="checkbox" id="enemy-select-all" class="sci-fi-checkbox">
+                                <label for="enemy-select-all">Select All</label>
+                            </div>
+                        </div>
+
+                        <!-- Enemy Options (Center/Right) -->
+                        <div id="enemy-type-config" class="enemy-selector-group">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="custom-config-row"
+                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
+                        <!-- Label Column (Left) -->
+                        <div
+                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
+                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Spawn Settings</h3>
+                        </div>
+
+                        <!-- Spawn Options (Center) -->
+                        <div class="spawn-config-group" style="display: flex; gap: 20px;">
+                            <div class="input-wrapper" style="display: flex; flex-direction: column;">
+                                <label for="custom-spawn-rate"
+                                    style="color: #ccc; font-size: 14px; margin-bottom: 5px;">Spawn Rate (per
+                                    sec)</label>
+                                <input type="number" id="custom-spawn-rate" class="sci-fi-input" min="0.1" value="1"
+                                    step="0.1"
+                                    style="background: rgba(0,0,0,0.5); border: 1px solid #00ffff; color: #fff; padding: 5px; width: 100px;">
+                            </div>
+                            <div class="input-wrapper" style="display: flex; flex-direction: column;">
+                                <label for="custom-max-enemies"
+                                    style="color: #ccc; font-size: 14px; margin-bottom: 5px;">Max Enemies</label>
+                                <input type="number" id="custom-max-enemies" class="sci-fi-input" min="1" value="100"
+                                    style="background: rgba(0,0,0,0.5); border: 1px solid #00ffff; color: #fff; padding: 5px; width: 100px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="custom-config-row"
+                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
+                        <!-- Label Column (Left) -->
+                        <div
+                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
+                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Biome Selection</h3>
+
+                            <!-- Debug Checkbox moved here -->
+                            <div class="sci-fi-checkbox-wrapper">
+                                <input type="checkbox" id="debug-weather-check" class="sci-fi-checkbox">
+                                <label for="debug-weather-check" style="font-size: 12px;">Debug Weather</label>
+                            </div>
+
+                        </div>
+
+                        <!-- Biome Options (Center) -->
+                        <div id="custom-biome-config" class="biome-selector-group">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>
+                    <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease.
+                        Click
+                        at max level to reset.</p>
+                    <div id="custom-skill-config"></div>
+
+                    <!-- Footer with Speed Slider and Start Button -->
+                    <!-- Footer with Speed Buttons and Start Button -->
+                    <div class="modal-footer">
+                        <div class="game-speed-control">
+                            <div class="label-mono">Game Speed</div>
+                            <div class="speed-controls" style="display: flex; gap: 5px;">
+                                <button class="btn btn-small speed-btn" data-speed="0.5">Slow</button>
+                                <button class="btn btn-small speed-btn" data-speed="0.75">Med</button>
+                                <button class="btn btn-small speed-btn" data-speed="1.0">Fast</button>
+                            </div>
+                        </div>
+
+                        <button id="start-custom-btn" class="btn btn-large">Start Custom Game</button>
+                        <!-- removed cancel button -->
+                    </div>
+                </div>
+                <!-- Sticky Close X -->
+                <span id="close-custom-modal" class="modal-close-btn">&times;</span>
+            </div>
         </div>
-    </div>
 </body>
 
 </html>

@@ -152,8 +152,10 @@ export class Enemy extends Entity {
             return;
         }
 
-        this.x += this.vx; // vx already has speedModifier which includes timeScale (checked in Game.js)
-        this.y += this.vy;
+        // Apply movement scaled by DT (timeScale)
+        // vx/vy are speed * modifiers, so they represent "pixels per frame at 144fps" scaling
+        this.x += this.vx * timeScale;
+        this.y += this.vy * timeScale;
 
         // Shooter and ice enemy logic
         // States: 
