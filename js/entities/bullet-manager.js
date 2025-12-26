@@ -11,6 +11,7 @@ export class BulletManager {
      * @param {Object} stats - The game stats object for tracking shots fired and damage.
      * @param {Object} callbacks - Dictionary of callback functions.
      * @param {Function} callbacks.createParticles - Function to spawn particles (x, y, color, count).
+     * @param {Function} callbacks.createExplosion - Function to spawn explosion ring (x, y, color, radius).
      * @param {Function} callbacks.onGameOver - Function to trigger game over state.
      * @param {Function} callbacks.onCameraShake - Function to trigger camera shake (amount).
      * @param {Function} [callbacks.onEnemyDeath] - Optional callback when an enemy is killed by a bullet.
@@ -139,6 +140,35 @@ export class BulletManager {
                                 this.callbacks.createParticles(enemy.x, enemy.y, '#00ffff', 15);
                             } else {
                                 this.callbacks.createParticles(enemy.x, enemy.y, '#ffff00', PARTICLE_COUNT_HIT);
+                            }
+                        }
+
+                        // Splash Damage
+                        if (player.splashRadius > 0) {
+                            const rangeSq = player.splashRadius * player.splashRadius;
+                            const splashDmg = bullet.damage * player.splashDamageRatio;
+
+                            // Visuals for explosion at impact point
+                            // Add slight jitter to separate simultaneous hits visually
+                            const ex = bullet.x + (Math.random() - 0.5) * 15;
+                            const ey = bullet.y + (Math.random() - 0.5) * 15;
+
+                            this.callbacks.createParticles(ex, ey, '#ff5500', 8);
+                            if (this.callbacks.createExplosion) {
+                                this.callbacks.createExplosion(ex, ey, '#ff5500', player.splashRadius);
+                            }
+
+                            for (const other of enemies) {
+                                if (other === enemy || other.health <= 0) continue;
+
+                                const dx = other.x - enemy.x;
+                                const dy = other.y - enemy.y;
+                                if (dx * dx + dy * dy <= rangeSq) {
+                                    if (other.takeDamage(splashDmg)) {
+                                        if (this.callbacks.onEnemyDeath) this.callbacks.onEnemyDeath(other);
+                                    }
+                                    this.callbacks.createParticles(other.x, other.y, '#ff8800', 3);
+                                }
                             }
                         }
 

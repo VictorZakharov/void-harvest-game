@@ -1,4 +1,5 @@
 import { Particle } from '../particles.js';
+import { ExplosionRing } from './ExplosionRing.js';
 
 /**
  * Manages visual particle effects in the game.
@@ -32,6 +33,19 @@ export class ParticleManager {
             this.particles.push(p);
             this.scene.add(p.mesh);
         }
+    }
+
+    /**
+     * Creates an expanding ring effect for explosions.
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @param {string} color - Hex color
+     * @param {number} radius - Max radius of explosion
+     */
+    createExplosion(x, y, color, radius) {
+        const ring = new ExplosionRing(x, y, color, radius);
+        this.particles.push(ring);
+        this.scene.add(ring.mesh);
     }
 
     /**

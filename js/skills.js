@@ -96,17 +96,33 @@ export const SKILLS = [
         }
     },
     {
-        id: 'bulletspeed',
-        name: 'Bullet Velocity',
-        description: 'Increases projectile flight speed by 25%.',
-        baseValue: 25,
-        unit: '%',
-        maxLevel: MAX_SKILL_LEVEL,
+        id: 'explosive',
+        name: 'Explosive Rounds',
+        description: 'Bullets emit an explosion on impact, dealing area damage.',
+        baseValue: 10, // For display purposes in UI if needed, though custom logic handles it
+        unit: '% Dmg',
+        maxLevel: 3,
         category: 'offensive',
-        icon: ICONS.bulletspeed,
+        icon: ICONS.explosive,
         apply: (player) => {
-            player.bulletSpeed *= 1.25;
-            player.skills.bulletspeed = (player.skills.bulletspeed || 0) + 1;
+            const currentLvl = player.skills.explosive || 0;
+            const nextLvl = currentLvl + 1;
+
+            player.skills.explosive = nextLvl;
+
+            // Level 1: 10% dmg, 40px
+            // Level 2: 20% dmg, 50px
+            // Level 3: 30% dmg, 60px
+            if (nextLvl === 1) {
+                player.splashDamageRatio = 0.10;
+                player.splashRadius = 40;
+            } else if (nextLvl === 2) {
+                player.splashDamageRatio = 0.20;
+                player.splashRadius = 50;
+            } else {
+                player.splashDamageRatio = 0.30;
+                player.splashRadius = 60;
+            }
         }
     },
     {

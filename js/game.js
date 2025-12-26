@@ -100,6 +100,7 @@ export class Game {
     this.enemySpawner = new EnemySpawner(this.scene, this.enemies);
     this.bulletManager = new BulletManager(this.scene, this.stats, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
+      createExplosion: (x, y, c, r) => this.particleManager.createExplosion(x, y, c, r),
       onGameOver: () => this.gameOver(),
       onCameraShake: (amount) => {
         this.camera.shake = amount;

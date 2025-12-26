@@ -44,7 +44,12 @@ export class Player extends Entity {
     this.bulletSize = BULLET_SIZE * 2;
     this.projectileCount = 1;
     this.piercing = 0;
+    this.piercing = 0;
     this.range = BULLET_BASE_RANGE;
+
+    // Splash Damage
+    this.splashRadius = 0;
+    this.splashDamageRatio = 0;
 
     // Visuals delegation
     this.visuals = new PlayerVisuals(scene, this);
