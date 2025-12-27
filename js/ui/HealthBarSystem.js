@@ -46,7 +46,7 @@ export class HealthBarSystem {
         const group = new THREE.Group();
 
         const bg = new THREE.Mesh(this.bgGeo, this.bgMat);
-        bg.position.y = 70; // Float above head
+        bg.position.y = 0; // Pivot is now handled by group position
 
         const fg = new THREE.Mesh(this.fgGeo, this.fgMat.clone()); // Clone for unique color
         fg.position.set(-(24 - 0.4) / 2, 0, 0.1); // Relative to bg center
@@ -96,18 +96,14 @@ export class HealthBarSystem {
             if (enemy.type === 'shooter') heightOffset = 75; // Gun raises profile?
 
             // Adjust visual Y relative to Enemy position (ground)
-            // Note: group is set to enemy X/Y. 
-            // The mesh inside group is at y=70 (by default).
-            // We can adjust group.position.y to be floating + height.
-            // Actually, bg.position.y is fixed at 70 in register.
-            // Let's adjust here if needed, or just set group.position.y to 0 and rely on local Y.
-            // But we can override local Y of the background mesh if we want dynamic.
+            // Fix: Move Pivot to head level so rotation doesn't displace the bar
+            // Note: enemy.y is Z in 3D space
 
-            group.position.set(enemy.x + enemy.width / 2, 0, enemy.y + enemy.height / 2);
+            group.position.set(enemy.x + enemy.width / 2, heightOffset, enemy.y + enemy.height / 2);
 
             // Update Height
             if (group.userData.background) {
-                group.userData.background.position.y = heightOffset;
+                group.userData.background.position.y = 0; // Reset local offset
             }
 
             const isDamaged = enemy.health < enemy.maxHealth;
