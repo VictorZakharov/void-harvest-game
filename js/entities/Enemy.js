@@ -104,12 +104,15 @@ export class Enemy extends Entity {
         const dy = playerY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Calculate angle to player
-        this.angle = Math.atan2(dy, dx);
+        // Calculate angle
+        if (!this.isDummy) {
+            // Face towards player
+            this.angle = Math.atan2(dy, dx);
+        }
 
         // Movement logic
-        // Default to moving
-        let allowedToMove = true;
+        // Default to moving (unless dummy)
+        let allowedToMove = !this.isDummy;
 
         // Shooter logic overrides movement
         if ((this.type === 'shooter' || this.type === 'ice') && this.shooterState !== undefined && this.shooterState !== 0) {
@@ -121,9 +124,11 @@ export class Enemy extends Entity {
             this.vx = (dx / dist) * currentSpeed;
             this.vy = (dy / dist) * currentSpeed;
         } else {
-            // Stop if too close or not allowed
-            if (allowedToMove) {
-                // Close range stop for non-shooters? No, others chase.
+            // Stop if too close, not allowed, or is dummy
+            if (this.isDummy) {
+                this.vx = 0;
+                this.vy = 0;
+            } else if (allowedToMove) {
                 // Just resetting vx/vy if we shouldn't move
             }
         }
@@ -162,7 +167,8 @@ export class Enemy extends Entity {
             }
 
             // Dist check logic
-            const inRange = dist <= SHOOTER_STOP_RANGE;
+            // Dummies always in range to ensure they fire
+            const inRange = this.isDummy || (dist <= SHOOTER_STOP_RANGE);
 
             switch (this.shooterState) {
                 case 0: // MOVING
@@ -170,8 +176,10 @@ export class Enemy extends Entity {
                         this.shooterState = 1; // Start Aiming
                         this.stateTimer = 60; // 1 second aim time
                         this.isKneeling = true;
-                        this.vx = 0;
-                        this.vy = 0;
+                        if (!this.isDummy) {
+                            this.vx = 0;
+                            this.vy = 0;
+                        }
                     }
                     // Movement logic is handled above by general update if not handled here
                     // But we need to ensure we don't move if we just switched to Aiming

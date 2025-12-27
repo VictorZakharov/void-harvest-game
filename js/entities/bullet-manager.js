@@ -103,7 +103,7 @@ export class BulletManager {
         }
 
         const bullet = new Bullet(
-            startX, startY, angle, 4, enemy.damage, false, 0, 600, enemy.type
+            startX, startY, angle, 4, enemy.isDummy ? 0 : enemy.damage, false, 0, 600, enemy.type
         );
         this.bullets.push(bullet);
         this.scene.add(bullet.mesh);

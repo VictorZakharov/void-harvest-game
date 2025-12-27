@@ -208,6 +208,16 @@ export class Game {
     if (this.debugWeather && this.weather) {
       this.weather.triggerWeather(this.currentBiome);
     }
+
+    // Training Mode Check
+    this.trainingMode = false;
+    if (this.customEnemies) {
+      // Check if any enemy is enabled
+      const anyEnabled = Object.values(this.customEnemies).some(e => e === true);
+      if (!anyEnabled) {
+        this.trainingMode = true;
+      }
+    }
   }
 
   applyMetaUpgrades() {
@@ -440,14 +450,20 @@ export class Game {
       this.bulletManager.createPlayerBullets(this.player);
     }
 
-    this.spawnTimer += effectiveScale;
-    if (this.spawnTimer >= this.spawnRate) {
-      this.spawnTimer = 0;
+    if (this.trainingMode) {
+      // Training Mode: Maintain constant dummy population
+      this.enemySpawner.updateTrainingMode(this.player);
+    } else {
+      // Normal Wave Logic
+      this.spawnTimer += effectiveScale;
+      if (this.spawnTimer >= this.spawnRate) {
+        this.spawnTimer = 0;
 
-      // Check max enemies limit
-      const maxEnemies = this.customMaxEnemies || 9999;
-      if (this.enemies.length < maxEnemies) {
-        this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
+        // Check max enemies limit
+        const maxEnemies = this.customMaxEnemies || 9999;
+        if (this.enemies.length < maxEnemies) {
+          this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
+        }
       }
     }
 

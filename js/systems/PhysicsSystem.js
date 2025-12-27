@@ -14,6 +14,8 @@ export class PhysicsSystem {
         const potentialCollisions = this.game.spatialHash.query(player.x, player.y, player.width, player.height);
 
         for (const enemy of potentialCollisions) {
+            if (this.game.trainingMode && enemy.isDummy) continue; // Skip player collision for dummies
+
             if (enemy.collidesWith(player)) {
                 // We need the index to remove from main array? 
                 // game.enemies.splice(index, 1) is used in handlePlayerCollision

@@ -137,10 +137,10 @@ export class UIManager {
 
     this.dom.startCustomBtn.onclick = () => {
       // Check that at least one type is selected
-      if (!Object.values(this.customEnemies).some(v => v)) {
-        alert('Please select at least one enemy type!');
-        return;
-      }
+      // if (!Object.values(this.customEnemies).some(v => v)) {
+      //   alert('Please select at least one enemy type!');
+      //   return;
+      // }
 
       this.dom.hide(this.dom.customModal);
       this.game.customEnemies = { ...this.customEnemies };

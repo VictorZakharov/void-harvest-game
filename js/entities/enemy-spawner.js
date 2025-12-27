@@ -236,4 +236,54 @@ export class EnemySpawner {
         }
         return union;
     }
+
+    /**
+     * Manages spawning for Training Dummy Mode.
+     * Ensures 5 dummies of each type are present within player's light radius.
+     * @param {Player} player 
+     */
+    updateTrainingMode(player) {
+        const types = ['basic', 'fast', 'tank', 'shooter', 'ice'];
+        const TARGET_COUNT = 5;
+
+        // Count existing dummies by type
+        const counts = {};
+        types.forEach(t => counts[t] = 0);
+
+        let activeDummies = 0;
+        this.enemies.forEach(e => {
+            if (e.isDummy && counts[e.type] !== undefined) {
+                counts[e.type]++;
+                activeDummies++;
+            }
+        });
+
+        // Respawn check
+        // We iterate types so we don't spawn too many at once if we wanted to throttle, 
+        // but here we just fill voids immediately.
+        types.forEach(type => {
+            if (counts[type] < TARGET_COUNT) {
+                this.spawnDummy(type, player);
+            }
+        });
+    }
+
+    spawnDummy(type, player) {
+        const lightRadius = player.getLightRadius();
+
+        // Spawn inside visible area (0.4 to 0.8 of radius)
+        // so player sees them appear or they are ready nearby
+        // User request: "respawn somewhere else in the visible radius"
+        const r = lightRadius * (0.4 + Math.random() * 0.4);
+        const theta = Math.random() * Math.PI * 2;
+
+        const x = player.x + Math.cos(theta) * r;
+        const y = player.y + Math.sin(theta) * r;
+
+        // Create with Wave 1 stats
+        const enemy = this.createEnemy(x, y, type, 1);
+        enemy.isDummy = true;
+        // Face outward from player center
+        enemy.angle = Math.atan2(y - player.y, x - player.x);
+    }
 }
