@@ -1,5 +1,6 @@
 import { Bullet } from './Bullet.js';
 import { PARTICLE_COUNT_HIT, POLAR_VORTEX_RADIUS } from '../constants.js';
+import { EnemyInstancedAnimation } from './EnemyInstancedAnimation.js';
 
 /**
  * Manages all projectiles in the game, including player and enemy bullets.
@@ -96,19 +97,44 @@ export class BulletManager {
         let startY = bounds.centerY;
 
         if (enemy.type === 'shooter' || enemy.type === 'ice') {
-            const localFwd = enemy.width / 2 + 15;
-            const localRight = enemy.height / 2 + 4;
-            // First calculate muzzle position based on body angle
-            startX += localFwd * Math.cos(enemy.angle) - localRight * Math.sin(enemy.angle);
-            startY += localFwd * Math.sin(enemy.angle) + localRight * Math.cos(enemy.angle);
+            // Calculate exact Muzzle Position from Visual Model
+            const muzzle = EnemyInstancedAnimation.getMuzzlePosition(enemy);
+            startX = muzzle.x;
+            startY = muzzle.z; // Game Z is 2D Y
 
-            // Recalculate angle from muzzle to target
-            angle = Math.atan2(targetY - startY, targetX - startX);
+            // Note: angle is already set correctly (straight or aimed)
+            // We just updated the start point.
+
+            // Recalculate angle from muzzle to target IF NOT DUMMY
+            // Dummies should shoot straight ahead (controlled by their angle)
+            if (!enemy.isDummy) {
+                angle = Math.atan2(targetY - startY, targetX - startX);
+            }
+
+            // Apply spread to the bullet angle (Visuals only, does not rotate enemy body)
+            const spread = 0.25; // Approx 14 degrees
+            angle += (Math.random() - 0.5) * spread;
         }
 
         const bullet = new Bullet(
-            startX, startY, angle, 4, enemy.isDummy ? 0 : enemy.damage, false, 0, 600, enemy.type
+            startX, startY, angle, 4, enemy.isDummy ? 0 : enemy.damage, false, 0, 600, enemy.type, enemy.isDummy
         );
+
+        // Adjust for Bullet Center vs Top-Left
+        // Bullet.js renders at x + width/2. We want center to be at startX.
+        bullet.x -= bullet.width / 2;
+        bullet.y -= bullet.height / 2;
+
+        // Sync bullet visual height with gun muzzle height
+        if (enemy.type === 'shooter' || enemy.type === 'ice') {
+            const muzzle = EnemyInstancedAnimation.getMuzzlePosition(enemy);
+            bullet.yHeight = muzzle.y;
+
+            // Re-apply center correction using robust muzzle pos
+            bullet.x = muzzle.x - bullet.width / 2;
+            bullet.y = muzzle.z - bullet.height / 2;
+        }
+
         this.bullets.push(bullet);
         this.scene.add(bullet.mesh);
     }
@@ -328,10 +354,13 @@ export class BulletManager {
                     }
 
                     if (bullet.enemyType === 'ice') {
-                        player.slowEffects.push({
-                            amount: 0.25,
-                            timer: 120
-                        });
+                        // Skip slow effect for dummy bullets
+                        if (!bullet.fromDummy) {
+                            player.slowEffects.push({
+                                amount: 0.25,
+                                timer: 120
+                            });
+                        }
                         this.callbacks.createParticles(player.x, player.y, '#66ccff', 8);
                         // Ice bullets deal NO initial damage, only DoT via stacks (handled in Player.js)
                     } else {

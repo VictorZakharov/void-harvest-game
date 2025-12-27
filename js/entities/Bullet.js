@@ -7,7 +7,7 @@ import { SpriteGenerator } from '../sprites.js';
 import { Entity } from './Entity.js';
 
 export class Bullet extends Entity {
-    constructor(x, y, angle, speed, damage, isPlayer = true, piercing = 0, range = BULLET_BASE_RANGE, enemyType = null) {
+    constructor(x, y, angle, speed, damage, isPlayer = true, piercing = 0, range = BULLET_BASE_RANGE, enemyType = null, fromDummy = false) {
         const bulletSize = BULLET_SIZE * 2; // Convert to sprite size
         super(x, y, bulletSize, bulletSize);
         this.angle = angle;
@@ -19,6 +19,8 @@ export class Bullet extends Entity {
         this.distanceTraveled = 0;
         this.maxDistance = range;
         this.enemyType = enemyType; // Store enemy type for ice bullets
+        this.fromDummy = fromDummy; // Flag for dummy bullets
+        this.yHeight = isPlayer ? 20 : 42; // Higher spawn for enemies to match visual gun height
         this.sprite = SpriteGenerator.createBulletSprite(
             isPlayer ? 'player' : (enemyType === 'ice' ? 'ice' : 'enemy')
         );
@@ -111,7 +113,7 @@ export class Bullet extends Entity {
 
     updateMesh() {
         if (this.mesh) {
-            this.mesh.position.set(this.x + this.width / 2, 20, this.y + this.height / 2);
+            this.mesh.position.set(this.x + this.width / 2, this.yHeight, this.y + this.height / 2);
             // Rotate to face velocity
             // Velocity angle is -this.angle (standard canvas inverted Y)
             this.mesh.rotation.y = -this.angle;

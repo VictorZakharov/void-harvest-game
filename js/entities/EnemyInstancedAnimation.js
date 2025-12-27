@@ -140,11 +140,9 @@ export class EnemyInstancedAnimation {
         const sZ = bZ + (armX * -sin);
 
         // 2. Arm Vector (Local to body, then Local to Arm)
-        // Arm rotates X. Vector(0, -armL, 0) rotated by X becomes (0, -L*cos, -L*sin)
         const tipLocalY = -armL * Math.cos(rArmRot);
         const tipLocalZ = -armL * Math.sin(rArmRot);
 
-        // Apply Body Y rot to the tip vector (Z component rotates)
         const wTipX = tipLocalZ * sin;
         const wTipZ = tipLocalZ * cos;
 
@@ -152,10 +150,68 @@ export class EnemyInstancedAnimation {
         dummy.position.set(sX + wTipX, shoulderY + tipLocalY, sZ + wTipZ);
 
         // Gun Rotation:
-        // Combine Body Rotation + Arm Rotation + 90 degree offset for forward aim.
         dummy.rotation.set(rArmRot + Math.PI / 2, angle, 0, 'YXZ');
 
         dummy.scale.set(s, s, s);
         dummy.updateMatrix();
+    }
+
+    /**
+     * Calculates the exact world position of the gun muzzle.
+     * Matches the transformation logic used in applyGunTransform.
+     * @param {Enemy} enemy 
+     * @returns {THREE.Vector3}
+     */
+    static getMuzzlePosition(enemy) {
+        // 1. Scale
+        let s = 0.85;
+        if (enemy.type === 'tank') s = 1.2;
+        if (enemy.type === 'fast') s = 0.7;
+
+        // 2. Torso Vertical Offset (Animation State)
+        // Assume shooting state (stopped/standing) unless kneeling
+        let torsoY = 0;
+        if (enemy.isKneeling) torsoY = -20;
+
+        // 3. Shoulder Position
+        const shoulderY = (50 * s) + torsoY;
+        const armX = 6 * s; // Matches Instanced Renderer shoulder offset
+
+        // 4. Arm Rotation (Shooting = -PI/2, aiming forward)
+        // const rArmRot = -Math.PI / 2; // Implicit in calculations below
+
+        // 5. Total Extension Length
+        // Arm Length (18) + Gun Length (15). 
+        // Gun geometry is 15 units long, centered at +7.5 from wrist. Tip is at 15.
+        const armL = 18 * s;
+        const gunLen = 15 * s;
+        const totalExtension = armL + gunLen;
+
+        // 6. Calculate Global Position
+        // Enemy facing angle converted to renderer rotation
+        const angle = -enemy.angle + Math.PI / 2;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+
+        // Center of Body
+        const bX = enemy.x + enemy.width / 2;
+        const bZ = enemy.y + enemy.height / 2;
+
+        // Shoulder World Position
+        const sX = bX + (armX * cos);
+        const sZ = bZ + (armX * -sin);
+
+        // Calculate Tip Vector relative to Shoulder
+        // At -PI/2 rotation (arm straight forward), the vector extends purely along Z in arm space.
+        // After applying body rotation (Y-axis), this aligns with the facing direction.
+
+        const mX = sX + (totalExtension * sin);
+        const mZ = sZ + (totalExtension * cos);
+
+        // Muzzle Height
+        // At -PI/2 rotation, the arm is horizontal, so Muzzle Y equals Shoulder Y.
+        const mY = shoulderY;
+
+        return { x: mX, y: mY, z: mZ };
     }
 }

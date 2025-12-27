@@ -256,11 +256,6 @@ export class Enemy extends Entity {
                 this.burstCount++;
                 this.stateTimer = 18; // Slow down burst (approx 0.3s between shots)
 
-                // Apply random angular spread to the shot
-                // The updated angle will be used by the BulletManager when collecting projectile data
-                const spread = 0.25; // Approx 14 degrees spread (+/- 7 degrees)
-                this.angle += (Math.random() - 0.5) * spread;
-
                 return true;
             }
             return false;

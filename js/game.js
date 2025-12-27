@@ -302,11 +302,15 @@ export class Game {
     this.applyCustomSkills();
 
     // Autoshoot State (Refresh on start)
-    this.autoshootEnabled = (this.metaProgress.autoshootEnabled !== undefined) ? this.metaProgress.autoshootEnabled : true;
+    if (this.trainingMode) {
+      this.autoshootEnabled = false;
+    } else {
+      this.autoshootEnabled = (this.metaProgress.autoshootEnabled !== undefined) ? this.metaProgress.autoshootEnabled : true;
+    }
     this.autoshootOverrideTimer = 0;
 
-    // Show Hint at start (Always)
-    if (this.ui.showStatusMessage) {
+    // Show Hint at start (Always, unless training mode)
+    if (this.ui.showStatusMessage && !this.trainingMode) {
       const status = this.autoshootEnabled ? "[Q] Autoshoot: ON" : "[Q] Autoshoot: OFF";
       this.ui.showStatusMessage(status, 3000);
     }
@@ -447,8 +451,8 @@ export class Game {
 
     const target = this.rendering.getMouseWorldPosition(this.input.mouseX, this.input.mouseY);
 
-    // Autoshoot Input Toggle (Q)
-    if (this.input.keys['q'] || this.input.keys['Q']) {
+    // Autoshoot Input Toggle (Q) - Disabled in Training Mode
+    if (!this.trainingMode && (this.input.keys['q'] || this.input.keys['Q'])) {
       if (!this.lastQ) {
         this.autoshootEnabled = !this.autoshootEnabled;
         this.metaProgress.autoshootEnabled = this.autoshootEnabled;
