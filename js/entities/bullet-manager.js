@@ -98,8 +98,12 @@ export class BulletManager {
         if (enemy.type === 'shooter' || enemy.type === 'ice') {
             const localFwd = enemy.width / 2 + 15;
             const localRight = enemy.height / 2 + 4;
-            startX += localFwd * Math.cos(angle) - localRight * Math.sin(angle);
-            startY += localFwd * Math.sin(angle) + localRight * Math.cos(angle);
+            // First calculate muzzle position based on body angle
+            startX += localFwd * Math.cos(enemy.angle) - localRight * Math.sin(enemy.angle);
+            startY += localFwd * Math.sin(enemy.angle) + localRight * Math.cos(enemy.angle);
+
+            // Recalculate angle from muzzle to target
+            angle = Math.atan2(targetY - startY, targetX - startX);
         }
 
         const bullet = new Bullet(
@@ -156,8 +160,8 @@ export class BulletManager {
                                 this.callbacks.onEnemyDeath(enemy);
                             }
                         } else {
-                            // Check for freeze chance
-                            if (player.freezeChance > 0 && Math.random() < player.freezeChance) {
+                            // Check for freeze chance: Standard OR Forced (Ice bullet deflection)
+                            if (bullet.forceFreeze || (player.freezeChance > 0 && Math.random() < player.freezeChance)) {
                                 enemy.freeze(120); // 2 seconds at 60fps
                                 this.callbacks.createParticles(enemy.x, enemy.y, '#00ffff', 15);
                             } else {
@@ -215,6 +219,114 @@ export class BulletManager {
             } else {
                 // Enemy bullet
                 if (bullet.collidesWith(player)) {
+
+                    // Deflect Skill Logic
+                    // Redirects bullet back to nearest enemy if charges available AND Hit is from Front (120 deg arc)
+                    if (player.deflectUnlocked && player.deflectCharges > 0) {
+
+                        // Check Directionality
+                        const playerFacing = player.angle;
+
+                        // Robust angle calculation using velocity
+                        const checkAngle = Math.atan2(bullet.vy, bullet.vx);
+                        const incomingAngle = checkAngle + Math.PI;
+
+                        let hitAngleDiff = incomingAngle - playerFacing;
+                        while (hitAngleDiff > Math.PI) hitAngleDiff -= Math.PI * 2;
+                        while (hitAngleDiff < -Math.PI) hitAngleDiff += Math.PI * 2;
+
+                        // 120 degree arc = +/- 60 degrees (PI/3)
+                        const arcRad = (120 * Math.PI / 180) / 2; // 60 degrees
+
+                        if (Math.abs(hitAngleDiff) <= arcRad) {
+                            // Valid Frontal Deflect
+                            player.deflectCharges--;
+
+                            // Find Target in Frontal Arc (Recalculate sourceAngle based on checkAngle)
+                            const sourceAngle = checkAngle + Math.PI;
+                            const arc = 120 * (Math.PI / 180);
+                            const halfArc = arc / 2;
+
+                            const deflectRange = 800;
+                            // Fix: Query box must be centered on player (x-range, y-range)
+                            const nearby = this.spatialHash.query(
+                                player.x - deflectRange,
+                                player.y - deflectRange,
+                                deflectRange * 2,
+                                deflectRange * 2
+                            );
+
+                            let nearest = null;
+                            let minDst = Infinity;
+
+                            for (const e of nearby) {
+                                if (e.health <= 0 || e.isDummy) {
+                                    if (!e.isDummy && e.health <= 0) continue;
+                                    if (e.health <= 0) continue;
+                                }
+
+                                const dx = (e.x + 0.5 * e.width) - bullet.x;
+                                const dy = (e.y + 0.5 * e.height) - bullet.y;
+
+                                // Check Angle Constraint (120 degree arc towards shooter/source)
+                                const angleToEnemy = Math.atan2(dy, dx);
+                                let angleDiff = angleToEnemy - sourceAngle;
+
+                                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                                if (Math.abs(angleDiff) > halfArc) continue;
+
+                                const d2 = dx * dx + dy * dy;
+                                if (d2 < minDst) {
+                                    minDst = d2;
+                                    nearest = e;
+                                }
+                            }
+
+                            // Default: Reflect back 180 degrees
+                            let targetAngle = sourceAngle;
+
+                            if (nearest) {
+                                // Aim at center of enemy from center of bullet
+                                const bx = bullet.x + bullet.width / 2;
+                                const by = bullet.y + bullet.height / 2;
+                                const ex = nearest.x + nearest.width / 2;
+                                const ey = nearest.y + nearest.height / 2;
+
+                                targetAngle = Math.atan2(ey - by, ex - bx);
+                            }
+
+                            // Convert Bullet to Player Bullet
+                            bullet.isPlayer = true;
+                            bullet.angle = targetAngle;
+                            bullet.speed *= 1.5;
+                            bullet.vx = Math.cos(targetAngle) * bullet.speed;
+                            bullet.vy = Math.sin(targetAngle) * bullet.speed;
+
+                            // Apply Stats
+                            if (bullet.enemyType === 'ice') {
+                                bullet.damage = 0;
+                                bullet.forceFreeze = true;
+                            } else {
+                                bullet.damage = player.damage;
+                            }
+                            bullet.piercing = player.piercing;
+
+                            // range: "Same as original"
+                            // We reset distanceTraveled so it flies a full new cycle
+                            bullet.distanceTraveled = 0;
+                            // We do NOT overwrite maxDistance with player.range
+                            // bullet.maxDistance remains whatever the enemy set it to (e.g. 600)
+
+                            // Visuals
+                            this.callbacks.createParticles(bullet.x, bullet.y, '#00ffff', 5);
+
+                            continue; // Block damage
+                        }
+                        // Else: Hit from behind -> Fall through to normal damage logic
+                    }
+
                     if (bullet.enemyType === 'ice') {
                         player.slowEffects.push({
                             amount: 0.25,

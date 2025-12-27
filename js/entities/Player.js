@@ -77,17 +77,18 @@ export class Player extends Entity {
     this.shieldTimer = 0;
     this.shieldCooldown = 600;
 
-    // Shockwave
-    this.shockwaveUnlocked = false;
-    this.shockwaveTimer = 0;
-    this.shockwaveCooldown = 180;
-    this.shockwaveForce = 0;
-    this.triggerShockwave = false;
-
     // Polar Vortex
     this.stasisUnlocked = false;
     this.stasisRadius = POLAR_VORTEX_RADIUS;
     this.stasisSlow = 0;
+
+    // Deflect
+    this.deflectUnlocked = false;
+    this.deflectCharges = 0;
+    this.deflectMaxCharges = 0;
+    this.deflectRechargeTimer = 0;
+    this.deflectRechargeInterval = 60;
+    this.deflectRange = 150;
 
     // Utilities
     this.magnetBonus = 0;
@@ -210,12 +211,12 @@ export class Player extends Entity {
       }
     }
 
-    // Shockwave logic
-    if (this.shockwaveUnlocked) {
-      this.shockwaveTimer += timeScale;
-      if (this.shockwaveTimer >= this.shockwaveCooldown) {
-        this.shockwaveTimer = 0;
-        this.triggerShockwave = true;
+    // Deflect Recharge Logic
+    if (this.deflectUnlocked && this.deflectCharges < this.deflectMaxCharges) {
+      this.deflectRechargeTimer -= timeScale;
+      if (this.deflectRechargeTimer <= 0) {
+        this.deflectCharges++;
+        this.deflectRechargeTimer = this.deflectRechargeInterval;
       }
     }
 

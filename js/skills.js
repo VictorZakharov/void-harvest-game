@@ -271,18 +271,30 @@ export const SKILLS = [
         }
     },
     {
-        id: 'shockwave',
-        name: 'Shockwave',
-        description: 'Periodically releases a force that pushes all nearby enemies away.',
-        baseValue: 10,
-        unit: 'Force',
-        maxLevel: MAX_SKILL_LEVEL,
+        id: 'deflect',
+        name: 'Deflect',
+        description: 'Charges up to 3 energy shields that deflect enemy projectiles.',
+        baseValue: 1, // 1 Hz
+        unit: 'Shields',
+        maxLevel: 3,
         category: 'defensive',
-        icon: ICONS.shockwave,
+        icon: ICONS.shield,
         apply: (player) => {
-            player.shockwaveForce = (player.shockwaveForce || 0) + 10;
-            player.skills.shockwave = (player.skills.shockwave || 0) + 1;
-            player.shockwaveUnlocked = true;
+            player.deflectUnlocked = true;
+
+            const level = (player.skills.deflect || 0) + 1;
+            player.skills.deflect = level;
+
+            // Charges System
+            player.deflectMaxCharges = level; // Level 1=1, 2=2, 3=3
+
+            // Recharge Rate: Constant 1.0s (60 frames)
+            // Level only helps retaining more charges
+            player.deflectRechargeInterval = 60;
+
+            // Fill charges immediately on upgrade
+            player.deflectCharges = player.deflectMaxCharges;
+            player.deflectRechargeTimer = player.deflectRechargeInterval;
         }
     }
 ];

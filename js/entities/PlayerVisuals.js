@@ -24,7 +24,7 @@ export class PlayerVisuals {
     this.spotLight = null;
     this.shieldMesh = null;
     this.shockwaveMesh = null;
-    this.stasisParticles = [];
+    this.orbitShields = []; // Array of 3 shield meshes
     this.stasisParticles = [];
     this.shockwaveVisualTimer = 0;
     this.animTime = 0;
@@ -59,7 +59,42 @@ export class PlayerVisuals {
 
     if (this.scene) {
       this.scene.add(this.mesh);
+      this.scene.add(this.mesh);
       this.scene.add(this.vortexMesh);
+
+      // Create Orbiting Shields (Cyan Plates)
+      // Custom Heater Shield Shape
+      const shieldShape = new THREE.Shape();
+      const sw = 6; // Half width
+      const sh = 10; // Height
+      shieldShape.moveTo(-sw, sh);
+      shieldShape.lineTo(sw, sh);
+      shieldShape.lineTo(sw, 0);
+      shieldShape.quadraticCurveTo(sw, -sh, 0, -sh * 1.5); // Pointed bottom
+      shieldShape.quadraticCurveTo(-sw, -sh, -sw, 0);
+      shieldShape.lineTo(-sw, sh);
+
+      const shieldGeo = new THREE.ExtrudeGeometry(shieldShape, {
+        depth: 2,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 1,
+        bevelThickness: 1
+      });
+      // Center geometry?
+      shieldGeo.center();
+
+      const shieldMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.7 });
+
+      for (let i = 0; i < 3; i++) {
+        const s = new THREE.Mesh(shieldGeo, shieldMat);
+        s.visible = false;
+        // Initialize Scale 0 for transition
+        s.scale.set(0, 0, 0);
+        this.orbitShields.push(s);
+        this.scene.add(s);
+      }
     }
   }
 
@@ -205,6 +240,74 @@ export class PlayerVisuals {
       }
     }
 
+
+
+    // Orbiting Shields (Deflect Charges)
+    if (this.orbitShields.length > 0) {
+      const charges = this.player.deflectCharges || 0;
+      const radius = 35;
+
+      // Bobbing Effect (Sine wave based on time)
+      const bobOffset = Math.sin(this.vfxAnimTime * 3.0) * 2.0;
+
+      // Frontal Arc layout
+      // Slot 0 (Center): 0 deg (Front)
+      // Slot 1 (Left): -35 deg
+      // Slot 2 (Right): +35 deg
+
+      // Smooth Interpolation Factor
+      const lerpFactor = 0.1;
+
+      for (let i = 0; i < 3; i++) {
+        const shield = this.orbitShields[i];
+
+        // Determine Target State
+        let targetVisible = (i < charges);
+        let targetAngleOffset = 0;
+
+        if (targetVisible) {
+          if (charges === 1) targetAngleOffset = 0;
+          else if (charges === 2) targetAngleOffset = (i === 0 ? -0.35 : 0.35);
+          else { // 3
+            if (i === 0) targetAngleOffset = 0;
+            if (i === 1) targetAngleOffset = -0.6; // Wider spread for 3
+            if (i === 2) targetAngleOffset = 0.6;
+          }
+        }
+
+        // Handle Visibility / Scale transition
+        // If not visible, target scale is 0. If visible, target scale is 1.
+        const targetScale = targetVisible ? 1 : 0;
+        shield.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), lerpFactor);
+
+        // Optim: If scale is tiny, hide it completely to save draw calls?
+        shield.visible = (shield.scale.x > 0.01);
+
+        if (shield.visible) {
+          // Target Position Calculation
+          const baseAngle = this.player.angle;
+          const targetTotalAngle = baseAngle + targetAngleOffset;
+
+          const targetX = this.player.x + this.player.width / 2 + Math.cos(targetTotalAngle) * radius;
+          const targetZ = this.player.y + this.player.height / 2 + Math.sin(targetTotalAngle) * radius;
+          const targetY = 25 + bobOffset;
+
+          // Lerp Position
+          shield.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), lerpFactor);
+
+          // Rotation
+          // Face outward from Player Center.
+          const dx = shield.position.x - (this.player.x + this.player.width / 2);
+          const dz = shield.position.z - (this.player.y + this.player.height / 2);
+          const currentAngle = Math.atan2(dz, dx);
+          shield.rotation.y = -currentAngle + Math.PI / 2;
+        } else {
+          // Keep it at player center if hidden so it spawns from there? 
+          shield.position.set(this.player.x + this.player.width / 2, 25, this.player.y + this.player.height / 2);
+        }
+      }
+    }
+
     if (this.shockwaveVisualTimer > 0) {
       this.shockwaveVisualTimer -= dt / 16.0; // Scale timer decrement relative to 60fps frame
       const progress = 1 - (this.shockwaveVisualTimer / 30);
@@ -333,6 +436,7 @@ export class PlayerVisuals {
     if (this.scene) {
       this.scene.remove(this.mesh);
       this.scene.remove(this.vortexMesh);
+      this.orbitShields.forEach(s => this.scene.remove(s));
     }
   }
 }
