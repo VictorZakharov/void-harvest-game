@@ -60,7 +60,12 @@ export class HealthBarSystem {
         fg.renderOrder = 999;
 
         // Store reference to foreground directly on group for easy access
-        group.userData = { foreground: fg, background: bg };
+        group.userData = {
+            foreground: fg,
+            background: bg,
+            lastHealth: enemy.health,
+            visibilityTimer: 0
+        };
         group.visible = false;
 
         this.scene.add(group);
@@ -85,31 +90,100 @@ export class HealthBarSystem {
 
     /**
      * Updates all active health bars.
-     * @param {THREE.Camera} camera 
+     * @param {THREE.Camera} camera
+     * @param {Player} player 
+     * @param {THREE.Vector3} cursorTarget - World position of the cursor light.
+     * @param {Array<Enemy>} activeEnemies - List of currently active enemies for reconciliation.
      */
-    update(camera) {
+    update(camera, player, cursorTarget, activeEnemies) {
+        // Reconciliation: Detect and remove orphans
+        // We create a Set of active enemy IDs (or objects) to verify validity
+        // Optimization: Only run reconciliation check periodically or if counts mismatch?
+        // But for reliability with < 1000 enemies, Set construction is fast enough.
+        let activeSet = null;
+        if (activeEnemies) {
+            activeSet = new Set(activeEnemies);
+        }
+
+        // Time constant approx for 60fps (1.0 scale)
+        const DECAY_RATE = 1.0 / 60.0;
+        const toRemove = [];
+
         for (const [enemy, group] of this.bars) {
+            // Check 1: Health (Dead)
+            if (enemy.health <= 0) {
+                group.visible = false;
+                toRemove.push(enemy);
+                continue;
+            }
+
+            // Check 2: Orphaned (Removed from game but stuck in UI)
+            if (activeSet && !activeSet.has(enemy)) {
+                group.visible = false;
+                toRemove.push(enemy);
+                continue;
+            }
+
+            // Detect Damage (Hit in darkness logic)
+            if (enemy.health < group.userData.lastHealth) {
+                // Enemy took damage, show bar for 1 second
+                group.userData.visibilityTimer = 1.0;
+                group.userData.lastHealth = enemy.health;
+            } else if (enemy.health > group.userData.lastHealth) {
+                // Healed? Just update tracker
+                group.userData.lastHealth = enemy.health;
+            }
+
+            // Check Light Visibility
+            if (player && cursorTarget) {
+                // Check distance to CURSOR LIGHT, not player body
+                // Because the cursor emits the light
+                const dx = (enemy.x + enemy.width / 2) - cursorTarget.x;
+                const dz = (enemy.y + enemy.height / 2) - cursorTarget.z;
+                const distSq = dx * dx + dz * dz;
+
+                const lightRad = player.getLightRadius ? player.getLightRadius() : 500;
+                // Add buffer
+                if (distSq < (lightRad + 50) * (lightRad + 50)) {
+                    // In light: Refresh timer
+                    group.userData.visibilityTimer = 1.0;
+                }
+            }
+
+            // Decay Timer
+            if (group.userData.visibilityTimer > 0) {
+                // If we don't have delta time passed in, assume 1 frame at 60fps? 
+                // Or rely on it checking next frame. 
+                // Wait, update is called every frame. We need DT.
+                // game.js calls `this.healthBarSystem.update(this.rendering.camera3D, this.player)`. 
+                // It doesn't pass dt.
+                // Changing signature to include dt would be cleaner, but let's assume 1/60 for now or passed via wrapper.
+                // Let's rely on the fact that 1.0 = 1 second in this logic IF we decrement by dt/60 or similar.
+                // Actually, let's just decrement by approx 0.016 (16ms) per call if game is running.
+                // Better: Decrement by 1/60. 
+                group.userData.visibilityTimer -= DECAY_RATE;
+            }
+
             // Position
             // Tank is tall (~75), others ~60. 
             let heightOffset = 70;
             if (enemy.type === 'tank') heightOffset = 90;
-            if (enemy.type === 'shooter') heightOffset = 75; // Gun raises profile?
-
-            // Adjust visual Y relative to Enemy position (ground)
-            // Fix: Move Pivot to head level so rotation doesn't displace the bar
-            // Note: enemy.y is Z in 3D space
+            if (enemy.type === 'shooter') heightOffset = 75;
 
             group.position.set(enemy.x + enemy.width / 2, heightOffset, enemy.y + enemy.height / 2);
 
             // Update Height
             if (group.userData.background) {
-                group.userData.background.position.y = 0; // Reset local offset
+                group.userData.background.position.y = 0;
             }
 
             const isDamaged = enemy.health < enemy.maxHealth;
-            const shouldBeVisible = (isDamaged && enemy.health > 0);
+            // Visible if: (Damaged AND (Timer > 0))
+            // We only show full health bars if explicitly requested, but usually only damaged ones.
+            // Wait, standard behavior is usually: Full hp bars hidden. Damaged visible.
+            // So Timer applies to DAMAGED bars visibility.
 
-            if (shouldBeVisible) {
+            if (isDamaged && group.userData.visibilityTimer > 0) {
                 group.visible = true;
 
                 // Percent stuff
@@ -129,6 +203,11 @@ export class HealthBarSystem {
             } else {
                 group.visible = false;
             }
+        }
+
+        // Process removals
+        for (const enemy of toRemove) {
+            this.unregister(enemy);
         }
     }
 

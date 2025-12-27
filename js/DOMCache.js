@@ -92,6 +92,33 @@ export class DOMCache {
 
         // Game Canvas
         this.gameCanvas = document.getElementById('gameCanvas');
+
+        // Dynamic Status Message (Autoshoot, etc)
+        this.statusMessage = document.getElementById('status-message');
+        if (!this.statusMessage) {
+            this.statusMessage = document.createElement('div');
+            this.statusMessage.id = 'status-message';
+            // Default styling for "Above Player" / Center Screen
+            // Using transform: translate(-50%, -50%) to center, then margin-top to offset?
+            // Actually, "Above Player" usually means center screen - offset.
+            // Let's place it at 40% height (slightly above center).
+            Object.assign(this.statusMessage.style, {
+                position: 'absolute',
+                top: '40%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: '#aaaaaa', // Grey as requested
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: '24px',
+                fontWeight: 'bold',
+                textShadow: '0 0 5px rgba(0,0,0,0.8)',
+                pointerEvents: 'none',
+                opacity: '0',
+                transition: 'opacity 0.5s',
+                zIndex: '900' // Below modals (1000+)
+            });
+            document.body.appendChild(this.statusMessage);
+        }
     }
 
     /**

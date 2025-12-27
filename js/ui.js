@@ -348,6 +348,15 @@ export class UIManager {
   }
 
   showPauseScreen() {
+    // Hide status message immediately to prevent overlap
+    if (this.dom.statusMessage) {
+      this.dom.statusMessage.style.transition = 'none';
+      this.dom.statusMessage.style.opacity = '0';
+    }
+    if (this.statusMessageTimer) {
+      clearTimeout(this.statusMessageTimer);
+      this.statusMessageTimer = null;
+    }
     showPauseScreen(this.game, this.dom);
   }
 
@@ -357,6 +366,28 @@ export class UIManager {
 
   showGuide() {
     showGuide(this.dom);
+  }
+
+  showHint(message, duration = 3000) {
+    if (this.game.weather) {
+      this.game.weather.showWarning(message, duration);
+    }
+  }
+
+  showStatusMessage(message, duration = 2000) {
+    const el = this.dom.statusMessage;
+    if (el) {
+      el.style.transition = 'opacity 0.5s';
+      el.textContent = message;
+      el.style.opacity = '1';
+
+      // Clear existing timer if any
+      if (this.statusMessageTimer) clearTimeout(this.statusMessageTimer);
+
+      this.statusMessageTimer = setTimeout(() => {
+        el.style.opacity = '0';
+      }, duration);
+    }
   }
 
 

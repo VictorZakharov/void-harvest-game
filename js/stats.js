@@ -58,7 +58,7 @@ export class StatsManager {
         if (saved) {
             return JSON.parse(saved);
         }
-        return { souls: 0, upgrades: {}, gameSpeed: 1.0 };
+        return { souls: 0, upgrades: {}, gameSpeed: 1.0, autoshootEnabled: true };
     }
 
     static saveMetaProgress(metaProgress) {

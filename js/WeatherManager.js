@@ -19,6 +19,10 @@ export class WeatherManager {
         this.weatherState = 'none'; // 'none' or 'active'
         this.weatherTimer = 0;
         this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
+
+        // Custom warning state
+        this.customWarningText = null;
+        this.warningTimer = 0;
     }
 
     /**
@@ -26,23 +30,29 @@ export class WeatherManager {
      * @param {Object} player - The player entity (to apply slow effects).
      * @param {Object} currentBiome - Data for the current biome.
      * @param {number} defaultFogDensity - Global default fog density.
+     * @param {number} timeScale - Time delta factor (1.0 = 60fps).
      * @returns {number|null} New fog density if weather state changed, otherwise null.
      */
     update(player, currentBiome, defaultFogDensity, timeScale = 1.0) {
         if (!currentBiome || currentBiome.weather === WEATHER_TYPES.NONE) return null;
 
+        // Custom Warning Timer
+        if (this.warningTimer > 0) {
+            this.warningTimer -= (timeScale * 16.666); // Convert frame-scale to ms approx
+            if (this.dom.weatherWarning) {
+                this.dom.show(this.dom.weatherWarning);
+                this.dom.setText(this.dom.weatherWarning, this.customWarningText);
+            }
+        }
+
         let newFogDensity = null;
+        let showWeatherWarn = false;
 
         if (this.weatherState === 'none') {
             this.nextWeatherTimer -= timeScale;
 
             if (this.nextWeatherTimer <= WEATHER_WARNING_TIME) {
-                if (this.dom.weatherWarning) {
-                    this.dom.show(this.dom.weatherWarning);
-                    this.dom.setText(this.dom.weatherWarning, `WARNING: ${currentBiome.weather.toUpperCase()} APPROACHING`);
-                }
-            } else {
-                if (this.dom.weatherWarning) this.dom.hide(this.dom.weatherWarning);
+                showWeatherWarn = true;
             }
 
             if (this.nextWeatherTimer <= 0) {
@@ -50,8 +60,6 @@ export class WeatherManager {
                 newFogDensity = currentBiome.weatherFogDensity || defaultFogDensity * 3;
             }
         } else if (this.weatherState === 'active') {
-            if (this.dom.weatherWarning) this.dom.hide(this.dom.weatherWarning);
-
             this.weatherTimer -= timeScale;
 
             let fadeFactor = 1.0;
@@ -81,6 +89,18 @@ export class WeatherManager {
             }
         }
 
+        // Draw Priority: Custom Warning > Weather Warning > Hide
+        if (this.warningTimer <= 0) {
+            if (showWeatherWarn && this.weatherState === 'none') {
+                if (this.dom.weatherWarning) {
+                    this.dom.show(this.dom.weatherWarning);
+                    this.dom.setText(this.dom.weatherWarning, `WARNING: ${currentBiome.weather.toUpperCase()} APPROACHING`);
+                }
+            } else {
+                if (this.dom.weatherWarning) this.dom.hide(this.dom.weatherWarning);
+            }
+        }
+
         return newFogDensity;
     }
 
@@ -105,6 +125,21 @@ export class WeatherManager {
         this.nextWeatherTimer = Math.random() * (WEATHER_INTERVAL_MAX - WEATHER_INTERVAL_MIN) + WEATHER_INTERVAL_MIN;
         if (this.weatherSystem) {
             this.weatherSystem.stopWeather();
+        }
+    }
+
+    /**
+     * Shows a generic warning or hint in the weather warning box.
+     * @param {string} text - The text to display.
+     * @param {number} duration - Duration in milliseconds.
+     */
+    showWarning(text, duration = 3000) {
+        this.customWarningText = text;
+        this.warningTimer = duration;
+        // Immediate update to ensure responsiveness
+        if (this.dom.weatherWarning) {
+            this.dom.show(this.dom.weatherWarning);
+            this.dom.setText(this.dom.weatherWarning, text);
         }
     }
 }

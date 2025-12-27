@@ -301,8 +301,20 @@ export class Game {
     this.lastTime = performance.now();
     this.applyCustomSkills();
 
+    // Autoshoot State (Refresh on start)
+    this.autoshootEnabled = (this.metaProgress.autoshootEnabled !== undefined) ? this.metaProgress.autoshootEnabled : true;
+    this.autoshootOverrideTimer = 0;
+
+    // Show Hint at start (Always)
+    if (this.ui.showStatusMessage) {
+      const status = this.autoshootEnabled ? "[Q] Autoshoot: ON" : "[Q] Autoshoot: OFF";
+      this.ui.showStatusMessage(status, 3000);
+    }
+
     if (!this.gameLoopRunning) {
       this.gameLoopRunning = true;
+      // Initial Input State
+      this.lastQ = false;
       this.gameLoop();
     }
   }
@@ -311,13 +323,6 @@ export class Game {
     const now = performance.now();
     const dt = now - this.lastTime;
     this.lastTime = now;
-
-    // In gameLoop
-    if (this.input.escapePressed) {
-      this.input.escapePressed = false;
-      this.togglePause();
-
-    }
 
     // --- FPS Calculation ---
     if (!this.fpsTime) this.fpsTime = now;
@@ -333,6 +338,11 @@ export class Game {
       this.fpsTime = now;
     }
     // -----------------------
+
+    if (this.input.escapePressed) {
+      this.input.escapePressed = false;
+      this.togglePause();
+    }
 
     if (this.input.spacePressed) {
       this.input.spacePressed = false;
@@ -436,17 +446,107 @@ export class Game {
     }
 
     const target = this.rendering.getMouseWorldPosition(this.input.mouseX, this.input.mouseY);
+
+    // Autoshoot Input Toggle (Q)
+    if (this.input.keys['q'] || this.input.keys['Q']) {
+      if (!this.lastQ) {
+        this.autoshootEnabled = !this.autoshootEnabled;
+        this.metaProgress.autoshootEnabled = this.autoshootEnabled;
+        this.saveMetaProgress();
+
+        const msg = this.autoshootEnabled ? "[Q] Autoshoot: ON" : "[Q] Autoshoot: OFF";
+        if (this.ui.showStatusMessage) this.ui.showStatusMessage(msg, 2000);
+      }
+      this.lastQ = true;
+    } else {
+      this.lastQ = false;
+    }
+
+    // Manual Override Logic (2s)
+    if (this.input.mouseDown) {
+      this.autoshootOverrideTimer = 2.0;
+    } else if (this.autoshootOverrideTimer > 0) {
+      this.autoshootOverrideTimer -= dt / 1000;
+    }
+
+    let aimX = target.x;
+    let aimZ = target.z;
+    let autoFiring = false;
+
+    // Autoshoot Targeting
+    if (this.autoshootEnabled && this.autoshootOverrideTimer <= 0) {
+      const range = this.player.range || 600;
+      // Use true light radius
+      const light = this.player.getLightRadius ? this.player.getLightRadius() : 500;
+
+      let nearest = null;
+      let minDst = Infinity;
+
+      // Optimization: Query SpatialHash for candidates around player
+      // Note: SpatialHash uses 2D coords (x, y) which match Entity x, y
+      // We search in slightly larger weapon range box
+      const candidates = this.spatialHash.query(
+        this.player.x - range,
+        this.player.y - range,
+        range * 2,
+        range * 2
+      );
+
+      // Cursor world position for light check
+      const cursorP = this.lighting.getCursorTarget();
+
+      for (const e of candidates) {
+        if (e.health <= 0 || e.isDummy) continue;
+
+        // 1. Check Weapon Range (Player to Enemy)
+        const pdx = (e.x + e.width / 2) - (this.player.x + this.player.width / 2);
+        const pdy = (e.y + e.height / 2) - (this.player.y + this.player.height / 2);
+        const pDistSq = pdx * pdx + pdy * pdy;
+
+        if (pDistSq > range * range) continue;
+
+        // 2. Check Light Visibility (Cursor to Enemy)
+        // Only shoot if enemy is illuminated by the cursor light
+        if (cursorP) {
+          const cdx = (e.x + e.width / 2) - cursorP.x;
+          const cdy = (e.y + e.height / 2) - cursorP.z; // CursorTarget is Vector3(x, y, z) where y is height
+          const cDistSq = cdx * cdx + cdy * cdy;
+
+          if (cDistSq > light * light) continue;
+        }
+
+        // Sort by distance to PLAYER (shooting priority usually proximity to self)
+        if (pDistSq < minDst) {
+          minDst = pDistSq;
+          nearest = e;
+        }
+      }
+
+      if (nearest) {
+        aimX = nearest.x + nearest.width / 2;
+        aimZ = nearest.y + nearest.height / 2;
+        autoFiring = true;
+      }
+    }
+
     this.lighting.update(target, this.player);
 
+    let finalInput = this.input;
+    if (autoFiring) {
+      // Force fire by proxying input
+      finalInput = Object.create(this.input);
+      finalInput.mouseDown = true;
+    }
+
     // Pass effectiveScale to player update
-    this.player.update(this.input, target.x, target.z, this.rendering.camYaw || 0, effectiveScale);
+    this.player.update(finalInput, aimX, aimZ, this.rendering.camYaw || 0, effectiveScale);
 
     if (this.player.health <= 0) {
       this.gameOver();
       return;
     }
 
-    if (this.player.shoot(this.input.mouseDown)) {
+    if (this.player.shoot(finalInput.mouseDown)) {
       this.bulletManager.createPlayerBullets(this.player);
     }
 
@@ -564,7 +664,7 @@ export class Game {
     this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
     // Update Overlay Visuals (Heath Bars)
-    this.healthBarSystem.update(this.rendering.camera3D);
+    this.healthBarSystem.update(this.rendering.camera3D, this.player, cursorTargetForCull, this.enemies);
 
     this.bulletManager.updateMeshes();
     this.itemManager.updateMeshes();
