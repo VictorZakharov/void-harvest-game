@@ -80,6 +80,7 @@ Welcome to Void Harvest, a fast-paced twin-stick roguelite where you fight waves
 | **Right Mouse (Hold)** | Orbit Camera (Rotate View) |
 | **Mouse Wheel** | Zoom In / Out |
 | **ESC** | Open Pause Menu |
+| **Q** | Toggle Autoshoot |
 | **SPACE** | Quick Freeze (Toggle) |
 
 **Notes:**
@@ -126,7 +127,8 @@ Pressing **SPACE** toggles a tactical "frozen" state overlay:
 - Health pickups (red hearts) restore **20 HP** (5% drop rate)
 
 ### Shooting Mechanics
-- Hold mouse button to auto-fire
+- **Autoshoot:** Enabled by default (toggle with **Q**). Automatically targets nearest enemy within range.
+- **Manual Override:** Clicking mouse temporarily disables autoshoot for 2 seconds to allow manual aiming.
 - Default fire rate: 1 shot per 10 frames (~6 shots/second at 60 FPS)
 - Default damage: 10 per bullet
 - Default bullet speed: 8 pixels/frame
@@ -197,9 +199,10 @@ Pressing **SPACE** toggles a tactical "frozen" state overlay:
 - **Contact Damage:** 5
 - **Bullet Damage:** 5
 - **XP Value:** 3 orbs
-- **Fire Rate:** Every 120 frames (2 seconds)
+- **Fire Rate:** Burst of 3 shots every 120 frames
 - **Bullet Speed:** 4 px/frame
-- **Behavior:** Maintains distance, shoots projectiles
+- **Behavior:** Maintains distance, stops and kneels to fire
+- **Threat:** Ranged burst damage, slight spread on bullets
 - **Threat:** Ranged attacks, multiple damage sources
 - **First Appears:** Wave 5
 
@@ -207,12 +210,13 @@ Pressing **SPACE** toggles a tactical "frozen" state overlay:
 - **HP:** 25
 - **Speed:** 0.9 px/frame
 - **Contact Damage:** 5
-- **Bullet Effect:** 15% slow for 1 second (cumulative - multiple hits stack!)
+- **Bullet Effect:** Applies "Deep Freeze" stack (DoT)
+- **Damage over Time:** Deals 1 damage every 0.2s when player is frozen (100% slow)
 - **XP Value:** 3 orbs
 - **Fire Rate:** Every 180 frames (3 seconds)
 - **Bullet Speed:** 4 px/frame
-- **Behavior:** Maintains distance, shoots ice projectiles
-- **Threat:** Slows player movement, makes dodging harder. Multiple ice bullets can slow you to a halt!
+- **Behavior:** Maintains distance, stops to shoot
+- **Threat:** High control threat. Does NOT deal direct contact damage with bullets, but freezing allows other enemies to catch you.
 - **Visual Effect:** Blue glow on screen edges when hit (intensity increases with stacks)
 - **First Appears:** Wave 8
 
@@ -259,11 +263,12 @@ Pressing **SPACE** toggles a tactical "frozen" state overlay:
 - **Note:** Bullet survives after hit
 - **Best For:** Crowded situations, lines of enemies
 
-#### 7. Bullet Velocity
-- **Effect:** +25% bullet speed per level
-- **Stacks:** Multiplicative
-- **Example:** 8 → 10 → 12.5 → 15.6
-- **Best For:** Long-range engagements
+#### 7. Explosive Rounds
+- **Effect:** Bullets explode on impact, dealing % of damage to nearby enemies
+- **Damage:** 10% / 20% / 30% of hit damage to neighbors
+- **Radius:** 80 pixels
+- **Visual:** "Explosion Ring" shockwave effect
+- **Best For:** Crowd clearing, tightly packed groups
 
 #### 8. Extended Range
 - **Effect:** +50% bullet range per level

@@ -25,6 +25,8 @@ A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
 - Tactical QUICK FREEZE mode (Spacebar)
 - Smart enemy spawning (off-screen guaranteed)
 - Procedurally generated pixel art sprites
+- HIGH-PERFORMANCE INSTANCED RENDERING (2500+ Enemies)
+- AUTOSHOOT SYSTEM with manual override (Toggle 'Q')
 
 ## Controls
 
@@ -81,7 +83,7 @@ For a complete and up-to-date file map with detailed descriptions, please refer 
 
 **Combat Skills:**
 - Increased Damage, Rapid Fire, Multi-Shot, Piercing Shots
-- Bullet Velocity, Extended Range, Freeze Chance
+- Bullet Velocity -> EXPLOSIVE ROUNDS (Splash Damage), Extended Range, Freeze Chance
 
 **Survivability Skills:**
 - Max Health, Passive Heal, Vampiric Touch, Armor

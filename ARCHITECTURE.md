@@ -7,21 +7,31 @@ This document provides a comprehensive technical guide to the Void Harvest codeb
 ```text
 js/
 ├── entities/
-│   ├── bullet-manager.js    - Pooled management of all projectiles
-│   ├── Bullet.js            - Individual projectile logic and 3D mesh
-│   ├── enemy-spawner.js     - Difficulty scaling and wave-based spawning
-│   ├── Enemy.js             - Enemy AI, stats, and logical state
-│   ├── EnemyVisuals.js      - Three.js rendering component for enemies
-│   ├── Entity.js            - Base class for all physical game objects
-│   ├── item-manager.js      - Spawning and collection of XP/Health packs
-│   ├── Item.js              - Logical item representation and visual behavior
-│   ├── particle-manager.js  - High-performance effect system
-│   ├── Player.js            - Player movement, logic, and skill application
-│   └── PlayerVisuals.js     - Three.js rendering component for the player
+│   ├── bullet-manager.js          - Pooled management of all projectiles
+│   ├── Bullet.js                  - Individual projectile logic and 3D mesh
+│   ├── enemy-spawner.js           - Difficulty scaling and wave-based spawning
+│   ├── Enemy.js                   - Enemy logic/AI state (no rendering)
+│   ├── EnemyInstancedAnimation.js - CPU-side animation state calculator
+│   ├── EnemyInstancedGeometry.js  - Shared geometry definitions for instancing
+│   ├── EnemyInstancedRenderer.js  - High-perf InstancedMesh renderer (2500+ entities)
+│   ├── EnemyMeshFactory.js        - Visual asset generation for enemies
+│   ├── Entity.js                  - Base class for all physical game objects
+│   ├── ExplosionRing.js           - Visual effect for periodic explosions
+│   ├── item-manager.js            - Spawning and collection of XP/Health packs
+│   ├── Item.js                    - Logical item representation and visual behavior
+│   ├── particle-manager.js        - High-performance effect system
+│   ├── Player.js                  - Player movement, logic, and skill application
+│   ├── PlayerMeshFactory.js       - Procedural mesh generation for player
+│   └── PlayerVisuals.js           - Three.js rendering component for the player
+├── systems/
+│   ├── PhysicsSystem.js           - Centralized collision detection & resolution
+│   └── SpatialHash.js             - O(1) spatial partitioning for collision optimization
 ├── ui/
 │   ├── UISkillDetail.js     - Logic for skill bonus/scaling calculations
 │   ├── UIStatItem.js        - Component for interactive stat rows/tooltips
-│   └── UIUtils.js           - Shared UI formatting and helper functions
+│   ├── UIUtils.js           - Shared UI formatting and helper functions
+│   ├── UI3DRenderer.js      - 3D rendering context for UI elements (cards)
+│   └── HealthBarSystem.js   - Optimized planar HTML overlay for health bars
 ├── biomes.js                - Environment configuration (fog, ground, weather)
 ├── constants.js             - Global game constants and balancing parameters
 ├── entities.js              - Centralized export point for entity classes
@@ -45,6 +55,7 @@ js/
 ├── ui-meta.js               - Meta-progression and upgrade menu logic
 ├── ui-modals.js             - Shared modal system (e.g., In-game Guide)
 ├── ui-pause.js              - High-level orchestrator for the pause menu
+├── ui-templates.js          - HTML template strings for UI components
 ├── WeatherManager.js        - Synchronizes weather states with visuals
 └── weather-system.js        - Low-level particle and fog systems for biomes
 ```
@@ -79,6 +90,23 @@ Balanced game data is never hardcoded. It resides in:
 - **`constants.js`**: Numerical values (speed, range, costs).
 - **`skills.js`**: Content-rich skill definitions and descriptions.
 - **`biomes.js`**: Environmental aesthetics and weather types.
+
+### 7. Instanced Rendering
+To support massive enemy counts (up to 2500 active entities) without dropping frames, we use **Three.js InstancedMesh**.
+- **`EnemyInstancedRenderer`**: Manages a single draw call per mesh part (Body, Eyes, Limbs, Gun).
+- **`EnemyInstancedAnimation`**: CPU-side matrix calculations for walking/shooting animations, updated directly into the instance buffer.
+- This decoupling allows the `Enemy` logical class to remain lightweight, while the renderer handles the heavy lifting of matrix composition.
+
+### 8. Spatial Hashing & Physics
+Collision detection is cached via a **Spatial Hash Grid** (`SpatialHash.js`).
+- The world is divided into fixed-size cells.
+- Entities register their cell occupancy each frame.
+- **`PhysicsSystem`** queries only adjacent cells for collisions, reducing checks from O(N²) to near O(N).
+
+### 9. Factory Pattern for Visuals
+Mesh generation complexity is extracted into Factories:
+- **`PlayerMeshFactory`** & **`EnemyMeshFactory`**: Isolate the procedural geometry construction code.
+- This separates the "recipe" for a 3D model from the class that controls it.
 
 ---
 
