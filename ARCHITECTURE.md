@@ -117,3 +117,74 @@ Mesh generation complexity is extracted into Factories:
 - **GPU Memory Management**: When removing an entity (Player or Enemy), you **must** call `entity.dispose(scene)`. Removing the mesh from the scene is not enough; Three.js geometries and materials must be explicitly disposed to prevent memory leaks during long runs.
 - **No Static Assets**: You will not find `.png` or `.jpg` files for textures. All world textures and UI sprites are generated at runtime via `texture-generator.js` and `sprites.js`. To change the "look" of the game, you must modify the canvas drawing logic.
 - **Orchestrator Dependency**: Refrain from adding heavy logic to the main update loop in `game.js`. If you are adding a new feature (e.g., a new weapon system or weather effect), create a new Manager and hook it into the orchestrator.
+
+---
+
+## Project Size Analysis
+- **Generated At**: 2025-12-27
+- **Total JS Files**: 50
+- **Total Project Size**: 318.5 KB
+- **Total Raw LOC**: 6736
+- **Total Logical LOC**: 4774
+
+### Full File List (Sorted by Logic LOC)
+| File | Size | Raw LOC | Logic LOC ▼ |
+|---|---|---|---|
+| `js/entities/Player.js` | 24.1 KB | 532 | 432 |
+| `js/ui.js` | 22.8 KB | 654 | 389 |
+| `js/game.js` | 22.6 KB | 1070 | 370 |
+| `js/entities/PlayerVisuals.js` | 21.0 KB | 861 | 311 |
+| `js/skills.js` | 13.0 KB | 313 | 296 |
+| `js/ui-custom.js` | 14.5 KB | 368 | 289 |
+| `js/ui-levelup.js` | 8.3 KB | 218 | 179 |
+| `js/ui-pause.js` | 8.2 KB | 204 | 177 |
+| `js/texture-generator.js` | 8.2 KB | 269 | 170 |
+| `js/sprites.js` | 7.5 KB | 175 | 162 |
+| `js/ui/HealthBarSystem.js` | 7.1 KB | 178 | 155 |
+| `js/entities/bullet-manager.js` | 6.3 KB | 185 | 150 |
+| `js/weather-system.js` | 7.1 KB | 186 | 146 |
+| `js/entities/EnemyInstancedRenderer.js` | 8.5 KB | 212 | 137 |
+| `js/entities/Enemy.js` | 7.7 KB | 162 | 132 |
+| `js/entities/PlayerMeshFactory.js` | 7.0 KB | 167 | 129 |
+| `js/entities/EnemyMeshFactory.js` | 6.4 KB | 149 | 126 |
+| `js/entities/enemy-spawner.js` | 6.7 KB | 173 | 124 |
+| `js/entities/EnemyInstancedAnimation.js` | 5.6 KB | 162 | 121 |
+| `js/RenderingManager.js` | 5.6 KB | 207 | 119 |
+| `js/LightingManager.js` | 6.3 KB | 235 | 114 |
+| `js/ui/UISkillDetail.js` | 5.3 KB | 108 | 101 |
+| `js/ui-hud.js` | 7.9 KB | 120 | 100 |
+| `js/WeatherManager.js` | 5.4 KB | 167 | 92 |
+| `js/ui/UI3DRenderer.js` | 4.9 KB | 116 | 91 |
+| `js/entities/Bullet.js` | 4.2 KB | 110 | 87 |
+| `js/ui/UIStatItem.js` | 5.0 KB | 98 | 86 |
+| `js/ui-gameover.js` | 5.3 KB | 96 | 79 |
+| `js/entities/EnemyInstancedAnimation.js` | 5.6 KB | 162 | 78 |
+| `js/ui-meta.js` | 3.8 KB | 112 | 77 |
+| `js/constants.js` | 5.2 KB | 157 | 73 |
+| `js/input.js` | 3.8 KB | 112 | 73 |
+| `js/entities/Item.js` | 4.1 KB | 107 | 70 |
+| `js/entities/item-manager.js` | 3.6 KB | 115 | 68 |
+| `js/stats.js` | 2.0 KB | 68 | 59 |
+| `js/entities/EnemyInstancedGeometry.js` | 3.4 KB | 110 | 57 |
+| `js/systems/SpatialHash.js` | 2.6 KB | 78 | 45 |
+| `js/systems/PhysicsSystem.js` | 1.9 KB | 57 | 39 |
+| `js/entities/particle-manager.js` | 2.1 KB | 73 | 38 |
+| `js/biomes.js` | 1.2 KB | 39 | 36 |
+| `js/entities/Entity.js` | 1.5 KB | 50 | 36 |
+| `js/particles.js` | 1.3 KB | 46 | 34 |
+| `js/entities/ExplosionRing.js` | 1.4 KB | 45 | 31 |
+| `js/PersistenceManager.js` | 1.5 KB | 54 | 23 |
+| `js/icons.js` | 7.8 KB | 27 | 22 |
+| `js/ui-modals.js` | 498 B | 20 | 9 |
+| `js/ui/UIUtils.js` | 443 B | 18 | 7 |
+| `js/ui/ui-templates.js` | 6.8 KB | 4 |
+| `js/main.js` | 207 B | 8 | 3 |
+| `js/entities.js` | 234 B | 6 | 0 |
+
+### How to Update This Report
+Run the following command to regenerate the project size analysis:
+```bash
+node scripts/analyze-project-size.js
+```
+Then copy the output and replace this section.
+
