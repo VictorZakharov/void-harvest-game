@@ -1,5 +1,5 @@
 import { Bullet } from './Bullet.js';
-import { PARTICLE_COUNT_HIT } from '../constants.js';
+import { PARTICLE_COUNT_HIT, POLAR_VORTEX_RADIUS } from '../constants.js';
 
 /**
  * Manages all projectiles in the game, including player and enemy bullets.
@@ -117,7 +117,24 @@ export class BulletManager {
     update(player, enemies, timeScale = 1.0) {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
-            bullet.update(timeScale);
+
+            let currentScale = timeScale;
+            // Check for Polar Vortex Bullet Slow (Level 3+)
+            if (!bullet.isPlayer && player.stasisBulletSlow) {
+                const dx = bullet.x - player.x;
+                const dy = bullet.y - player.y;
+                const radIs = player.stasisRadius || POLAR_VORTEX_RADIUS;
+                // Optimization: Square distance check
+                if (dx * dx + dy * dy < radIs * radIs) {
+                    // Apply slow (e.g. 50% slow = 0.5 scale). 
+                    // Using stasisSlow value (e.g. 0.45 or 0.60) might be too much or too little.
+                    // The requirement says "slow down bullets". Let's use a flat 50% or derive from stasisSlow.
+                    // Since stasisSlow grows (15%, 30%, 45%), using it directly is consistent.
+                    currentScale *= (1 - player.stasisSlow);
+                }
+            }
+
+            bullet.update(currentScale);
 
             if (bullet.isOutOfBounds()) {
                 this.scene.remove(bullet.mesh);

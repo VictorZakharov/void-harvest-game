@@ -241,7 +241,7 @@ export const SKILLS = [
     {
         id: "stasis",
         name: "Polar Vortex",
-        description: `A freezing storm surrounds you, slowing nearby enemies within ${POLAR_VORTEX_RADIUS} units.`,
+        description: `A freezing storm surrounds you, slowing nearby enemies within ${POLAR_VORTEX_RADIUS} units. At Level 3, it also slows enemy projectiles.`,
         baseValue: 15,
         unit: "%",
         maxLevel: 3,
@@ -251,6 +251,9 @@ export const SKILLS = [
             player.skills.stasis = (player.skills.stasis || 0) + 1;
             player.stasisSlow = (player.skills.stasis * POLAR_VORTEX_SLOW_BASE) + POLAR_VORTEX_SLOW_BASE;
             player.stasisUnlocked = true;
+            if (player.skills.stasis >= 3) {
+                player.stasisBulletSlow = true;
+            }
         }
     },
     {
