@@ -15,10 +15,12 @@ export class EnemySpawner {
     /**
      * @param {THREE.Scene} scene - The Three.js scene to add enemy meshes to.
      * @param {Enemy[]} enemiesList - The reference to the game's enemy list to populate.
+     * @param {HealthBarSystem} healthBarSystem - Use for registering enemy health bars at creation.
      */
-    constructor(scene, enemiesList) {
+    constructor(scene, enemiesList, healthBarSystem) {
         this.scene = scene;
         this.enemies = enemiesList;
+        this.healthBarSystem = healthBarSystem;
     }
 
     /**
@@ -136,7 +138,8 @@ export class EnemySpawner {
         }
 
         this.enemies.push(enemy);
-        this.scene.add(enemy.mesh);
+        if (this.healthBarSystem) this.healthBarSystem.register(enemy);
+        // this.scene.add(enemy.mesh); // Legacy: Mesh is now instanced or managed by HealthBarSystem
         return enemy;
     }
 

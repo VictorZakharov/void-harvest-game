@@ -27,6 +27,7 @@ import * as THREE from 'three';
 
 import { RenderingManager } from './RenderingManager.js';
 import { EnemyInstancedRenderer } from './entities/EnemyInstancedRenderer.js';
+import { HealthBarSystem } from './ui/HealthBarSystem.js';
 import { LightingManager } from './LightingManager.js';
 import { PersistenceManager } from './PersistenceManager.js';
 import { WeatherManager } from './WeatherManager.js';
@@ -61,6 +62,7 @@ export class Game {
     // Initialize Instanced Renderer
     // Capacity 15000 to handle high spawn rate stress tests without buffer overflow
     this.instancedRenderer = new EnemyInstancedRenderer(this.rendering.scene, 15000); // Support up to 3000 enemies
+    this.healthBarSystem = new HealthBarSystem(this.scene);
     this.spatialHash = new SpatialHash(150); // Cell size approx max enemy size + speed buffer
     this.physicsSystem = new PhysicsSystem(this); // Physics & Collision
 
@@ -103,7 +105,7 @@ export class Game {
 
     // MANAGERS
     this.particleManager = new ParticleManager(this.scene);
-    this.enemySpawner = new EnemySpawner(this.scene, this.enemies);
+    this.enemySpawner = new EnemySpawner(this.scene, this.enemies, this.healthBarSystem);
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
       createExplosion: (x, y, c, r) => this.particleManager.createExplosion(x, y, c, r),
@@ -134,6 +136,7 @@ export class Game {
     if (this.bulletManager) this.bulletManager.clear();
     if (this.itemManager) this.itemManager.clear();
     if (this.particleManager) this.particleManager.clear();
+    if (this.healthBarSystem) this.healthBarSystem.clear();
 
     // Select Biome
     if (this.customBiome) {
@@ -539,18 +542,13 @@ export class Game {
     this.player.updateMesh(animDelta);
 
     // Update Instanced Renderer (Batches all enemies)
+    // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)
-    // Note: 'cursorTarget' is declared again here due to scope; ensuring freshness for culling.
     const cursorTargetForCull = this.lighting.getCursorTarget();
     this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
     // Update Overlay Visuals (Heath Bars)
-    // Only update active enemies closer to camera? For now, simple loop is fast enough.
-    // Optimization: Skips invisible health bars internally.
-    const cam3D = this.rendering.camera3D;
-    for (const enemy of this.enemies) {
-      if (enemy.visuals) enemy.visuals.update(animDelta, cam3D);
-    }
+    this.healthBarSystem.update(this.rendering.camera3D);
 
     this.bulletManager.updateMeshes();
     this.itemManager.updateMeshes();
@@ -564,7 +562,11 @@ export class Game {
     this.player.onKill();
     this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
     this.itemManager.spawnXP(enemy.x, enemy.y, enemy.xpValue);
+
+    // Cleanup
+    this.healthBarSystem.unregister(enemy);
     enemy.dispose(this.scene);
+
     const index = this.enemies.indexOf(enemy);
     if (index > -1) this.enemies.splice(index, 1);
   }

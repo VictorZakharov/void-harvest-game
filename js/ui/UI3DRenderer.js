@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { EnemyVisuals } from '../entities/EnemyVisuals.js';
+import { EnemyInstancedGeometry } from '../entities/EnemyInstancedGeometry.js';
+import { EnemyInstancedAnimation } from '../entities/EnemyInstancedAnimation.js';
+import { ENEMY_SPRITE_COLORS } from '../constants.js';
 
 export class UI3DRenderer {
     constructor(size = 128) {
@@ -42,30 +44,77 @@ export class UI3DRenderer {
         this.subjectContainer = new THREE.Group();
         this.scene.add(this.subjectContainer);
 
-        // Mock Enemy Object
+        // Mock Enemy
         const mockEnemy = {
             type: type,
-            // Add any other props EnemyVisuals needs
+            x: 0, y: 0,
+            width: (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32)),
+            height: (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32)),
+            angle: 0, vx: 0, vy: 0, isKneeling: false, frozen: false
         };
 
-        const visuals = new EnemyVisuals(mockEnemy);
-        const mesh = visuals.mesh;
+        // 1. Geometries & Materials
+        const geos = EnemyInstancedGeometry.createAll();
+        const color = ENEMY_SPRITE_COLORS[type].main;
+        const bodyMat = new THREE.MeshStandardMaterial({ color: color });
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+        const gunMat = new THREE.MeshStandardMaterial({ color: (type === 'ice' ? 0x88ccff : 0x333333) });
 
-        // Center and Rotate Mesh
-        // Enemy is height 0..63. Center is ~31.5.
-        // We move it down so 0,0,0 is effectively the center of the body.
-        let yOffset = -31;
-        let camDist = 65;
+        // 2. Animation State
+        const animState = EnemyInstancedAnimation.calculateState(mockEnemy, 0);
+        const s = animState.scale;
 
-        // Custom offsets for weird sizes
-        if (type === 'tank') {
-            yOffset = -45; // Move down significantly more
-            camDist = 110;  // Pull camera back dramatically to ensure fit
+        // 3. Meshes
+        // Body
+        const body = new THREE.Mesh(geos.body, bodyMat);
+        EnemyInstancedAnimation.applyBodyTransform(body, mockEnemy, animState);
+        this.subjectContainer.add(body);
+
+        // Eyes
+        const eyes = new THREE.Mesh(geos.eyes, eyeMat);
+        eyes.position.copy(body.position);
+        eyes.rotation.copy(body.rotation);
+        eyes.scale.copy(body.scale);
+        this.subjectContainer.add(eyes);
+
+        // Limbs
+        const shoulderY = (40 + 10) * s + animState.torsoY;
+        const hipY = (40 - 12) * s + animState.torsoY;
+        const armX = (mockEnemy.type === 'tank' ? 10 : 6) * s;
+        const legX = (mockEnemy.type === 'tank' ? 6 : 4) * s;
+        const armL = 18 * s;
+        const legL = 28 * s;
+        const armW = 3 * s;
+        const legW = 3 * s;
+
+        const createLimb = (rot, xOff, yOff, len, wid) => {
+            const limb = new THREE.Mesh(geos.limbs, bodyMat);
+            EnemyInstancedAnimation.applyLimbTransform(limb, mockEnemy, animState, rot, xOff, yOff, len, wid);
+            this.subjectContainer.add(limb);
+        };
+
+        createLimb(animState.limbs.lArmRot, -armX, shoulderY, armL, armW);
+        createLimb(animState.limbs.rArmRot, armX, shoulderY, armL, armW);
+        createLimb(animState.limbs.lLegRot, -legX, hipY, legL, legW);
+        createLimb(animState.limbs.rLegRot, legX, hipY, legL, legW);
+
+        // Gun
+        if (animState.isShooter) {
+            const gun = new THREE.Mesh(geos.gun, gunMat);
+            EnemyInstancedAnimation.applyGunTransform(gun, mockEnemy, animState, shoulderY, armX, armL, s);
+            this.subjectContainer.add(gun);
         }
 
-        mesh.position.y = yOffset;
-        mesh.rotation.y = Math.PI / 8; // Slight pleasing perspective rotation
-        this.subjectContainer.add(mesh);
+        // 4. Center and Rotate
+        let yOffset = -31;
+        let camDist = 65;
+        if (type === 'tank') {
+            yOffset = -45;
+            camDist = 110;
+        }
+
+        this.subjectContainer.position.y = yOffset;
+        this.subjectContainer.rotation.y = Math.PI / 8; // Aesthetic rotation
 
         // Camera Positioning
         // Close up, looking slightly down.

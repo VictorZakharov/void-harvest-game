@@ -4,7 +4,6 @@ import {
 } from '../constants.js';
 import { SpriteGenerator } from '../sprites.js';
 import { Entity } from './Entity.js';
-import { EnemyVisuals } from './EnemyVisuals.js';
 
 /**
  * Represents an enemy entity with AI, stats, and movement logic.
@@ -69,25 +68,14 @@ export class Enemy extends Entity {
         this.freezeTimer = 0;
 
         // Knockback handling state
-        this.knockbackVx = 0;
         this.knockbackVy = 0;
         this.knockbackTimer = 0;
-
-        // Instantiate the visuals component
-        this.visuals = new EnemyVisuals(this);
     }
 
     /**
      * Compatibility getter for external access to the 3D mesh.
      */
-    get mesh() {
-        return this.visuals.mesh;
-    }
 
-    /**
-     * Compatibility setter for the mesh (required to avoid conflicts with Entity constructor).
-     */
-    set mesh(value) { }
 
     /**
      * Updates enemy AI, movement, and logic.
@@ -303,19 +291,7 @@ export class Enemy extends Entity {
         this.freezeTimer = Math.max(this.freezeTimer, duration);
     }
 
-    /**
-     * Compatibility method to update the visual mesh.
-     * Delegates to EnemyVisuals.
-     */
-    updateMesh(visibility, fogColor, camera, dt = 16) {
-        this.visuals.update(visibility, fogColor, camera, dt);
-    }
-
-    /**
-     * Cleans up Three.js resources for the enemy.
-     * @param {THREE.Scene} scene - The scene to remove visuals from.
-     */
     dispose(scene) {
-        this.visuals.dispose(scene);
+        // Visuals are now handled by EnemyInstancedRenderer and HealthBarSystem
     }
 }
