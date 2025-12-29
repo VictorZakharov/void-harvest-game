@@ -43,6 +43,9 @@ export class PlayerVisuals {
     this.gun = null;
     this.secondGun = null;
 
+    // Animation Transitions
+    this.downAnimationProgress = 0; // 0 = standing, 1 = fully downed
+
     this.init();
   }
 
@@ -307,24 +310,53 @@ export class PlayerVisuals {
 
     // Bobbing torso
     if (this.torso) {
-      if (this.player.isDowned) {
-        // Downed Pose: Lay flat on ground
-        // Overwrite rotations to make character lie down
-        const downRot = Math.PI / 2;
-        this.torso.rotation.x = -downRot;
-        this.torso.position.y = 5; // Lower to ground
+      // Calculate Animation Progress
+      const targetDown = this.player.isDowned ? 1.0 : 0.0;
+      const animationSpeed = 0.1; // Speed of falling/standing (approx 10 frames or 0.16s at 60fps? No, 0.1 per frame is fast. Let's use dt.)
 
-        // Reset limbs to look like "Ragdoll" or flat
-        if (this.leftLeg) this.leftLeg.rotation.x = 0;
-        if (this.rightLeg) this.rightLeg.rotation.x = 0;
-        if (this.leftArm) this.leftArm.rotation.x = -Math.PI; // Arms up/back
-        if (this.rightArm) this.rightArm.rotation.x = -Math.PI;
-      } else {
-        // Normal Animation
-        if (this.torso) this.torso.rotation.x = 0; // Reset
+      // Move progress towards target
+      // dt is approx 16ms usually. 0.0016 * dt approx 0.025 per frame (~0.6-0.7s duration)
+      const step = 0.0016 * dt;
+      if (this.downAnimationProgress < targetDown) {
+        this.downAnimationProgress = Math.min(targetDown, this.downAnimationProgress + step);
+      } else if (this.downAnimationProgress > targetDown) {
+        this.downAnimationProgress = Math.max(targetDown, this.downAnimationProgress - step);
+      }
 
-        const bounce = isMoving ? Math.abs(Math.sin(time)) * 2 : Math.sin(time) * 0.1;
-        this.torso.position.y = 40 + bounce;
+      // 0 = Standing, 1 = Downed
+      const t = this.downAnimationProgress;
+      const easeT = t * t * (3 - 2 * t); // Smoothstep
+
+      // Standard Animation Values (Standing)
+      const visibleBounce = isMoving ? Math.abs(Math.sin(time)) * 2 : Math.sin(time) * 0.1;
+      const standY = 40 + visibleBounce;
+      const standRotX = 0;
+
+      // Downed Values
+      const downedY = 5;
+      const downedRotX = -Math.PI / 2;
+
+      // Interpolate Torso
+      this.torso.position.y = standY + (downedY - standY) * easeT;
+      this.torso.rotation.x = standRotX + (downedRotX - standRotX) * easeT;
+
+      // Interpolate Limbs to "Ragdoll" / Flat Interaction
+      if (t > 0) {
+        // Target Limb Rotations for Downed State
+        // Arms back (-PI), Legs straight (0)
+        const deadArmRot = -Math.PI;
+        const deadLegRot = 0;
+
+        // Lerp from current animated value to dead value
+        // Note: lArmRot, etc are calculated above for the current frame's "alive" state.
+        // We act as if the player is still trying to run while falling, which is funny, 
+        // effectively blending from "Run" to "Fall".
+
+        if (this.leftArm) this.leftArm.rotation.x = this.leftArm.rotation.x * (1 - easeT) + deadArmRot * easeT;
+        if (this.rightArm) this.rightArm.rotation.x = this.rightArm.rotation.x * (1 - easeT) + deadArmRot * easeT;
+
+        if (this.leftLeg) this.leftLeg.rotation.x = this.leftLeg.rotation.x * (1 - easeT) + deadLegRot * easeT;
+        if (this.rightLeg) this.rightLeg.rotation.x = this.rightLeg.rotation.x * (1 - easeT) + deadLegRot * easeT;
       }
     }
 
