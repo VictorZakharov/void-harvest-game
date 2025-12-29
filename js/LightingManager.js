@@ -205,4 +205,41 @@ export class LightingManager {
     getCursorTarget() {
         return this.cursorLight ? this.cursorLight.target.position : null;
     }
+
+    /**
+     * Checks if a point in the world (Ground plane) is illuminated.
+     * @param {number} x - World X
+     * @param {number} z - World Z (Game Y)
+     * @returns {boolean}
+     */
+    isPointLit(x, z) {
+        // 1. Check P1/Cursor Light
+        if (this.cursorLight) {
+            const tx = this.cursorLight.target.position.x;
+            const tz = this.cursorLight.target.position.z;
+            const dx = x - tx;
+            const dz = z - tz;
+            // Calculate effective light radius including penumbra.
+            // Angle is PI/3 (60 deg), tan(60) ~ 1.73. 
+            // Using factor 1.8 to ensure coverage of the spotlight cone and penumbra falloff.
+            const lightY = this.cursorLight.position.y;
+            const radius = lightY * 1.8;
+
+            if ((dx * dx + dz * dz) < (radius * radius)) return true;
+        }
+
+        // 2. Check P2 Personal Light
+        if (this.p2Light && this.p2Light.visible) {
+            const tx = this.p2Light.target.position.x;
+            const tz = this.p2Light.target.position.z;
+            const dx = x - tx;
+            const dz = z - tz;
+            const lightY = this.p2Light.position.y;
+            const radius = lightY * 1.8;
+
+            if ((dx * dx + dz * dz) < (radius * radius)) return true;
+        }
+
+        return false;
+    }
 }

@@ -578,15 +578,8 @@ export class Game {
 
         if (pDistSq > range * range) continue;
 
-        // 2. Check Light Visibility (Cursor to Enemy)
-        // Only shoot if enemy is illuminated by the cursor light
-        if (cursorP) {
-          const cdx = (e.x + e.width / 2) - cursorP.x;
-          const cdy = (e.y + e.height / 2) - cursorP.z; // CursorTarget is Vector3(x, y, z) where y is height
-          const cDistSq = cdx * cdx + cdy * cdy;
-
-          if (cDistSq > light * light) continue;
-        }
+        // 2. Check Light Visibility (Must be lit by any source)
+        if (!this.lighting.isPointLit(e.x + e.width / 2, e.y + e.height / 2)) continue;
 
         // Sort by distance to PLAYER (shooting priority usually proximity to self)
         if (pDistSq < minDst) {
@@ -641,6 +634,9 @@ export class Game {
 
         for (const e of candidatesP2) {
           if (e.health <= 0 || e.isDummy) continue;
+
+          // Visibility Check: Must be lit
+          if (!this.lighting.isPointLit(e.x + e.width / 2, e.y + e.height / 2)) continue;
 
           // Distance to P2
           const pdx = (e.x + e.width / 2) - (p.x + p.width / 2);
@@ -861,16 +857,40 @@ export class Game {
       enemy.update(this.players, currentSpeedMod, effectiveScale);
 
       if (enemy.canShoot()) {
-        this.bulletManager.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
+        // Find nearest valid target (ignoring downed players)
+        let targetX = playerBounds.centerX;
+        let targetY = playerBounds.centerY;
+        let minDistSq = Infinity;
+        let foundTarget = false;
+
+        const pList = Array.isArray(this.players) ? this.players : [this.player];
+        for (const p of pList) {
+          if (p.health > 0 && !p.isDowned) {
+            const dx = p.x - enemy.x;
+            const dy = p.y - enemy.y;
+            const dSq = dx * dx + dy * dy;
+            if (dSq < minDistSq) {
+              minDistSq = dSq;
+              const pB = p.getBounds();
+              targetX = pB.centerX;
+              targetY = pB.centerY;
+              foundTarget = true;
+            }
+          }
+        }
+
+        // Fallback Strategy:
+        // If no valid active target is found (e.g., all players are downed), default to the primary player's position.
+        // This ensures the shooting logic has valid coordinates until the Game Over state triggers.
+        this.bulletManager.createEnemyBullet(enemy, targetX, targetY);
       }
     }
 
-    // Pass 2: Physics & Collision
-    // Physics system likely uses raw DT? Or should it use scaled DT?
-    // If BulletManager uses 'timeScale', it probably expects a multiplier, not MS.
-    // PhysicsSystem in JS usually likes MS.
-    this.physicsSystem.update(dt * this.timeScale); // Slow down physics if game is slow? 
+    // --- System Updates ---
+    // Update physics simulation with scaled delta time to maintain consistency during slow-motion.
+    this.physicsSystem.update(dt * this.timeScale);
 
+    // Update game systems (Bullets, Items, Particles) with the effective time scale (including DT correction).
     this.bulletManager.update(this.players, this.enemies, effectiveScale);
     this.itemManager.update(effectiveScale);
     this.particleManager.update();
