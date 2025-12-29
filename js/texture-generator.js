@@ -221,7 +221,7 @@ export class TextureGenerator {
 
             ctx.fillStyle = iceColor;
             // No blur, keep ice edges somewhat defined but maybe slight soften
-            // Actually ice puddles usually have sharp edges.
+            // detailed ice puddles with sharp edges.
 
             for (let i = 0; i < 40; i++) {
                 // Random polygon shape

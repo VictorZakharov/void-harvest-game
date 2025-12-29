@@ -7,13 +7,14 @@ import { SpriteGenerator } from '../sprites.js';
 import { Entity } from './Entity.js';
 
 export class Bullet extends Entity {
-    constructor(x, y, angle, speed, damage, isPlayer = true, piercing = 0, range = BULLET_BASE_RANGE, enemyType = null, fromDummy = false) {
+    constructor(x, y, angle, speed, damage, isPlayer = true, piercing = 0, range = BULLET_BASE_RANGE, enemyType = null, fromDummy = false, stats = {}, color = null) {
         const bulletSize = BULLET_SIZE * 2; // Convert to sprite size
         super(x, y, bulletSize, bulletSize);
         this.angle = angle;
         this.speed = speed;
         this.damage = damage;
         this.isPlayer = isPlayer;
+        this.color = color; // Optional color override for visual distinction
         this.piercing = piercing;
         this.maxPiercing = piercing;
         this.distanceTraveled = 0;
@@ -25,6 +26,12 @@ export class Bullet extends Entity {
             isPlayer ? 'player' : (enemyType === 'ice' ? 'ice' : 'enemy')
         );
         this.hitEnemies = new Set(); // Track which enemies this bullet has already hit
+
+        // Store Player Stats on Bullet
+        this.freezeChance = stats.freezeChance || 0;
+        this.splashRadius = stats.splashRadius || 0;
+        this.splashDamageRatio = stats.splashDamageRatio || 0;
+        this.forceFreeze = stats.forceFreeze || false;
 
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
@@ -66,8 +73,15 @@ export class Bullet extends Entity {
             Bullet.glowMaterials = {};
         }
 
-        const colorStr = this.isPlayer ? '#ffff00' : (this.enemyType === 'ice' ? '#66ccff' : '#ff0000');
-        const colorHex = this.isPlayer ? 0xffff00 : (this.enemyType === 'ice' ? 0x66ccff : 0xff0000);
+        let colorStr = this.isPlayer ? '#ffff00' : (this.enemyType === 'ice' ? '#66ccff' : '#ff0000');
+
+        // Override with dynamic color if provided (and player)
+        if (this.isPlayer && this.color) {
+            colorStr = this.color;
+        }
+
+        // Parse hex safely
+        const colorHex = new THREE.Color(colorStr).getHex();
 
         // Cache Material
         if (!Bullet.materials[colorStr]) {

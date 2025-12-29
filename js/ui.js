@@ -25,7 +25,13 @@ export class UIManager {
     this.setupEventHandlers();
     this.setupSpeedControls();
     this.setupMainParallax();
+    this.setupSpeedControls();
+    this.setupMainParallax();
     this.updateMainMenuSouls();
+
+    // Multiplayer Queue
+    this.levelUpQueue = [];
+    this.isLevelUpActive = false;
   }
 
   // ... (unchanged methods)
@@ -98,6 +104,8 @@ export class UIManager {
       this.game.customBiome = null;
       this.game.customSpawnRate = null;
       this.game.customMaxEnemies = null;
+      this.game.customMaxEnemies = null;
+      this.game.isMultiplayer = false; // Reset to single player
       this.game.start();
     };
 
@@ -135,19 +143,56 @@ export class UIManager {
       this.dom.show(this.dom.customModal);
     };
 
-    this.dom.startCustomBtn.onclick = () => {
-      // Check that at least one type is selected
-      // if (!Object.values(this.customEnemies).some(v => v)) {
-      //   alert('Please select at least one enemy type!');
-      //   return;
-      // }
+    if (this.dom.multiplayerBtn) {
+      this.dom.multiplayerBtn.onclick = () => {
+        this.dom.hide(this.dom.startScreen);
+        this.dom.show(this.dom.lobbyModal);
+      };
+    }
 
+    if (this.dom.startCoopBtn) {
+      this.dom.startCoopBtn.onclick = () => {
+        this.dom.hide(this.dom.lobbyModal);
+        this.game.debugWeather = false;
+        // Clear custom stuffs
+        this.game.customEnemies = null;
+        this.game.customSkills = null;
+        this.game.customBiome = null;
+        this.game.customSpawnRate = null;
+        this.game.customMaxEnemies = null;
+
+        // Enable Multiplayer Flag
+        this.game.isMultiplayer = true;
+
+        // Custom Colors
+        const p1Color = document.getElementById('p1-color').value;
+        const p2Color = document.getElementById('p2-color').value;
+        this.game.playerColors = [p1Color, p2Color];
+
+        this.game.start();
+      };
+    }
+
+    if (this.dom.closeLobbyModal) {
+      this.dom.closeLobbyModal.onclick = () => {
+        this.dom.hide(this.dom.lobbyModal);
+        this.dom.show(this.dom.startScreen);
+      };
+    }
+
+    this.dom.startCustomBtn.onclick = () => {
       this.dom.hide(this.dom.customModal);
       this.game.customEnemies = { ...this.customEnemies };
       this.game.customSkills = { ...this.customSkills }; // Pass selected skills
       this.game.customBiome = this.customBiome.value; // Pass selected biome
-      this.game.customBiome = this.customBiome.value; // Pass selected biome
-      this.game.debugWeather = this.dom.debugWeatherCheck.checked; // Existing
+      this.game.debugWeather = this.dom.debugWeatherCheck.checked;
+
+      // New Game Mode Flags
+      const is2P = document.getElementById('custom-2p-check').checked;
+      const friendlyFire = document.getElementById('custom-friendly-fire-check').checked;
+
+      this.game.isMultiplayer = is2P;
+      this.game.friendlyFire = is2P && friendlyFire;
 
       const rateVal = parseFloat(this.dom.customSpawnRateInput.value);
       this.game.customSpawnRate = isNaN(rateVal) ? null : rateVal;
@@ -157,6 +202,16 @@ export class UIManager {
 
       this.game.start();
     };
+
+    // Toggle Friendly Fire based on 2P check
+    const p2Check = document.getElementById('custom-2p-check');
+    const ffCheck = document.getElementById('custom-friendly-fire-check');
+    if (p2Check && ffCheck) {
+      p2Check.onchange = () => {
+        ffCheck.disabled = !p2Check.checked;
+        if (!p2Check.checked) ffCheck.checked = false;
+      };
+    }
 
     // Close Button (X)
     if (this.dom.closeCustomModal) {
@@ -306,7 +361,14 @@ export class UIManager {
           return;
         }
 
-        // 5. Game Over Screen -> Main Menu
+        // 5. Lobby Modal
+        if (this.dom.lobbyModal && !this.dom.lobbyModal.classList.contains('hidden')) {
+          this.dom.hide(this.dom.lobbyModal);
+          this.dom.show(this.dom.startScreen);
+          return;
+        }
+
+        // 6. Game Over Screen -> Main Menu
         if (this.dom.gameoverModal && !this.dom.gameoverModal.classList.contains('hidden')) {
           // Reuse the exit logic
           this.dom.hide(this.dom.gameoverModal);
@@ -325,10 +387,36 @@ export class UIManager {
     updateHUD(this.game, this.dom);
   }
 
-  showLevelUpScreen() {
-    showLevelUpScreen(this.game, this.dom);
+  showLevelUpScreen(player) {
+    if (!player) player = this.game.players ? this.game.players[0] : this.game.player;
 
+    if (this.isLevelUpActive) {
+      this.levelUpQueue.push(player);
+      return;
+    }
 
+    this.isLevelUpActive = true;
+
+    const onComplete = () => {
+      if (this.levelUpQueue.length > 0) {
+        const nextPlayer = this.levelUpQueue.shift();
+        // Small delay to prevent instant flash or allow UI update
+        setTimeout(() => {
+          showLevelUpScreen(this.game, this.dom, nextPlayer, onComplete);
+        }, 100);
+      } else {
+        this.isLevelUpActive = false;
+        this.dom.hide(this.dom.levelupModal);
+
+        // Resume ONLY if not paused by ESC
+        if (this.game.state === 'paused' && this.dom.pauseModal.classList.contains('hidden')) {
+          this.game.setFrozen(false);
+          this.game.state = 'playing';
+        }
+      }
+    };
+
+    showLevelUpScreen(this.game, this.dom, player, onComplete);
   }
 
   showGameOverStats(souls, isVictory = false) {
@@ -358,6 +446,10 @@ export class UIManager {
       this.statusMessageTimer = null;
     }
     showPauseScreen(this.game, this.dom);
+  }
+
+  hidePauseScreen() {
+    this.dom.hide(this.dom.pauseModal);
   }
 
   resumeGame() {
@@ -408,6 +500,7 @@ export class UIManager {
       'gameover-modal',
       'pause-modal',
       'custom-modal',
+      'lobby-modal',
       'start-screen'          // Bottom (Main Menu)
     ];
 

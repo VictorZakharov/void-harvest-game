@@ -10,7 +10,7 @@
 
 export const CANVAS_WIDTH = 4500;
 export const CANVAS_HEIGHT = 4500;
-export const BASE_CAMERA_HEIGHT = 800; // Reference height for fog density scaling
+export const BASE_CAMERA_HEIGHT = 400; // Reference height for fog density scaling (Halved for 2x Zoom)
 
 // ============================================
 // GAME RULES

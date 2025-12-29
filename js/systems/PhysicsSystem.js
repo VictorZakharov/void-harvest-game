@@ -6,28 +6,31 @@ export class PhysicsSystem {
     }
 
     update(dt) {
-        if (!this.game.player || !this.game.enemies) return;
+        if (!this.game.players || !this.game.enemies) return;
 
-        // Check Enemy-Player Collisions
-        // Optimize: Only check enemies near the player
-        const player = this.game.player;
-        const potentialCollisions = this.game.spatialHash.query(player.x, player.y, player.width, player.height);
+        // Check Enemy-Player Collisions for ALL players
+        const players = this.game.players;
 
-        for (const enemy of potentialCollisions) {
-            if (this.game.trainingMode && enemy.isDummy) continue; // Skip player collision for dummies
+        for (const player of players) {
+            if (player.health <= 0 || player.isDowned) continue;
 
-            if (enemy.collidesWith(player)) {
-                // We need the index to remove from main array? 
-                // game.enemies.splice(index, 1) is used in handlePlayerCollision
-                // This makes it tricky if we don't have the index.
-                // Let's find index or change handlePlayerCollision to use indexOf
-                this.handlePlayerCollision(enemy);
+            const potentialCollisions = this.game.spatialHash.query(player.x, player.y, player.width, player.height);
+
+            for (const enemy of potentialCollisions) {
+                if (this.game.trainingMode && enemy.isDummy) continue; // Skip player collision for dummies
+
+                // If enemy is already dead/processed (e.g. hit another player same frame), skip
+                if (enemy.health <= 0) continue;
+
+                if (enemy.collidesWith(player)) {
+                    this.handlePlayerCollision(enemy, player);
+                }
             }
         }
     }
 
-    handlePlayerCollision(enemy) {
-        const { player, stats, particleManager, camera, scene, enemies } = this.game;
+    handlePlayerCollision(enemy, player) {
+        const { stats, particleManager, camera, scene, enemies } = this.game;
 
         const blocked = player.shieldActive;
         if (!blocked) {
@@ -35,7 +38,23 @@ export class PhysicsSystem {
         }
 
         if (player.takeDamage(enemy.damage)) {
-            this.game.gameOver();
+            // Check if ALL players are dead/downed before ending game
+            let allDead = true;
+            if (this.game.isMultiplayer && this.game.players) {
+                for (const p of this.game.players) {
+                    if (!p.isDowned && p.health > 0) {
+                        allDead = false;
+                        break;
+                    }
+                }
+            } else {
+                // Single player: if takeDamage returns true, they are downed/dead -> Game Over
+                allDead = true;
+            }
+
+            if (allDead) {
+                this.game.gameOver();
+            }
             return;
         }
 

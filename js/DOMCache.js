@@ -13,6 +13,7 @@ export class DOMCache {
         this.resetConfirmModal = document.getElementById('reset-confirm-modal');
         this.guideModal = document.getElementById('guide-modal');
         this.customModal = document.getElementById('custom-modal');
+        this.uiOverlay = document.getElementById('ui-overlay');
 
         // Main Menu Buttons
         this.startBtn = document.getElementById('start-btn');
@@ -66,19 +67,38 @@ export class DOMCache {
         this.customMaxEnemiesInput = document.getElementById('custom-max-enemies');
 
         // HUD Elements
-        this.healthBar = document.getElementById('health-bar');
-        this.healthText = document.getElementById('health-text');
-        this.xpBar = document.getElementById('xp-bar');
-        this.levelText = document.getElementById('level-text');
+        this.p1Panel = document.getElementById('p1-panel');
+        this.p1HealthBar = document.getElementById('p1-health-bar');
+        this.p1HealthText = document.getElementById('p1-health-text');
+        this.p1XpBar = document.getElementById('p1-xp-bar');
+        this.p1LevelText = document.getElementById('p1-level-text');
+        this.p1StatusEffects = document.getElementById('p1-status-effects');
+        this.p1ActiveSkills = document.getElementById('p1-active-skills');
+
+        this.p2Panel = document.getElementById('p2-panel');
+        this.p2HealthBar = document.getElementById('p2-health-bar');
+        this.p2HealthText = document.getElementById('p2-health-text');
+        this.p2XpBar = document.getElementById('p2-xp-bar');
+        this.p2LevelText = document.getElementById('p2-level-text');
+        this.p2StatusEffects = document.getElementById('p2-status-effects');
+        this.p2ActiveSkills = document.getElementById('p2-active-skills');
+
+        // Game Stats (Central)
         this.waveVal = document.getElementById('wave-val');
         this.waveIcons = document.getElementById('wave-icons');
         this.timeVal = document.getElementById('time-val');
         this.killsVal = document.getElementById('kills-val');
-        this.currencyText = document.getElementById('currency-text');
-        this.statusEffects = document.getElementById('status-effects');
-        this.activeSkills = document.getElementById('active-skills');
+        this.soulsBankedText = document.getElementById('souls-banked-text'); // Fixed ID reference
+        this.soulsRunText = document.getElementById('souls-run-text');       // Fixed ID reference
+
         this.weatherWarning = document.getElementById('weather-warning');
         this.frozenMessage = document.getElementById('frozen-message');
+
+        // Lobby Modal
+        this.lobbyModal = document.getElementById('lobby-modal');
+        this.startCoopBtn = document.getElementById('start-coop-btn');
+        this.closeLobbyModal = document.getElementById('close-lobby-modal');
+        this.multiplayerBtn = document.getElementById('multiplayer-btn');
 
         // Pause Stats
         this.pauseStats = document.getElementById('pause-stats');
@@ -100,8 +120,8 @@ export class DOMCache {
             this.statusMessage.id = 'status-message';
             // Default styling for "Above Player" / Center Screen
             // Using transform: translate(-50%, -50%) to center, then margin-top to offset?
-            // Actually, "Above Player" usually means center screen - offset.
-            // Let's place it at 40% height (slightly above center).
+            // Position relative to screen center with offset.
+            // Place at 40% height (slightly above center).
             Object.assign(this.statusMessage.style, {
                 position: 'absolute',
                 top: '40%',

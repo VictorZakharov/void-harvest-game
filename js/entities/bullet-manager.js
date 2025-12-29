@@ -52,7 +52,13 @@ export class BulletManager {
 
             const bullet = new Bullet(
                 startX, startY, player.angle + angleOffset, player.bulletSpeed,
-                effectiveDamage, true, player.piercing, player.range
+                effectiveDamage, true, player.piercing, player.range, null, false,
+                {
+                    freezeChance: player.freezeChance,
+                    splashRadius: player.splashRadius,
+                    splashDamageRatio: player.splashDamageRatio
+                },
+                player.color // Apply player's unique color to projectile
             );
             this.bullets.push(bullet);
             this.scene.add(bullet.mesh);
@@ -116,8 +122,10 @@ export class BulletManager {
             angle += (Math.random() - 0.5) * spread;
         }
 
+        // Create Enemy Bullet
         const bullet = new Bullet(
-            startX, startY, angle, 4, enemy.isDummy ? 0 : enemy.damage, false, 0, 600, enemy.type, enemy.isDummy
+            startX, startY, angle, 4, enemy.isDummy ? 0 : enemy.damage, false, 0, 600, enemy.type, enemy.isDummy,
+            { forceFreeze: (enemy.type === 'ice') }
         );
 
         // Adjust for Bullet Center vs Top-Left
@@ -143,24 +151,32 @@ export class BulletManager {
      * Updates all active bullets and handles collision detection.
      * @param {Player} player - The player entity (for enemy bullet collisions).
      * @param {Enemy[]} enemies - List of active enemies (for player bullet collisions).
+     * @param {number} [timeScale=1.0] - Global game time scale.
+     * @param {boolean} [friendlyFire=false] - Whether player bullets can hurt players.
      */
-    update(player, enemies, timeScale = 1.0) {
+    update(players, enemies, timeScale = 1.0, friendlyFire = false) {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
 
             let currentScale = timeScale;
             // Check for Polar Vortex Bullet Slow (Level 3+)
-            if (!bullet.isPlayer && player.stasisBulletSlow) {
-                const dx = bullet.x - player.x;
-                const dy = bullet.y - player.y;
-                const radIs = player.stasisRadius || POLAR_VORTEX_RADIUS;
-                // Optimization: Square distance check
-                if (dx * dx + dy * dy < radIs * radIs) {
-                    // Apply slow (e.g. 50% slow = 0.5 scale). 
-                    // Using stasisSlow value (e.g. 0.45 or 0.60) might be too much or too little.
-                    // The requirement says "slow down bullets". Let's use a flat 50% or derive from stasisSlow.
-                    // Since stasisSlow grows (15%, 30%, 45%), using it directly is consistent.
-                    currentScale *= (1 - player.stasisSlow);
+            // Check against ALL players with Stasis unlocked
+            // Ensure players is/are iterable
+            const playerList = Array.isArray(players) ? players : [players];
+
+            if (!bullet.isPlayer) {
+                for (const p of playerList) {
+                    if (p.stasisBulletSlow && p.health > 0 && !p.isDowned) {
+                        const dx = bullet.x - p.x;
+                        const dy = bullet.y - p.y;
+                        const radIs = p.stasisRadius || POLAR_VORTEX_RADIUS;
+                        if (dx * dx + dy * dy < radIs * radIs) {
+                            currentScale *= (1 - p.stasisSlow);
+                            // Don't stack multiple slows from multiple players? 
+                            // Or do? safe to break after one application for now to prevent 0 speed
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -173,6 +189,39 @@ export class BulletManager {
             }
 
             if (bullet.isPlayer) {
+                // --- Friendly Fire Check ---
+                // If enabled, check if bullet hits OTHER players
+                if (friendlyFire) {
+                    const playerList = Array.isArray(players) ? players : [players];
+                    for (const p of playerList) {
+                        // Standard Friendly Fire: Check collision against all active players.
+                        // This allows PvP testing and simulates dangerous combat environments.
+
+                        // Check collision
+                        if (p.health > 0 && !p.isDowned) {
+                            // Simple box/circle check
+                            // Bullet is center x,y
+                            const dx = bullet.x - (p.x + p.width / 2);
+                            const dy = bullet.y - (p.y + p.height / 2);
+                            const distSq = dx * dx + dy * dy;
+                            const hitRad = (p.width / 2) + 5; // Player radius approx
+
+
+                            if (distSq < hitRad * hitRad) {
+                                // Hit Player!
+                                p.takeDamage(bullet.damage);
+                                this.callbacks.createParticles(p.x + p.width / 2, p.y + p.height / 2, '#ff0000', 5);
+
+                                // Destroy Bullet
+                                this.scene.remove(bullet.mesh);
+                                this.bullets.splice(i, 1);
+                                continue; // Proceed to next bullet
+                            }
+                        }
+                    }
+                } // End Friendly Fire
+
+
                 // Optimize: Query only nearby enemies using Spatial Hash
                 const nearbyEnemies = this.spatialHash.query(bullet.x, bullet.y, bullet.width || 8, bullet.height || 8);
 
@@ -187,7 +236,8 @@ export class BulletManager {
                             }
                         } else {
                             // Check for freeze chance: Standard OR Forced (Ice bullet deflection)
-                            if (bullet.forceFreeze || (player.freezeChance > 0 && Math.random() < player.freezeChance)) {
+                            // Use BULLET stats, not player (since we don't know which player here easily)
+                            if (bullet.forceFreeze || (bullet.freezeChance > 0 && Math.random() < bullet.freezeChance)) {
                                 enemy.freeze(120); // 2 seconds at 60fps
                                 this.callbacks.createParticles(enemy.x, enemy.y, '#00ffff', 15);
                             } else {
@@ -196,9 +246,9 @@ export class BulletManager {
                         }
 
                         // Splash Damage
-                        if (player.splashRadius > 0) {
-                            const rangeSq = player.splashRadius * player.splashRadius;
-                            const splashDmg = bullet.damage * player.splashDamageRatio;
+                        if (bullet.splashRadius > 0) {
+                            const rangeSq = bullet.splashRadius * bullet.splashRadius;
+                            const splashDmg = bullet.damage * bullet.splashDamageRatio;
 
                             // Visuals for explosion at impact point
                             // Add slight jitter to separate simultaneous hits visually
@@ -207,16 +257,16 @@ export class BulletManager {
 
                             this.callbacks.createParticles(ex, ey, '#ff5500', 8);
                             if (this.callbacks.createExplosion) {
-                                this.callbacks.createExplosion(ex, ey, '#ff5500', player.splashRadius);
+                                this.callbacks.createExplosion(ex, ey, '#ff5500', bullet.splashRadius);
                             }
 
                             // Optimize: Query enemies in splash radius
                             // Radius * 2 for width/height box
                             const splashEnemies = this.spatialHash.query(
-                                ex - player.splashRadius,
-                                ey - player.splashRadius,
-                                player.splashRadius * 2,
-                                player.splashRadius * 2
+                                ex - bullet.splashRadius,
+                                ey - bullet.splashRadius,
+                                bullet.splashRadius * 2,
+                                bullet.splashRadius * 2
                             );
 
                             for (const other of splashEnemies) {
@@ -244,135 +294,143 @@ export class BulletManager {
                 }
             } else {
                 // Enemy bullet
-                if (bullet.collidesWith(player)) {
+                for (const player of playerList) {
+                    // Skip downed or dead players - bullets pass through them
+                    if (player.isDowned || player.health <= 0) continue;
 
-                    // Deflect Skill Logic
-                    // Redirects bullet back to nearest enemy if charges available AND Hit is from Front (120 deg arc)
-                    if (player.deflectUnlocked && player.deflectCharges > 0) {
+                    if (bullet.collidesWith(player)) {
 
-                        // Check Directionality
-                        const playerFacing = player.angle;
+                        // Deflect Skill Logic
+                        // Redirects bullet back to nearest enemy if charges available AND Hit is from Front (120 deg arc)
+                        if (player.deflectUnlocked && player.deflectCharges > 0) {
 
-                        // Robust angle calculation using velocity
-                        const checkAngle = Math.atan2(bullet.vy, bullet.vx);
-                        const incomingAngle = checkAngle + Math.PI;
+                            // Check Directionality
+                            const playerFacing = player.angle;
 
-                        let hitAngleDiff = incomingAngle - playerFacing;
-                        while (hitAngleDiff > Math.PI) hitAngleDiff -= Math.PI * 2;
-                        while (hitAngleDiff < -Math.PI) hitAngleDiff += Math.PI * 2;
+                            // Robust angle calculation using velocity
+                            const checkAngle = Math.atan2(bullet.vy, bullet.vx);
+                            const incomingAngle = checkAngle + Math.PI;
 
-                        // 120 degree arc = +/- 60 degrees (PI/3)
-                        const arcRad = (120 * Math.PI / 180) / 2; // 60 degrees
+                            let hitAngleDiff = incomingAngle - playerFacing;
+                            while (hitAngleDiff > Math.PI) hitAngleDiff -= Math.PI * 2;
+                            while (hitAngleDiff < -Math.PI) hitAngleDiff += Math.PI * 2;
 
-                        if (Math.abs(hitAngleDiff) <= arcRad) {
-                            // Valid Frontal Deflect
-                            player.deflectCharges--;
+                            // 120 degree arc = +/- 60 degrees (PI/3)
+                            const arcRad = (120 * Math.PI / 180) / 2; // 60 degrees
 
-                            // Find Target in Frontal Arc (Recalculate sourceAngle based on checkAngle)
-                            const sourceAngle = checkAngle + Math.PI;
-                            const arc = 120 * (Math.PI / 180);
-                            const halfArc = arc / 2;
+                            if (Math.abs(hitAngleDiff) <= arcRad) {
+                                // Valid Frontal Deflect
+                                player.deflectCharges--;
 
-                            const deflectRange = 800;
-                            // Fix: Query box must be centered on player (x-range, y-range)
-                            const nearby = this.spatialHash.query(
-                                player.x - deflectRange,
-                                player.y - deflectRange,
-                                deflectRange * 2,
-                                deflectRange * 2
-                            );
+                                // Find Target in Frontal Arc (Recalculate sourceAngle based on checkAngle)
+                                const sourceAngle = checkAngle + Math.PI;
+                                const arc = 120 * (Math.PI / 180);
+                                const halfArc = arc / 2;
 
-                            let nearest = null;
-                            let minDst = Infinity;
+                                const deflectRange = 800;
+                                // Fix: Query box must be centered on player (x-range, y-range)
+                                const nearby = this.spatialHash.query(
+                                    player.x - deflectRange,
+                                    player.y - deflectRange,
+                                    deflectRange * 2,
+                                    deflectRange * 2
+                                );
 
-                            for (const e of nearby) {
-                                if (e.health <= 0 || e.isDummy) {
-                                    if (!e.isDummy && e.health <= 0) continue;
-                                    if (e.health <= 0) continue;
+                                let nearest = null;
+                                let minDst = Infinity;
+
+                                for (const e of nearby) {
+                                    if (e.health <= 0 || e.isDummy) {
+                                        if (!e.isDummy && e.health <= 0) continue;
+                                        if (e.health <= 0) continue;
+                                    }
+
+                                    const dx = (e.x + 0.5 * e.width) - bullet.x;
+                                    const dy = (e.y + 0.5 * e.height) - bullet.y;
+
+                                    // Check Angle Constraint (120 degree arc towards shooter/source)
+                                    const angleToEnemy = Math.atan2(dy, dx);
+                                    let angleDiff = angleToEnemy - sourceAngle;
+
+                                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                                    if (Math.abs(angleDiff) > halfArc) continue;
+
+                                    const d2 = dx * dx + dy * dy;
+                                    if (d2 < minDst) {
+                                        minDst = d2;
+                                        nearest = e;
+                                    }
                                 }
 
-                                const dx = (e.x + 0.5 * e.width) - bullet.x;
-                                const dy = (e.y + 0.5 * e.height) - bullet.y;
+                                // Default: Reflect back 180 degrees
+                                let targetAngle = sourceAngle;
 
-                                // Check Angle Constraint (120 degree arc towards shooter/source)
-                                const angleToEnemy = Math.atan2(dy, dx);
-                                let angleDiff = angleToEnemy - sourceAngle;
+                                if (nearest) {
+                                    // Aim at center of enemy from center of bullet
+                                    const bx = bullet.x + bullet.width / 2;
+                                    const by = bullet.y + bullet.height / 2;
+                                    const ex = nearest.x + nearest.width / 2;
+                                    const ey = nearest.y + nearest.height / 2;
 
-                                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-
-                                if (Math.abs(angleDiff) > halfArc) continue;
-
-                                const d2 = dx * dx + dy * dy;
-                                if (d2 < minDst) {
-                                    minDst = d2;
-                                    nearest = e;
+                                    targetAngle = Math.atan2(ey - by, ex - bx);
                                 }
+
+                                // Convert Bullet to Player Bullet
+                                bullet.isPlayer = true;
+                                bullet.angle = targetAngle;
+                                bullet.speed *= 1.5;
+                                bullet.vx = Math.cos(targetAngle) * bullet.speed;
+                                bullet.vy = Math.sin(targetAngle) * bullet.speed;
+
+                                // Apply Stats
+                                if (bullet.enemyType === 'ice') {
+                                    bullet.damage = 0;
+                                    bullet.forceFreeze = true;
+                                } else {
+                                    bullet.damage = player.damage;
+                                }
+                                bullet.piercing = player.piercing;
+                                bullet.freezeChance = player.freezeChance;
+                                bullet.splashRadius = player.splashRadius;
+                                bullet.splashDamageRatio = player.splashDamageRatio;
+
+                                // range: "Same as original"
+                                // We reset distanceTraveled so it flies a full new cycle
+                                bullet.distanceTraveled = 0;
+                                // We do NOT overwrite maxDistance with player.range
+                                // bullet.maxDistance remains whatever the enemy set it to (e.g. 600)
+
+                                // Visuals
+                                this.callbacks.createParticles(bullet.x, bullet.y, '#00ffff', 5);
+
+                                continue; // Block damage
                             }
-
-                            // Default: Reflect back 180 degrees
-                            let targetAngle = sourceAngle;
-
-                            if (nearest) {
-                                // Aim at center of enemy from center of bullet
-                                const bx = bullet.x + bullet.width / 2;
-                                const by = bullet.y + bullet.height / 2;
-                                const ex = nearest.x + nearest.width / 2;
-                                const ey = nearest.y + nearest.height / 2;
-
-                                targetAngle = Math.atan2(ey - by, ex - bx);
-                            }
-
-                            // Convert Bullet to Player Bullet
-                            bullet.isPlayer = true;
-                            bullet.angle = targetAngle;
-                            bullet.speed *= 1.5;
-                            bullet.vx = Math.cos(targetAngle) * bullet.speed;
-                            bullet.vy = Math.sin(targetAngle) * bullet.speed;
-
-                            // Apply Stats
-                            if (bullet.enemyType === 'ice') {
-                                bullet.damage = 0;
-                                bullet.forceFreeze = true;
-                            } else {
-                                bullet.damage = player.damage;
-                            }
-                            bullet.piercing = player.piercing;
-
-                            // range: "Same as original"
-                            // We reset distanceTraveled so it flies a full new cycle
-                            bullet.distanceTraveled = 0;
-                            // We do NOT overwrite maxDistance with player.range
-                            // bullet.maxDistance remains whatever the enemy set it to (e.g. 600)
-
-                            // Visuals
-                            this.callbacks.createParticles(bullet.x, bullet.y, '#00ffff', 5);
-
-                            continue; // Block damage
+                            // Else: Hit from behind -> Fall through to normal damage logic
                         }
-                        // Else: Hit from behind -> Fall through to normal damage logic
+
+                        if (bullet.enemyType === 'ice') {
+                            // Skip slow effect for dummy bullets
+                            if (!bullet.fromDummy) {
+                                player.slowEffects.push({
+                                    amount: 0.25,
+                                    timer: 120
+                                });
+                            }
+                            this.callbacks.createParticles(player.x, player.y, '#66ccff', 8);
+                            // Ice bullets deal NO initial damage, only DoT via stacks (handled in Player.js)
+                        } else {
+                            this.stats.damageReceived.bullet += bullet.damage;
+                            if (player.takeDamage(bullet.damage)) {
+                                this.callbacks.onGameOver();
+                            }
+                            this.callbacks.createParticles(player.x, player.y, '#ff0000', PARTICLE_COUNT_HIT);
+                        }
+                        this.scene.remove(bullet.mesh);
+                        this.bullets.splice(i, 1);
+                        this.callbacks.onCameraShake(8);
                     }
-
-                    if (bullet.enemyType === 'ice') {
-                        // Skip slow effect for dummy bullets
-                        if (!bullet.fromDummy) {
-                            player.slowEffects.push({
-                                amount: 0.25,
-                                timer: 120
-                            });
-                        }
-                        this.callbacks.createParticles(player.x, player.y, '#66ccff', 8);
-                        // Ice bullets deal NO initial damage, only DoT via stacks (handled in Player.js)
-                    } else {
-                        this.stats.damageReceived.bullet += bullet.damage;
-                        if (player.takeDamage(bullet.damage)) {
-                            this.callbacks.onGameOver();
-                        }
-                        this.callbacks.createParticles(player.x, player.y, '#ff0000', PARTICLE_COUNT_HIT);
-                    }
-                    this.scene.remove(bullet.mesh);
-                    this.bullets.splice(i, 1);
-                    this.callbacks.onCameraShake(8);
                 }
             }
         }

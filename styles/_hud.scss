@@ -21,36 +21,143 @@
     }
 }
 
-// Health Bar - Bottom Left
-.stat-bar:nth-child(1) {
+// Hide Legacy Health Bars (Replaced by Overhead UI)
+.stat-bar.health {
+    display: none !important;
+}
+
+// HUD Panels (Split UI)
+.hud-panel {
     position: absolute;
     bottom: v.$spacing-lg;
-    left: v.$spacing-lg;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; // Space between elements
+    width: 250px;
+    pointer-events: none; // Allow clicks/scroll to pass through to canvas
 
-    span {
-        color: v.$color-danger;
+    // Panel Header (Label + Skills wrapper)
+    .panel-header {
+        display: contents; // Default: SP style (unwrap children)
     }
 
-    .bar-container {
-        border-color: rgba(v.$color-danger, 0.5);
-        box-shadow: 0 0 10px rgba(v.$color-danger, 0.2);
+    // Panel Labels (P1/P2) - Hidden by default (SP)
+    .panel-label {
+        display: none;
+        font-size: 24px;
+        font-weight: 900;
+        text-shadow: 0 0 10px currentColor;
+        margin-bottom: -5px;
+    }
+
+    // Active Skills - Default SP order (Bottom)
+    .active-skills {
+        order: 10;
+        margin-top: auto;
+    }
+
+    &.left {
+        left: v.$spacing-lg;
+        align-items: flex-start;
+
+        .panel-label {
+            color: #44ccff;
+        }
+
+        // Cyan for P1
+
+        // P1 Stats align left
+        .stat-bar {
+            flex-direction: row;
+        }
+
+        .status-effects {
+            justify-content: flex-start;
+        }
+
+        .active-skills {
+            justify-content: flex-start;
+            flex-direction: row;
+        }
+
+        // Oldest left
+    }
+
+    &.right {
+        right: v.$spacing-lg;
+        align-items: flex-end;
+
+        .panel-label {
+            color: #ffaa44;
+        }
+
+        // Orange for P2
+
+        // P2 Stats align right (reverse row)
+        .stat-bar {
+            flex-direction: row-reverse;
+        }
+
+        .status-effects {
+            justify-content: flex-end;
+        }
+
+        .active-skills {
+            justify-content: flex-start; // Start of row-reverse is RIGHT
+            flex-direction: row-reverse;
+        }
+
+        // Oldest right
     }
 }
 
-// XP Bar - Bottom Right
+// Remove old absolute positioning for bars effectively, as they are now inside panels
+.stat-bar:nth-child(1),
 .stat-bar:nth-child(3) {
-    position: absolute;
-    bottom: v.$spacing-lg;
-    right: v.$spacing-lg;
+    position: static; // Reset absolute
+    bottom: auto;
+    left: auto;
+    right: auto;
+}
 
-    span {
-        color: v.$color-success;
-    }
+// SINGLE PLAYER OVERRIDES (Default state)
+// Restore XP bar to the right side
+#ui-overlay:not(.multiplayer) {
+    .hud-panel {
+        .stat-bar.xp {
+            position: fixed;
+            right: v.$spacing-lg;
+            bottom: v.$spacing-lg;
+            width: 300px;
+            flex-direction: row-reverse; // Flip so label is on inside
+            background: rgba(0, 0, 0, 0.4); // Add back background for readability against floor
+            border-radius: v.$border-radius-lg;
 
-    .bar-container {
-        border-color: rgba(v.$color-success, 0.5);
-        box-shadow: 0 0 10px rgba(v.$color-success, 0.2);
+            // Ensure connection with bar container looks good
+            .bar-container {
+                width: 100%; // Fill available space
+            }
+        }
     }
+}
+
+// Status Effects Container
+.status-effects {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+// Active Skills Container
+.active-skills {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 5px;
 }
 
 .bar-container {
@@ -79,17 +186,7 @@
 // Status Effects - positioned above health bar
 // ============================================
 
-#status-effects {
-    position: absolute;
-    bottom: 60px; // Position above HP bar
-    left: v.$spacing-lg; // Align with HP bar
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-    max-width: 245px; // Match HP bar width
-    justify-content: flex-start; // Align to left
-}
+// Old #status-effects styling removed or adapted above
 
 .status-effect {
     display: inline-flex;
@@ -145,18 +242,7 @@
 // Active Skills - positioned above XP bar
 // ============================================
 
-#active-skills {
-    position: absolute;
-    bottom: 60px; // Position above XP bar
-    right: v.$spacing-lg; // Align with XP bar
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-    max-width: 245px; // Match XP bar width
-    justify-content: flex-end; // Align to right
-    flex-direction: row-reverse; // Skills appear right-to-left (newest on right)
-}
+// Old #active-skills styling removed or adapted above
 
 .active-skill {
     display: inline-flex;
@@ -282,11 +368,44 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
+    flex: 1;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: v.$spacing-lg;
     // Children handled by #game-stats-content
+}
+
+.revive-prompt {
+    position: fixed;
+    bottom: 25%; // Above HUD
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #ffff00;
+    color: #ffff00;
+    padding: 10px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 8px;
+    z-index: 2000;
+    pointer-events: none;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.5);
+    transition: opacity 0.2s;
+
+    &.hidden {
+        display: none;
+        opacity: 0;
+    }
+
+    .key-hint {
+        color: #ffffff;
+        background: #444;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin: 0 5px;
+        border: 1px solid #777;
+    }
 }
 
 // New Wrapper Style

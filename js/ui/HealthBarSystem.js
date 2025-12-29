@@ -154,12 +154,12 @@ export class HealthBarSystem {
             if (group.userData.visibilityTimer > 0) {
                 // If we don't have delta time passed in, assume 1 frame at 60fps? 
                 // Or rely on it checking next frame. 
-                // Wait, update is called every frame. We need DT.
+                // Update logic requires delta time (dt) for smooth interpolation.
                 // game.js calls `this.healthBarSystem.update(this.rendering.camera3D, this.player)`. 
                 // It doesn't pass dt.
                 // Changing signature to include dt would be cleaner, but let's assume 1/60 for now or passed via wrapper.
                 // Let's rely on the fact that 1.0 = 1 second in this logic IF we decrement by dt/60 or similar.
-                // Actually, let's just decrement by approx 0.016 (16ms) per call if game is running.
+                // Decrement health bar visibility timer (approx 16ms per frame).
                 // Better: Decrement by 1/60. 
                 group.userData.visibilityTimer -= DECAY_RATE;
             }
@@ -180,7 +180,7 @@ export class HealthBarSystem {
             const isDamaged = enemy.health < enemy.maxHealth;
             // Visible if: (Damaged AND (Timer > 0))
             // We only show full health bars if explicitly requested, but usually only damaged ones.
-            // Wait, standard behavior is usually: Full hp bars hidden. Damaged visible.
+            // Default behavior: Hide full health bars, show damaged ones.
             // So Timer applies to DAMAGED bars visibility.
 
             if (isDamaged && group.userData.visibilityTimer > 0) {

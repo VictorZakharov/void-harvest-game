@@ -2,22 +2,46 @@
 import { SKILLS } from './skills.js';
 import { SKILL_CHOICES_BASE, SKILL_CHOICES_WITH_EXTRA } from './constants.js';
 
-export function showLevelUpScreen(game, dom) {
+export function showLevelUpScreen(game, dom, player, onComplete) {
     game.state = 'paused';
 
     // State for this level-up instance
     let rerollUsed = false;
     let isAnimating = false;
 
+    // Theme the Modal
+    const modalContent = dom.levelupModal.querySelector('.modal-content');
+    const color = player.color || '#44ccff'; // Default to Cyan if missing
+
+    if (modalContent) {
+        modalContent.style.border = `2px solid ${color}`;
+        modalContent.style.boxShadow = `0 0 30px ${color}60`; // Semi-transparent glow
+    }
+
+    // Update Header
+    const header = dom.levelupModal.querySelector('h2');
+    if (game.isMultiplayer) {
+        const pName = player.id === 0 ? "PLAYER 1" : "PLAYER 2";
+        header.innerHTML = `<span style="color: ${color}; text-shadow: 0 0 10px ${color}">${pName}</span> LEVEL UP!`;
+    } else {
+        header.innerHTML = `<span style="color: ${color}; text-shadow: 0 0 10px ${color}">LEVEL UP!</span>`;
+    }
+
     // Helper: Select Skills
     // excludeIds: Set of skill IDs to exclude (used for reroll)
     const selectSkills = (excludeIds = new Set()) => {
         // Determine number of choices
-        const numChoices = game.player.extraChoice ? SKILL_CHOICES_WITH_EXTRA : SKILL_CHOICES_BASE;
+        const numChoices = player.extraChoice ? SKILL_CHOICES_WITH_EXTRA : SKILL_CHOICES_BASE;
 
         // Filter available skills
         let available = SKILLS.filter(skill => {
-            const currentLevel = game.player.skills[skill.id] || 0;
+            // P2 cannot get Light Radius
+            if (player.id === 1 && skill.id === 'light') return false; // ID is 'light' not 'light_radius'
+
+            // Check Allowed ID
+            if (skill.allowedPlayerId !== undefined && skill.allowedPlayerId !== player.id) return false;
+
+            const currentLevel = player.skills[skill.id] || 0;
             // Check max level
             if (currentLevel >= (skill.maxLevel || Infinity)) return false;
             // Check exclusions
@@ -29,7 +53,9 @@ export function showLevelUpScreen(game, dom) {
         // This ensures the player always gets options even if their pool is small
         if (available.length < numChoices && excludeIds.size > 0) {
             available = SKILLS.filter(skill => {
-                const currentLevel = game.player.skills[skill.id] || 0;
+                if (player.id === 1 && skill.id === 'light') return false;
+                if (skill.allowedPlayerId !== undefined && skill.allowedPlayerId !== player.id) return false;
+                const currentLevel = player.skills[skill.id] || 0;
                 return currentLevel < (skill.maxLevel || Infinity);
             });
         }
@@ -52,7 +78,7 @@ export function showLevelUpScreen(game, dom) {
         dom.setHTML(dom.skillChoices, '');
 
         skills.forEach(skill => {
-            const currentLevel = game.player.skills[skill.id] || 0;
+            const currentLevel = player.skills[skill.id] || 0;
             const nextLevel = currentLevel + 1;
 
             // Build description
@@ -91,19 +117,21 @@ export function showLevelUpScreen(game, dom) {
             `;
 
             div.onclick = () => {
-                skill.apply(game.player);
-                game.stats.skillsPicked.push({ level: game.player.level, skill: skill.name });
+                skill.apply(player); // Apply to SPECIFIC player
+                // Game stats might need to track who picked what? For now global stats.
+                game.stats.skillsPicked.push({ level: player.level, skill: skill.name });
                 if (game.customSkillIds && game.customSkillIds.has(skill.id)) {
                     game.customSkillIds.delete(skill.id);
                 }
-                game.ui.updateHUD();
+                game.ui.updateHUD(); // Update HUD (handles both P1/P2)
                 if (game.updateGlobalLights) game.updateGlobalLights();
 
-                dom.hide(dom.levelupModal);
+                // dom.hide(dom.levelupModal); // Now handled by onComplete
+                onComplete();
 
                 // [DELETED] Cleanup Reroll Button logic
 
-                game.setFrozen(true);
+                // game.setFrozen(true); // Handled by UIManager logic (resuming or next)
             };
             dom.skillChoices.appendChild(div);
         });
@@ -111,6 +139,12 @@ export function showLevelUpScreen(game, dom) {
         // Reroll Button Logic
         const rerollBtn = dom.rerollBtn;
         if (rerollBtn) {
+            // Theme the button
+            const color = player.color || '#44ccff';
+            rerollBtn.style.border = `2px solid ${color}`;
+            rerollBtn.style.color = color;
+            rerollBtn.style.boxShadow = `0 0 10px ${color}40`;
+            // Add hover effect logic possibly via CSS or generic class, but inline style works for now
 
             rerollBtn.textContent = rerollUsed ? 'Reroll Used' : 'Reroll';
             rerollBtn.disabled = rerollUsed;

@@ -5,6 +5,7 @@ export class InputHandler {
     constructor(canvas) {
         this.canvas = canvas;
         this.keys = {};
+        this.codes = {}; // Track by physical key code (e.g. 'ControlRight')
         this.mouseDown = false;
         this.rightMouseDown = false;
         // Initialize mouse to center of screen
@@ -24,12 +25,14 @@ export class InputHandler {
 
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
+            this.codes[e.code] = true;
             if (e.key === 'Escape') this.escapePressed = true;
             if (e.key === ' ') this.spacePressed = true;
         });
 
         window.addEventListener('keyup', (e) => {
             this.keys[e.key.toLowerCase()] = false;
+            this.codes[e.code] = false;
         });
 
         canvas.addEventListener('mousedown', (e) => {
@@ -53,7 +56,7 @@ export class InputHandler {
 
         window.addEventListener('mousemove', (e) => {
             // Only update canvas-relative pos if on canvas? 
-            // Actually updateMousePosition relies on canvas rect. 
+            // Calculate mouse position relative to canvas bounding rect. 
             // If mouse is outside, it will produce coords outside bounds. This is fine.
             this.updateMousePosition(e, canvas);
 
@@ -74,7 +77,7 @@ export class InputHandler {
         // If we track on window, we don't need mouseleave on canvas as much.
         // But let's keep it for safety if they switch apps.
         canvas.addEventListener('mouseleave', () => {
-            // Actually, if we use window listeners, canvas mouseleave is bad because it stops dragging 
+            // Use window listeners to track dragging even if mouse leaves canvas. 
             // if you slip off the edge. 
             // So REMOVE mouseleave handler for button state clearing.
         });

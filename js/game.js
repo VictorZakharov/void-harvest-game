@@ -28,6 +28,7 @@ import * as THREE from 'three';
 import { RenderingManager } from './RenderingManager.js';
 import { EnemyInstancedRenderer } from './entities/EnemyInstancedRenderer.js';
 import { HealthBarSystem } from './ui/HealthBarSystem.js';
+import { PlayerOverheadUI } from './ui/PlayerOverheadUI.js';
 import { LightingManager } from './LightingManager.js';
 import { PersistenceManager } from './PersistenceManager.js';
 import { WeatherManager } from './WeatherManager.js';
@@ -38,7 +39,13 @@ export class Game {
   constructor() {
     this.persistence = new PersistenceManager();
     this.metaProgress = this.persistence.loadMetaProgress();
-    this.totalSouls = this.metaProgress.souls || 0;
+    this.metaProgress = this.persistence.loadMetaProgress();
+
+    // Robust Initialization of Souls
+    let loadedSouls = Number(this.metaProgress.souls);
+    if (isNaN(loadedSouls)) loadedSouls = 0;
+    this.totalSouls = loadedSouls;
+
     // Load Game Speed (Default 1.0)
     this.timeScale = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 1.0;
 
@@ -61,8 +68,6 @@ export class Game {
     this.lighting = new LightingManager(this.scene);
     // Initialize Instanced Renderer
     // Capacity 15000 to handle high spawn rate stress tests without buffer overflow
-    this.instancedRenderer = new EnemyInstancedRenderer(this.rendering.scene, 15000); // Support up to 3000 enemies
-    this.healthBarSystem = new HealthBarSystem(this.scene);
     this.spatialHash = new SpatialHash(150); // Cell size approx max enemy size + speed buffer
     this.physicsSystem = new PhysicsSystem(this); // Physics & Collision
 
@@ -105,11 +110,23 @@ export class Game {
 
     // MANAGERS
     this.particleManager = new ParticleManager(this.scene);
+    this.instancedRenderer = new EnemyInstancedRenderer(this.scene, 15000); // Support up to 3000 enemies
+    this.healthBarSystem = new HealthBarSystem(this.scene);
+    this.overheadUI = new PlayerOverheadUI(this.scene);
+
     this.enemySpawner = new EnemySpawner(this.scene, this.enemies, this.healthBarSystem);
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
       createExplosion: (x, y, c, r) => this.particleManager.createExplosion(x, y, c, r),
-      onGameOver: () => this.gameOver(),
+      onGameOver: () => {
+        if (this.isMultiplayer && this.players) {
+          // Check if ALL players are dead/downed
+          const allDead = this.players.every(p => p.isDowned || p.health <= 0);
+          if (allDead) this.gameOver();
+        } else {
+          this.gameOver();
+        }
+      },
       onCameraShake: (amount) => {
         this.camera.shake = amount;
       },
@@ -119,14 +136,31 @@ export class Game {
     });
 
     this.itemManager = new ItemManager(this.scene, this.player, this.metaProgress, {
-      onLevelUp: () => this.ui.showLevelUpScreen()
+      onLevelUp: (player) => this.ui.showLevelUpScreen(player)
     });
   }
 
   reset(commitHistory = false) {
     // Clear existing objects
-    if (this.player && this.player.visuals) {
+
+    // 1. Standard Cleanup via References
+    if (this.players) {
+      this.players.forEach(p => {
+        if (p && p.visuals) p.visuals.dispose();
+      });
+    } else if (this.player && this.player.visuals) {
       this.player.visuals.dispose();
+    }
+
+    // 2. Robust Safety Sweep (Fixes "Ghost Players" and Texture Warnings)
+    // Find any remaining Player Groups that leaked (e.g. from previous bugs)
+    if (this.scene) {
+      for (let i = this.scene.children.length - 1; i >= 0; i--) {
+        const child = this.scene.children[i];
+        if (child.name === 'PlayerGroup') {
+          this.scene.remove(child);
+        }
+      }
     }
 
     if (this.enemies) {
@@ -137,6 +171,10 @@ export class Game {
     if (this.itemManager) this.itemManager.clear();
     if (this.particleManager) this.particleManager.clear();
     if (this.healthBarSystem) this.healthBarSystem.clear();
+    if (this.overheadUI) this.overheadUI.clear();
+
+    // Reset players array
+    this.players = [];
 
     // Select Biome
     if (this.customBiome) {
@@ -172,10 +210,33 @@ export class Game {
       this.weatherSystem.stopWeather();
     }
 
-    // Create fresh player
-    this.player = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, this.scene);
+    // Create players
+    if (this.isMultiplayer) {
+      // P1: Left, P2: Right
+      // P1: Left, P2: Right
+      const c1 = this.playerColors ? this.playerColors[0] : '#00ffff';
+      const c2 = this.playerColors ? this.playerColors[1] : '#0088ff';
+      const p1 = new Player(CANVAS_WIDTH / 2 - 60, CANVAS_HEIGHT / 2, this.scene, 0, c1); // ID 0
+      const p2 = new Player(CANVAS_WIDTH / 2 + 60, CANVAS_HEIGHT / 2, this.scene, 1, c2); // ID 1
+      this.players = [p1, p2];
+    } else {
+      // Single Player (ID 0)
+      const c1 = this.playerColors ? this.playerColors[0] : '#00ffff';
+      const p1 = new Player(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, this.scene, 0, c1);
+      this.players = [p1];
+    }
 
-    // Update managers with new player instance
+    if (this.overheadUI) {
+      this.overheadUI.clear();
+      this.players.forEach(p => this.overheadUI.register(p));
+    }
+
+    // Legacy support / Primary player ref
+    this.player = this.players[0];
+
+    // Update managers with new player instance(s)
+    // Managers needing single player ref might default to P1
+    if (this.itemManager) this.itemManager.players = this.players; // Update ItemManager to handle array
 
     // Update managers with new player instance
     if (this.itemManager) this.itemManager.player = this.player;
@@ -224,7 +285,7 @@ export class Game {
     for (let upgrade of META_UPGRADES) {
       const level = this.metaProgress.upgrades[upgrade.id] || 0;
       if (level > 0) {
-        upgrade.apply(this.player, level);
+        this.players.forEach(p => upgrade.apply(p, level));
       }
     }
   }
@@ -239,7 +300,7 @@ export class Game {
         if (skill) {
           this.customSkillIds.add(skillId);
           for (let i = 0; i < level; i++) {
-            skill.apply(this.player);
+            this.players.forEach(p => skill.apply(p));
           }
         }
       }
@@ -273,17 +334,25 @@ export class Game {
     const savedCustomSkills = this.customSkills;
     const savedCustomBiome = this.customBiome;
     const savedDebugWeather = this.debugWeather;
+    const savedIsMultiplayer = this.isMultiplayer;
+    const savedFriendlyFire = this.friendlyFire; // Persist Friendly Fire
     const savedSpawnRate = this.customSpawnRate;
     const savedMaxEnemies = this.customMaxEnemies;
 
+    // Ensure Multiplayer flag is set & persisted BEFORE reset calls check it for player creation
+    this.isMultiplayer = savedIsMultiplayer;
+
+    // Reset game state (recreates players based on isMultiplayer)
     this.reset(true);
 
+    // Restore Flags that reset() might have cleared or that we want to persist
+    this.isMultiplayer = savedIsMultiplayer;
+    this.friendlyFire = savedFriendlyFire;
     this.customEnemies = savedCustomEnemies;
     this.customSkills = savedCustomSkills;
     this.customBiome = savedCustomBiome;
-    this.customBiome = savedCustomBiome;
     this.debugWeather = savedDebugWeather;
-    this.debugPerf = this.customDebugPerf; // Persist debug flag
+    this.debugPerf = this.customDebugPerf;
     this.customSpawnRate = savedSpawnRate;
     this.customMaxEnemies = savedMaxEnemies;
 
@@ -533,26 +602,191 @@ export class Game {
       }
     }
 
-    this.lighting.update(target, this.player);
+    // Lighting Update (Follows P1 Mouse)
+    const targetForLighting = this.rendering.getMouseWorldPosition(this.input.mouseX, this.input.mouseY);
 
-    let finalInput = this.input;
-    if (autoFiring) {
-      // Force fire by proxying input
-      finalInput = Object.create(this.input);
-      finalInput.mouseDown = true;
+    // Pass P1 for lighting bonuses if available
+    // Pass P1 and P2 for lighting
+    const p1 = this.players[0] || this.player;
+    const p2 = this.players[1];
+    this.lighting.update(targetForLighting, p1, p2);
+
+    // Player Updates
+    // Player Updates
+    this.players.forEach((p, index) => {
+      // Pass global input to all players. Player class handles ID-based key filtering.
+
+      // Determine Aim Target
+      let pAimX, pAimZ;
+      let targetFound = false;
+
+      if (index === 0) {
+        // P1 uses calculated aim (Mouse or Auto-Aim)
+        pAimX = aimX;
+        pAimZ = aimZ;
+      } else {
+        // P2 uses Auto-Aim ONLY (Nearest Enemy)
+        // Scan for nearest enemy to P2
+        let nearestP2 = null;
+        let minDstP2 = Infinity;
+        const rangeP2 = p.range || 200; // Use player range
+
+        // Perform spatial query for P2
+        const candidatesP2 = this.spatialHash.query(
+          p.x - rangeP2,
+          p.y - rangeP2,
+          rangeP2 * 2,
+          rangeP2 * 2
+        );
+
+        for (const e of candidatesP2) {
+          if (e.health <= 0 || e.isDummy) continue;
+
+          // Distance to P2
+          const pdx = (e.x + e.width / 2) - (p.x + p.width / 2);
+          const pdy = (e.y + e.height / 2) - (p.y + p.height / 2);
+          const pDistSq = pdx * pdx + pdy * pdy;
+
+          if (pDistSq < rangeP2 * rangeP2) {
+            if (pDistSq < minDstP2) {
+              minDstP2 = pDistSq;
+              nearestP2 = e;
+            }
+          }
+        }
+
+        if (nearestP2) {
+          pAimX = nearestP2.x + nearestP2.width / 2;
+          pAimZ = nearestP2.y + nearestP2.height / 2;
+          targetFound = true;
+        } else {
+          // No target: Aim forward or keep last?
+          // Default aim direction: Movement direction or forward.
+          pAimX = p.x;
+          pAimZ = p.y - 100; // Default up
+          targetFound = false;
+        }
+      }
+
+      p.update(this.input, pAimX, pAimZ, this.rendering.camYaw || 0, effectiveScale);
+
+      // Shooting
+      // P1: Manual or Auto (Inherits from Q toggle)
+      if (index === 0) {
+        // autoFiring is true if Autoshoot system found a target and is enabled
+        if (p.shoot(this.input.mouseDown || autoFiring)) {
+          this.bulletManager.createPlayerBullets(p);
+        }
+      }
+
+      // P2 Always Autoshoots at Nearest Enemy
+      if (index === 1 && !p.isDowned && p.health > 0 && targetFound) {
+        if (p.shoot(true)) {
+          this.bulletManager.createPlayerBullets(p);
+        }
+      }
+    });
+
+    // Resurrection Logic (Multiplayer Only)
+    // Also manage Revive Prompt UI
+    if (this.isMultiplayer && this.players.length === 2 && this.state === 'playing') {
+      const p1 = this.players[0];
+      const p2 = this.players[1];
+      const promptEl = document.getElementById('revive-prompt');
+
+      let showingPrompt = false;
+
+      const handleRevive = (reviver, downed) => {
+        const dist = Math.hypot(reviver.x - downed.x, reviver.y - downed.y);
+        const REVIVE_RANGE = 100;
+        const REVIVE_TIME = 2 * 60; // 2 Seconds at 60fps (Game Time)
+
+        let isReviving = false;
+
+        // Check Input & Range
+        if (dist < REVIVE_RANGE && !reviver.isDowned && reviver.health > 0) {
+
+          // Show Prompt
+          if (promptEl) {
+            const keyName = reviver.id === 0 ? "E" : "R-CTRL";
+            promptEl.innerHTML = `HOLD <span class="key-hint">[${keyName}]</span> TO REVIVE`;
+            promptEl.classList.remove('hidden');
+            showingPrompt = true;
+          }
+
+          // P1 reviving P2 -> Key 'e'
+          if (reviver.id === 0 && this.input.keys['e']) isReviving = true;
+          // P2 reviving P1 -> Key 'ControlRight'
+          if (reviver.id === 1 && this.input.codes['ControlRight']) isReviving = true;
+        }
+
+        if (isReviving) {
+          downed.reviveProgress += effectiveScale; // Use game time scale
+
+          // Update visual progress
+          const pct = Math.min(100, (downed.reviveProgress / REVIVE_TIME) * 100);
+          if (promptEl) {
+            // Target the key-hint span specifically or set on parent
+            const hintEl = promptEl.querySelector('.key-hint');
+            if (hintEl) hintEl.style.setProperty('--revive-progress', pct);
+          }
+
+          // Update 3D Ring
+          const progress01 = downed.reviveProgress / REVIVE_TIME;
+          downed.visuals.setReviveProgress(progress01, reviver.color);
+
+          if (downed.reviveProgress >= REVIVE_TIME) {
+            downed.revive();
+            // Trigger resurrection particle effect
+            this.particleManager.create(downed.x, downed.y, '#00ff00', 30);
+            downed.visuals.setReviveProgress(0); // Reset and hide ring
+          }
+        } else {
+          downed.reviveProgress = Math.max(0, downed.reviveProgress - effectiveScale); // Decay
+
+          // Show empty ring if still downed (out of range/not reviving)
+          if (downed.isDowned) {
+            downed.visuals.setReviveProgress(downed.reviveProgress / REVIVE_TIME, reviver.color);
+          }
+
+          // Reset visual progress
+          if (promptEl) {
+            const hintEl = promptEl.querySelector('.key-hint');
+            if (hintEl) hintEl.style.setProperty('--revive-progress', 0);
+          }
+        }
+      };
+
+      if (p1.isDowned && !p2.isDowned) handleRevive(p2, p1);
+      if (p2.isDowned && !p1.isDowned) handleRevive(p1, p2);
+
+      // Hide prompt if not showing
+      if (!showingPrompt && promptEl) {
+        promptEl.classList.add('hidden');
+      }
+
+      // Ensure visual state for downed players (even if out of revive range)
+      this.players.forEach(p => {
+        if (p.isDowned) {
+          // If not actively being revived (reviveProgress decreasing or 0), just update visuals
+          // But existing handleRevive updates it IF in range.
+          // We need a way to detect if handleRevive updated it.
+          // or just check reviveProgress.
+          // If reviveProgress == 0 and Downed, show empty ring.
+          if (p.reviveProgress <= 0) {
+            p.visuals.setReviveProgress(0, p.color); // Show own color if waiting
+          }
+        } else {
+          p.visuals.setReviveProgress(0); // Hide if not downed
+        }
+      });
     }
 
-    // Pass effectiveScale to player update
-    this.player.update(finalInput, aimX, aimZ, this.rendering.camYaw || 0, effectiveScale);
+    // Camera Logic (Average Position or P1?)
+    // "Two players will appear on screen... close enough to share light".
+    // Camera should probably center on midpoint.
 
-    if (this.player.health <= 0) {
-      this.gameOver();
-      return;
-    }
 
-    if (this.player.shoot(finalInput.mouseDown)) {
-      this.bulletManager.createPlayerBullets(this.player);
-    }
 
     if (this.trainingMode) {
       // Training Mode: Maintain constant dummy population
@@ -597,10 +831,10 @@ export class Game {
     }
 
     // Standard update loop (No sorting needed anymore for LOD, but sorting back-to-front or front-to-back can help overdraw)
-    // Let's keep it simple and just iterate.
+    // Iterate through entities.
     // If overdraw is a concern, sorting front-to-back (closest first) is good.
     // But Array.sort is O(N log N).
-    // Let's just iterate backwards for removal safety.
+    // Iterate backwards to safely remove items.
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
@@ -624,7 +858,7 @@ export class Game {
       // We use effectiveScale here to include both TimeScale and DT correction
       // enemy.update expects a timeScale factor.
 
-      enemy.update(playerBounds.centerX, playerBounds.centerY, currentSpeedMod, effectiveScale);
+      enemy.update(this.players, currentSpeedMod, effectiveScale);
 
       if (enemy.canShoot()) {
         this.bulletManager.createEnemyBullet(enemy, playerBounds.centerX, playerBounds.centerY);
@@ -637,7 +871,7 @@ export class Game {
     // PhysicsSystem in JS usually likes MS.
     this.physicsSystem.update(dt * this.timeScale); // Slow down physics if game is slow? 
 
-    this.bulletManager.update(this.player, this.enemies, effectiveScale);
+    this.bulletManager.update(this.players, this.enemies, effectiveScale);
     this.itemManager.update(effectiveScale);
     this.particleManager.update();
 
@@ -653,22 +887,55 @@ export class Game {
    */
   render3D(dt = 16) {
     this.rendering.updateFog(this.baseFogDensity, 800, DEFAULT_FOG_DENSITY);
-    this.rendering.updateCamera(this.player, this.input);
+    // Camera Logic (Average Position)
+    // Runs every frame to allow looking around while paused/frozen
+    let camX = 0, camZ = 0;
+    let livePlayers = this.players.filter(p => !p.isDowned && p.health > 0);
+    if (livePlayers.length === 0) livePlayers = this.players; // Fallback if all dead
+
+    livePlayers.forEach(p => {
+      const bounds = p.getBounds();
+      camX += bounds.centerX;
+      camZ += bounds.centerY;
+    });
+    // Protect against 0 players (shouldn't happen with fallback)
+    if (livePlayers.length > 0) {
+      camX /= livePlayers.length;
+      camZ /= livePlayers.length;
+    }
+
+    // Initialize smoothing variables if missing
+    if (this._smoothCamX === undefined) {
+      this._smoothCamX = camX;
+      this._smoothCamZ = camZ;
+    }
+
+    // LERP (Linear Interpolation) for smoothness
+    const lerpFactor = 0.1;
+    this._smoothCamX += (camX - this._smoothCamX) * lerpFactor;
+    this._smoothCamZ += (camZ - this._smoothCamZ) * lerpFactor;
+
+    this.rendering.updateCamera(this._smoothCamX, this._smoothCamZ, this.input);
 
     const target = this.lighting.getCursorTarget();
 
     // Calculate animation delta (0 if paused/frozen)
     const animDelta = (this.state === 'playing' ? this.timeScale : 0) * dt;
-    this.player.updateMesh(animDelta);
+    // Update mesh for ALL players
+    this.players.forEach(p => p.updateMesh(animDelta));
 
-    // Update Instanced Renderer (Batches all enemies)
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)
     const cursorTargetForCull = this.lighting.getCursorTarget();
     this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
+    // Update BulletManager with Friendly Fire flag
+    const effectiveScale = (this.state === 'playing' ? this.timeScale : 0);
+    this.bulletManager.update(this.players, this.enemies, effectiveScale, this.friendlyFire);
+
     // Update Overlay Visuals (Heath Bars)
     this.healthBarSystem.update(this.rendering.camera3D, this.player, cursorTargetForCull, this.enemies);
+    if (this.overheadUI) this.overheadUI.update();
 
     this.bulletManager.updateMeshes();
     this.itemManager.updateMeshes();
@@ -677,11 +944,16 @@ export class Game {
   }
 
   onEnemyDeath(enemy) {
+    if (enemy.type === 'tank') {
+      this.camera.shake = 5;
+    }
     this.kills++;
     this.stats.enemiesKilled[enemy.type]++;
-    this.player.onKill();
+    this.player.onKill(); // This should probably be removed or adapted for multiple players
     this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
     this.itemManager.spawnXP(enemy.x, enemy.y, enemy.xpValue);
+
+    this.totalSouls += enemy.soulsValue;
 
     // Cleanup
     this.healthBarSystem.unregister(enemy);
@@ -692,6 +964,10 @@ export class Game {
   }
 
   gameOver() {
+    // Hide Revive Prompt
+    const promptEl = document.getElementById('revive-prompt');
+    if (promptEl) promptEl.classList.add('hidden');
+
     this.state = 'gameover';
     this.camera.shake = 0;
     const souls = this.getRunSouls();
@@ -704,6 +980,10 @@ export class Game {
   }
 
   win() {
+    // Hide Revive Prompt
+    const promptEl = document.getElementById('revive-prompt');
+    if (promptEl) promptEl.classList.add('hidden');
+
     this.state = 'gameover';
     this.camera.shake = 0;
     const souls = Math.floor(this.kills / 3) + 50;
@@ -719,8 +999,13 @@ export class Game {
     if (this.state === 'playing') {
       this.state = 'paused';
       this.ui.showPauseScreen();
+      // Hide Revive Prompt
+      const promptEl = document.getElementById('revive-prompt');
+      if (promptEl) promptEl.classList.add('hidden');
     } else if (this.state === 'paused') {
-      this.ui.resumeGame();
+      this.state = 'playing';
+      this.ui.hidePauseScreen();
+      // Revive prompt will reappear in next update() if conditions met
     } else if (this.state === 'frozen') {
       this.state = 'paused';
       this.ui.showPauseScreen();
@@ -745,6 +1030,9 @@ export class Game {
 
   setFrozen(frozen) {
     if (frozen) {
+      // Hide Revive Prompt when frozen (e.g. Level Up)
+      const promptEl = document.getElementById('revive-prompt');
+      if (promptEl) promptEl.classList.add('hidden');
       this.state = 'frozen';
       this.ui.showFrozenMessage(true);
       this.lastTime = performance.now();

@@ -7,12 +7,13 @@ export class PlayerMeshFactory {
      * @param {Object} player - The player entity (for dimensions).
      * @returns {Object} { group, components, vortexMesh, stasisParticles }
      */
-    static create(player) {
+    static create(player, color = 0x00ffff) {
         const group = new THREE.Group();
+        group.name = 'PlayerGroup';
         const components = {};
 
         // Stick Figure Materials
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0x00ffff }); // Cyan stick figure
+        const skinMat = new THREE.MeshStandardMaterial({ color: color }); // Dynamic Color
         const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
 
         // --- Torso ---

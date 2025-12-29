@@ -27,14 +27,26 @@ export class Player extends Entity {
    * @param {number} x - Initial X position.
    * @param {number} y - Initial Y position.
    * @param {THREE.Scene} [scene] - The scene to add visuals to.
+   * @param {number} [id=0] - Player ID for multiplayer.
+   * @param {string|number} [color='#00ffff'] - Player color.
    */
-  constructor(x, y, scene = null) {
-    const playerSize = PLAYER_SIZE * 2 + 8;
-    super(x, y, playerSize, playerSize);
+  constructor(x, y, scene = null, id = 0, color = '#00ffff') {
+    const pSize = PLAYER_SIZE * 2;
+    super(x, y, pSize, pSize);
+    this.id = id;
+    this.color = color;
     this.maxHealth = PLAYER_BASE_HEALTH;
     this.health = this.maxHealth;
     this.speed = PLAYER_BASE_SPEED;
-    this.sprite = SpriteGenerator.createPlayerSprite(playerSize);
+    this.sprite = SpriteGenerator.createPlayerSprite(pSize, id === 1 ? '#ffaa44' : '#44ccff'); // P1 Cyan, P2 Orange 
+    // Player visual representation is managed by PlayerVisuals class. 
+    // Passing ID to Visuals would be good, but for now let's set properties.
+
+    // Multiplayer States
+    this.isDowned = false;
+    this.downedTimer = 0;
+    this.reviveProgress = 0;
+    this.maxDownedTime = 30 * 60; // 30 seconds at 60fps
 
     // Combat stats
     this.damage = PLAYER_BASE_DAMAGE;
@@ -140,6 +152,16 @@ export class Player extends Entity {
    * @param {number} [timeScale=1.0] - Global game time scale.
    */
   update(input, mouseX, mouseY, camYaw = 0, timeScale = 1.0) {
+    // Downed State logic
+    if (this.isDowned) {
+      this.downedTimer -= timeScale;
+      // If timer runs out, we remain downed (dead).
+      // Game Over logic checks if all are downed/dead.
+      return; // No movement, no actions
+    }
+
+    if (this.health <= 0) return; // Dead but not processed?
+
     // Slow effects
     for (let i = this.slowEffects.length - 1; i >= 0; i--) {
       this.slowEffects[i].timer--;
@@ -155,10 +177,21 @@ export class Player extends Entity {
     // Movement
     let ivx = 0;
     let ivy = 0;
-    if (input.keys['w'] || input.keys['ArrowUp']) ivy = -effectiveSpeed;
-    if (input.keys['s'] || input.keys['ArrowDown']) ivy = effectiveSpeed;
-    if (input.keys['a'] || input.keys['ArrowLeft']) ivx = -effectiveSpeed;
-    if (input.keys['d'] || input.keys['ArrowRight']) ivx = effectiveSpeed;
+
+    // Player 1 (WASD)
+    if (this.id === 0) {
+      if (input.keys['w']) ivy = -effectiveSpeed;
+      if (input.keys['s']) ivy = effectiveSpeed;
+      if (input.keys['a']) ivx = -effectiveSpeed;
+      if (input.keys['d']) ivx = effectiveSpeed;
+    }
+    // Player 2 (Arrow Keys)
+    else if (this.id === 1) {
+      if (input.keys['arrowup']) ivy = -effectiveSpeed;
+      if (input.keys['arrowdown']) ivy = effectiveSpeed;
+      if (input.keys['arrowleft']) ivx = -effectiveSpeed;
+      if (input.keys['arrowright']) ivx = effectiveSpeed;
+    }
 
     // Apply Time Scale to Movement Input
     ivx *= timeScale;
@@ -179,6 +212,15 @@ export class Player extends Entity {
 
     this.x = Math.max(0, Math.min(CANVAS_WIDTH - this.width, this.x));
     this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
+
+    // Update Downed Timer
+    if (this.isDowned && this.downedTimer > 0) {
+      this.downedTimer = Math.max(0, this.downedTimer - timeScale);
+      if (this.downedTimer <= 0) {
+        // Optional: Force Game Over logic here if needed, but Game.js handles 'allDead' check
+        this.health = 0;
+      }
+    }
 
     // Aiming
     const bounds = this.getBounds();
@@ -238,8 +280,28 @@ export class Player extends Entity {
     } else {
       this.freezeDoTTimer = 0;
     }
+  }
 
+  /**
+   * Defines if player can shoot. 
+   * @param {boolean} mouseDown 
+   */
+  shoot(mouseDown) {
+    if (this.isDowned || this.health <= 0) return false;
+    // ... existing logic
+    if (this.fireTimer === 0 && mouseDown) {
+      this.fireTimer = this.fireRate;
+      return true;
+    }
+    return false;
+  }
 
+  revive() {
+    this.isDowned = false;
+    this.health = this.maxHealth * 0.5; // Revive with 50% HP
+    this.reviveProgress = 0;
+    this.downedTimer = 0;
+    // Trigger visual update (handled in updateHUD or Visuals)
   }
 
   /**
@@ -248,6 +310,7 @@ export class Player extends Entity {
    * @returns {boolean} True if a shot should be fired.
    */
   shoot(mouseDown) {
+    if (this.isDowned || this.health <= 0) return false;
     if (this.fireTimer === 0 && mouseDown) {
       this.fireTimer = this.fireRate;
       return true;
@@ -293,7 +356,14 @@ export class Player extends Entity {
     }
 
     this.health -= amount;
-    return this.health <= 0;
+
+    if (this.health <= 0 && !this.isDowned) {
+      this.health = 0; // Clamp
+      this.isDowned = true;
+      this.downedTimer = this.maxDownedTime;
+    }
+
+    return this.isDowned; // Returns true if incapacitated
   }
 
   heal(amount) {

@@ -13,9 +13,13 @@ export class ItemManager {
      * @param {Object} callbacks - Dictionary of callbacks.
      * @param {Function} callbacks.onLevelUp - Callback when player levels up.
      */
-    constructor(scene, player, metaProgress, callbacks) {
+    constructor(scene, playerOrPlayers, metaProgress, callbacks) {
         this.scene = scene;
-        this.player = player;
+        // Support array or single
+        this.players = Array.isArray(playerOrPlayers) ? playerOrPlayers : [playerOrPlayers];
+        // Keep single ref if needed for some legacy, but preferably use [0]
+        this.player = this.players[0];
+
         this.metaProgress = metaProgress;
         this.callbacks = callbacks;
         this.items = [];
@@ -36,8 +40,10 @@ export class ItemManager {
             this.scene.add(item.mesh);
         }
 
-        // Chance for health drop
-        const healthDropRate = HEALTH_DROP_BASE_RATE + (this.player.dropBonus || 0);
+        // Chance for health drop (Use P1 stats/highest drop bonus?)
+        const maxDropBonus = this.players.reduce((max, p) => Math.max(max, p.dropBonus || 0), 0);
+        const healthDropRate = HEALTH_DROP_BASE_RATE + maxDropBonus;
+
         if (Math.random() < healthDropRate) {
             const item = new Item(x, y, 'health');
             this.items.push(item);
@@ -49,26 +55,50 @@ export class ItemManager {
      * Updates all items: handles magnet attraction and collision with player.
      */
     update(timeScale = 1.0) {
-        const bounds = this.player.getBounds();
+        // Collect player bounds once
+        // const bounds = this.player.getBounds(); // Legacy
+
+        // We need to check against ALL players
+        const playerBounds = this.players.filter(p => !p.isDowned && p.health > 0).map(p => ({
+            p,
+            bounds: p.getBounds()
+        }));
+
+        if (playerBounds.length === 0) return; // No active players
 
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
 
-            // Update item logic (magnetism, movement)
-            item.update(
-                bounds.centerX,
-                bounds.centerY,
-                this.player.magnetBonus,
-                this.player.speed,
-                this.player,
-                null, null, // Cursor target arguments (unused)
-                timeScale
-            );
+            // Magnetism: Find closest player? Or average?
+            // Usually closest player attracts.
+            let closest = null;
+            let minDistSq = Infinity;
 
-            if (item.collidesWith(this.player)) {
-                this.collect(item);
-                this.scene.remove(item.mesh);
-                this.items.splice(i, 1);
+            playerBounds.forEach(({ p, bounds }) => {
+                const distSq = (item.x - bounds.centerX) ** 2 + (item.y - bounds.centerY) ** 2;
+                if (distSq < minDistSq) {
+                    minDistSq = distSq;
+                    closest = { p, bounds };
+                }
+            });
+
+            if (closest) {
+                // Update item logic (magnetism, movement) towards closest
+                item.update(
+                    closest.bounds.centerX,
+                    closest.bounds.centerY,
+                    closest.p.magnetBonus,
+                    closest.p.speed,
+                    closest.p,
+                    null, null,
+                    timeScale
+                );
+
+                if (item.collidesWith(closest.p)) {
+                    this.collect(item, closest.p);
+                    this.scene.remove(item.mesh);
+                    this.items.splice(i, 1);
+                }
             }
         }
     }
@@ -77,22 +107,32 @@ export class ItemManager {
      * Handles the collection logic for a specific item.
      * @private
      * @param {Item} item - The collected item.
+     * @param {Player} collector - The player who collected it.
      */
-    collect(item) {
+    collect(item, collector) {
         switch (item.type) {
             case 'xp':
                 let xpGain = 1;
                 const xpBoostLevel = this.metaProgress.upgrades['xp_gain'] || 0;
                 xpGain *= (1 + 0.2 * xpBoostLevel); // +20% per level
 
-                if (this.player.addXP(xpGain)) {
-                    if (this.callbacks.onLevelUp) {
-                        this.callbacks.onLevelUp();
+                // Split XP evenly among all players to ensure simultaneous progression.
+                const splitAmount = Math.ceil(xpGain / this.players.length);
+
+                this.players.forEach(p => {
+                    // Check if player levels up
+                    if (p.health > 0 || p.isDowned) { // Gain XP even if downed? Sure.
+                        if (p.addXP(splitAmount)) {
+                            // Player leveled up!
+                            if (this.callbacks.onLevelUp) {
+                                this.callbacks.onLevelUp(p); // Pass the specific player
+                            }
+                        }
                     }
-                }
+                });
                 break;
             case 'health':
-                this.player.heal(HEALTH_RESTORE_AMOUNT);
+                collector.heal(HEALTH_RESTORE_AMOUNT);
                 break;
         }
     }

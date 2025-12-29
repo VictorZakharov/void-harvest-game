@@ -24,6 +24,7 @@ export class PlayerVisuals {
     this.spotLight = null;
     this.shieldMesh = null;
     this.shockwaveMesh = null;
+    this.reviveRing = null;
     this.orbitShields = []; // Array of 3 shield meshes
     this.stasisParticles = [];
     this.shockwaveVisualTimer = 0;
@@ -49,7 +50,7 @@ export class PlayerVisuals {
    * Initializes all 3D models and lights.
    */
   init() {
-    const { group, components, vortexMesh, stasisParticles } = PlayerMeshFactory.create(this.player);
+    const { group, components, vortexMesh, stasisParticles } = PlayerMeshFactory.create(this.player, this.player.color);
     this.mesh = group;
     this.vortexMesh = vortexMesh;
     this.stasisParticles = stasisParticles;
@@ -95,6 +96,107 @@ export class PlayerVisuals {
         this.orbitShields.push(s);
         this.scene.add(s);
       }
+
+      // --- Revive Ring (Shader Based) ---
+      // A dashed ring background + A solid progress arc
+      // Uniforms: uProgress (0..1), uColor
+      // Geometry: Plane 1x1, scaled to radius
+
+      const reviveGeo = new THREE.PlaneGeometry(220, 220); // 100 radius + padding
+      // Rotate to lie flat
+      reviveGeo.rotateX(-Math.PI / 2);
+
+      const reviveMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uProgress: { value: 0.0 }, // 0 to 1
+          uColor: { value: new THREE.Color(0xffff00) },
+          uTime: { value: 0 }
+        },
+        transparent: true,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uProgress;
+          uniform vec3 uColor;
+          uniform float uTime;
+          varying vec2 vUv;
+          
+          #define PI 3.14159265359
+
+          void main() {
+            vec2 center = vec2(0.5);
+            vec2 d = vUv - center;
+            float dist = length(d);
+            float angle = atan(d.y, d.x); // -PI to PI
+            // Normalize angle to 0..1 starting from top (PI/2)?
+            // standard atan is 0 at right.
+            // Rotate -PI/2 to align with top. 
+            // angle -= PI/2.0; 
+            
+            // Map -PI..PI to 0..1
+            if (angle < 0.0) angle += 2.0 * PI;
+            float angle01 = angle / (2.0 * PI);
+            
+            // Ring Radius range (0.35 to 0.45 in UV space = 70 to 90 units approx)
+            // Radius 100 means diameter 200. UV 0.5 is center. 0.45 is 90% radius.
+            float inner = 0.38;
+            float outer = 0.45;
+            
+            if (dist < inner || dist > outer) discard;
+
+            // Dashed Background
+            // 8 Dashes
+            float dash = sin(angle * 8.0 + uTime * 2.0); // Animate spin? No user didn't ask spin.
+            dash = step(0.0, sin(angle * 8.0)); // simple dashes
+            
+            float alpha = 0.0;
+            
+            // Background Layer (Dim Dashes)
+            if (dash > 0.0) alpha = 0.2;
+            
+            // Progress Layer (Solid, fills over dashes)
+            // Reverse direction or start from top? 
+            // angle01 goes CCW from Right.
+            // visual wants Clockwise? or CCW? CCW is standard.
+            
+            // Rotate start point to Top
+            float effectiveAngle = angle01 + 0.25; 
+            if (effectiveAngle > 1.0) effectiveAngle -= 1.0;
+            
+            // If angle is within progress
+            // But we want "sections will fill up". 
+            // Continuous fill is fine per user "fill up as revive button is pressed".
+            
+            // Invert to Clockwise rotation if necessary.
+            // If uProgress > effectiveAngle, it's filled.
+            // But we want to handle the wrap around logic or just use simple angle.
+            
+            // Simplest: Linear fill 0..1
+            // Shift so 0 degrees is at Top (0.25 offset).
+            
+            // Check if fragment angle is "less than" progress angle.
+            // Since we use effectiveAngle (0..1), if uProgress > effectiveAngle
+            if (uProgress > effectiveAngle) {
+                 alpha = 1.0;
+            }
+
+            if (alpha < 0.01) discard;
+
+            gl_FragColor = vec4(uColor, alpha);
+          }
+        `,
+        depthWrite: false
+      });
+
+      this.reviveRing = new THREE.Mesh(reviveGeo, reviveMat);
+      this.reviveRing.visible = false;
+      this.reviveRing.renderOrder = 999; // On top of floor
+      this.scene.add(this.reviveRing);
     }
   }
 
@@ -192,7 +294,7 @@ export class PlayerVisuals {
       lArmRot = -Math.PI / 2 + Math.sin(time * 0.001 + 0.5) * 0.1;
 
       // If strictly moving, we might want to override the run swing.
-      // But let's enforce aiming pose if dual wielding.
+      // Enforce aiming pose when dual wielding.
     } else if (!isMoving) {
       // Idle arm poses (already 0 by default)
     }
@@ -205,8 +307,25 @@ export class PlayerVisuals {
 
     // Bobbing torso
     if (this.torso) {
-      const bounce = isMoving ? Math.abs(Math.sin(time)) * 2 : Math.sin(time) * 0.1;
-      this.torso.position.y = 40 + bounce;
+      if (this.player.isDowned) {
+        // Downed Pose: Lay flat on ground
+        // Overwrite rotations to make character lie down
+        const downRot = Math.PI / 2;
+        this.torso.rotation.x = -downRot;
+        this.torso.position.y = 5; // Lower to ground
+
+        // Reset limbs to look like "Ragdoll" or flat
+        if (this.leftLeg) this.leftLeg.rotation.x = 0;
+        if (this.rightLeg) this.rightLeg.rotation.x = 0;
+        if (this.leftArm) this.leftArm.rotation.x = -Math.PI; // Arms up/back
+        if (this.rightArm) this.rightArm.rotation.x = -Math.PI;
+      } else {
+        // Normal Animation
+        if (this.torso) this.torso.rotation.x = 0; // Reset
+
+        const bounce = isMoving ? Math.abs(Math.sin(time)) * 2 : Math.sin(time) * 0.1;
+        this.torso.position.y = 40 + bounce;
+      }
     }
 
 
@@ -341,15 +460,12 @@ export class PlayerVisuals {
 
       this.stasisParticles.forEach(p => {
         p.mesh.visible = true;
-        p.angle += p.speed * (dt / 16.0); // Scale speed relative to 60fps
+        p.angle += p.speed * (dt / 16.0);
         p.radius += (p.radiusDrift || 0) * (dt / 16.0);
 
-        // Robust bounce logic: only reverse if moving OUT of bounds
         if (p.radius > r && p.radiusDrift > 0) p.radiusDrift *= -1;
         if (p.radius < innerR && p.radiusDrift < 0) p.radiusDrift *= -1;
 
-        // Vertical phase needs continuous time.
-        // Use vfxAnimTime instead of 'time' to decouple from running animation
         const verticalPhase = p.radius * 0.1;
         const relativeY = -10 + (Math.sin(this.vfxAnimTime * 2 + verticalPhase + p.angle) * 15 + 15);
 
@@ -418,6 +534,18 @@ export class PlayerVisuals {
         }
       });
     }
+
+    // Revive Ring Visibility
+    if (this.reviveRing) {
+      if (this.player.isDowned) {
+        this.reviveRing.visible = true;
+        this.reviveRing.position.set(this.player.x + this.player.width / 2, 5, this.player.y + this.player.height / 2);
+        // Rotate slowly
+        this.reviveRing.rotation.y += dt * 0.001;
+      } else {
+        this.reviveRing.visible = false;
+      }
+    }
   }
 
   /**
@@ -436,7 +564,30 @@ export class PlayerVisuals {
     if (this.scene) {
       this.scene.remove(this.mesh);
       this.scene.remove(this.vortexMesh);
+      if (this.reviveRing) this.scene.remove(this.reviveRing);
       this.orbitShields.forEach(s => this.scene.remove(s));
+    }
+  }
+  /**
+   * Updates the visual state of the revive ring.
+   * @param {number} progress - 0.0 to 1.0 (Revive completion)
+   * @param {string|number} [color] - Optional override color (hex)
+   */
+  setReviveProgress(progress, color) {
+    if (!this.reviveRing) return;
+
+    if (this.player.isDowned) {
+      this.reviveRing.visible = true;
+      this.reviveRing.material.uniforms.uProgress.value = progress;
+      if (color !== undefined) {
+        this.reviveRing.material.uniforms.uColor.value.set(color);
+      } else {
+        this.reviveRing.material.uniforms.uColor.value.set(this.player.color);
+      }
+      // Synchronize ring position with player mesh
+      this.reviveRing.position.set(this.mesh.position.x, 2, this.mesh.position.z);
+    } else {
+      this.reviveRing.visible = false;
     }
   }
 }

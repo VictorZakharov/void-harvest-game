@@ -2,14 +2,7 @@
 import { SKILLS } from './skills.js';
 
 export function updateHUD(game, dom) {
-    const healthPercent = (game.player.health / game.player.maxHealth) * 100;
-    dom.healthBar.style.width = healthPercent + '%';
-    dom.setText(dom.healthText, `${Math.max(0, Math.floor(game.player.health))}/${game.player.maxHealth}`);
-
-    const xpPercent = (game.player.xp / game.player.xpToLevel) * 100;
-    dom.xpBar.style.width = xpPercent + '%';
-    dom.setText(dom.levelText, `Lv ${game.player.level}`);
-
+    // Game Globals Update (Time, Wave, Kills, Souls)
     const seconds = Math.floor(game.gameTime / 60);
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -23,9 +16,10 @@ export function updateHUD(game, dom) {
         dom.setText(dom.soulsRunText, `(+${runSouls})`);
     }
 
+    // Wave & Enemy Icons
     // Count active enemies by type
     const counts = { basic: 0, fast: 0, shooter: 0, tank: 0, ice: 0 };
-    if (game.enemies) { // Ensure enemies array exists
+    if (game.enemies) {
         for (const enemy of game.enemies) {
             if (counts[enemy.type] !== undefined) {
                 counts[enemy.type]++;
@@ -33,14 +27,10 @@ export function updateHUD(game, dom) {
         }
     }
 
-    // Determine which enemies can spawn this wave
     const wave = game.wave;
     let enemyIconsHtml = '';
-
-    // Helper to generate icon HTML with count
     const getIcon = (type) => `<span class="enemy-indicator ${type}">● <span style="font-size: 0.8em; color: #fff;">${counts[type]}</span></span>`;
 
-    // Custom game mode: show only enabled enemies
     if (game.customEnemies) {
         if (game.customEnemies.basic) enemyIconsHtml += getIcon('basic') + ' ';
         if (game.customEnemies.fast) enemyIconsHtml += getIcon('fast') + ' ';
@@ -49,9 +39,7 @@ export function updateHUD(game, dom) {
         if (game.customEnemies.ice) enemyIconsHtml += getIcon('ice') + ' ';
         enemyIconsHtml = enemyIconsHtml.trim();
     } else {
-        // Normal mode: show enemies based on wave progression
         enemyIconsHtml = getIcon('basic');
-
         if (wave >= 3) enemyIconsHtml += ' ' + getIcon('fast');
         if (wave >= 5) enemyIconsHtml += ' ' + getIcon('shooter');
         if (wave >= 7) enemyIconsHtml += ' ' + getIcon('tank');
@@ -61,104 +49,183 @@ export function updateHUD(game, dom) {
     dom.setText(dom.waveVal, `${game.wave}`);
     if (dom.waveIcons) dom.setHTML(dom.waveIcons, enemyIconsHtml);
 
-    // Update status effects
-    dom.setHTML(dom.statusEffects, '');
+    // Update Player Panels
+    // If game has 'players' array, use it. Otherwise fallback to 'player' property (single player legacy/compat)
+    const p1 = game.players ? game.players[0] : game.player;
+    const p2 = game.players ? game.players[1] : null;
 
-    // Ice slow effect
-    if (game.player.slowEffects.length > 0) {
-        const iceEffect = document.createElement('div');
-        iceEffect.className = 'status-effect ice';
-        iceEffect.textContent = `❄ ${game.player.slowEffects.length}`;
-        iceEffect.title = `Slowed ${Math.round(game.player.slowEffects.reduce((sum, e) => sum + e.amount, 0) * 100)}%`;
-        dom.statusEffects.appendChild(iceEffect);
+    if (p1) updatePlayerStats(p1, game, dom, 'p1');
+
+    // Toggle Multiplayer Class & P2 Panel
+    if (game.isMultiplayer) {
+        dom.addClass(dom.uiOverlay, 'multiplayer');
+        dom.show(dom.p2Panel);
+        // Only update P2 if it exists (it should in MP)
+        if (p2) updatePlayerStats(p2, game, dom, 'p2');
+    } else {
+        dom.removeClass(dom.uiOverlay, 'multiplayer');
+        dom.hide(dom.p2Panel);
     }
+}
 
-    // Passive Heal (Regen)
-    const regenLevel = game.player.skills.regen || 0;
-    if (regenLevel > 0) {
-        const regenSkill = SKILLS.find(s => s.id === 'regen');
-        const regenEffect = document.createElement('div');
-        regenEffect.className = 'status-effect passive';
-        regenEffect.innerHTML = `<div class="status-icon">${regenSkill.icon}</div><span class="status-level">${regenLevel}</span>`;
-        regenEffect.title = `Passive Heal: ${game.player.healthRegen} HP per second`;
-        dom.statusEffects.appendChild(regenEffect);
-    }
+function updatePlayerStats(player, game, dom, prefix) {
+    const healthPercent = (player.health / player.maxHealth) * 100;
+    const hpBar = dom[prefix + 'HealthBar'];
+    const hpText = dom[prefix + 'HealthText'];
 
-    // Vampiric Touch
-    const vampireLevel = game.player.skills.vampire || 0;
-    if (vampireLevel > 0) {
-        const vampireSkill = SKILLS.find(s => s.id === 'vampire');
-        const vampireEffect = document.createElement('div');
-        vampireEffect.className = 'status-effect passive';
-        vampireEffect.innerHTML = `<div class="status-icon">${vampireSkill.icon}</div><span class="status-level">${vampireLevel}</span>`;
-        vampireEffect.title = `Vampiric Touch: ${game.player.vampire} HP per kill`;
-        dom.statusEffects.appendChild(vampireEffect);
-    }
+    if (hpBar) hpBar.style.width = healthPercent + '%';
+    if (hpText) dom.setText(hpText, `${Math.max(0, Math.floor(player.health))}/${player.maxHealth}`);
 
-    // Armor
-    const armorLevel = game.player.skills.armor || 0;
-    if (armorLevel > 0) {
-        const armorSkill = SKILLS.find(s => s.id === 'armor');
-        const armorEffect = document.createElement('div');
-        armorEffect.className = 'status-effect passive';
-        armorEffect.innerHTML = `<div class="status-icon">${armorSkill.icon}</div><span class="status-level">${armorLevel}</span>`;
-        armorEffect.title = `Armor: -${game.player.armor} damage reduction`;
-        dom.statusEffects.appendChild(armorEffect);
-    }
+    const xpPercent = (player.xp / player.xpToLevel) * 100;
+    const xpBar = dom[prefix + 'XpBar'];
+    const lvlText = dom[prefix + 'LevelText'];
 
-    // Berserk Mode (only show when active)
-    const berserkLevel = game.player.skills.berserk || 0;
-    if (berserkLevel > 0) {
-        const healthPercent = game.player.health / game.player.maxHealth;
-        const berserkThreshold = game.player.berserkBonus * 0.1 + 0.05;
-        if (healthPercent <= berserkThreshold) {
-            const berserkSkill = SKILLS.find(s => s.id === 'berserk');
-            const berserkEffect = document.createElement('div');
-            berserkEffect.className = 'status-effect passive';
-            const damageBonus = Math.round(game.player.berserkBonus * 100);
-            berserkEffect.innerHTML = `<div class="status-icon">${berserkSkill.icon}</div><span class="status-level">${berserkLevel}</span>`;
-            berserkEffect.title = `Berserk Mode: +${damageBonus}% damage`;
-            dom.statusEffects.appendChild(berserkEffect);
+    if (xpBar) xpBar.style.width = xpPercent + '%';
+    if (lvlText) dom.setText(lvlText, `Lv ${player.level}`);
+
+    // Dynamic Color Theming (UX Polish)
+    if (player.color) {
+        // 1. Panel Label Color
+        const panel = dom[prefix + 'Panel'];
+        if (panel) {
+            const label = panel.querySelector('.panel-label');
+            if (label) {
+                label.style.color = player.color;
+                label.style.textShadow = `0 0 10px ${player.color}`;
+            }
+        }
+
+        // 2. XP Bar Border Color & Fill
+        // Find the stat-bar container for XP
+        if (xpBar) {
+            const xpContainer = xpBar.closest('.stat-bar');
+            if (xpContainer) {
+                xpContainer.style.borderTop = `2px solid ${player.color}`;
+                xpContainer.style.boxShadow = `0 -4px 4px -2px ${player.color}40`; // Subtle glow
+                // Also theme the "Lv X" text
+                if (lvlText) lvlText.style.color = player.color;
+            }
+
+            // Dynamic XP Bar Fill
+            // Use CSS variables or direct linear-gradient
+            // Standard XP is green. We want player color.
+            // Darken it slightly for the 'end' of the gradient
+
+            // User requested SOLID color
+            xpBar.style.background = player.color;
         }
     }
 
-    // Update active skills
-    dom.setHTML(dom.activeSkills, '');
+    // Status Effects
+    const statusContainer = dom[prefix + 'StatusEffects'];
+    if (statusContainer) {
+        let statusHtml = '';
 
-    // Separate skills into custom (grey) and earned (colored)
-    const customSkills = [];
-    const earnedSkills = [];
+        // Ice Slow
+        if (player.slowEffects && player.slowEffects.length > 0) {
+            const amount = Math.round(player.slowEffects.reduce((sum, e) => sum + e.amount, 0) * 100);
+            statusHtml += `<div class="status-effect ice" title="Slowed ${amount}%">❄ ${player.slowEffects.length}</div>`;
+        }
 
-    for (let skillId in game.player.skills) {
-        const level = game.player.skills[skillId];
-        if (level > 0) {
-            const skillDef = SKILLS.find(s => s.id === skillId);
-            if (skillDef) {
-                const isCustomSkill = game.customSkillIds && game.customSkillIds.has(skillId);
-                if (isCustomSkill) {
-                    customSkills.push({ skillId, level, skillDef });
-                } else {
-                    earnedSkills.push({ skillId, level, skillDef });
+        // Skills that show as passives
+        if (player.skills.regen > 0) {
+            const skill = SKILLS.find(s => s.id === 'regen');
+            statusHtml += createPassiveBadge(skill, player.skills.regen, `Passive Heal: ${player.healthRegen} HP/s`);
+        }
+        if (player.skills.vampire > 0) {
+            const skill = SKILLS.find(s => s.id === 'vampire');
+            statusHtml += createPassiveBadge(skill, player.skills.vampire, `Vampiric Touch: ${player.vampire} HP/kill`);
+        }
+        if (player.skills.armor > 0) {
+            const skill = SKILLS.find(s => s.id === 'armor');
+            statusHtml += createPassiveBadge(skill, player.skills.armor, `Armor: -${player.armor} dmg red.`);
+        }
+        if (player.skills.berserk > 0) {
+            const healthPct = player.health / player.maxHealth;
+            const threshold = player.berserkBonus * 0.1 + 0.05;
+            if (healthPct <= threshold) {
+                const skill = SKILLS.find(s => s.id === 'berserk');
+                const bonus = Math.round(player.berserkBonus * 100);
+                statusHtml += createPassiveBadge(skill, player.skills.berserk, `Berserk Mode: +${bonus}% DMG`);
+            }
+        }
+
+        // Revive Progress (Downed State)
+        if (player.isDowned) {
+            const timeLeft = Math.ceil(player.downedTimer / 60); // approx seconds
+            statusHtml += `<div class="status-effect" style="border-color: #ff0000; color: #ff0000; background: rgba(50,0,0,0.8);">DOWNED (${timeLeft}s)</div>`;
+        }
+
+        dom.setHTML(statusContainer, statusHtml);
+    }
+
+    // Active Skills
+    const skillsContainer = dom[prefix + 'ActiveSkills'];
+    if (skillsContainer) {
+        dom.setHTML(skillsContainer, '');
+
+        const customSkills = [];
+        const earnedSkills = [];
+
+        for (let skillId in player.skills) {
+            const level = player.skills[skillId];
+            if (level > 0) {
+                const skillDef = SKILLS.find(s => s.id === skillId);
+                if (skillDef) {
+                    const isCustomSkill = game.customSkillIds && game.customSkillIds.has(skillId);
+                    if (isCustomSkill) {
+                        customSkills.push({ skillId, level, skillDef });
+                    } else {
+                        earnedSkills.push({ skillId, level, skillDef });
+                    }
                 }
             }
         }
+
+        // Render
+        [...earnedSkills, ...customSkills].forEach(({ skillId, level, skillDef }) => {
+            const badge = document.createElement('div');
+            const isCustom = game.customSkillIds && game.customSkillIds.has(skillId);
+            const cat = skillDef.category || 'defensive';
+
+            badge.className = isCustom ? `active-skill custom-skill ${cat}` : `active-skill ${cat}`;
+
+            // DYNAMIC COLOR OVERRIDE
+            if (player.color) {
+                // Determine contrast for text/icon (basic check)
+                // Use white icon with colored background for visibility.
+                // The CSS sets border color and background tint.
+                // Apply player color to skill badge.
+
+                // Need to hex to RGB for background opacity
+                // Helper to convert hex to rgba
+                const hexToRgba = (hex, alpha) => {
+                    let r = 0, g = 0, b = 0;
+                    if (hex.length === 7) {
+                        r = parseInt(hex.substr(1, 2), 16);
+                        g = parseInt(hex.substr(3, 2), 16);
+                        b = parseInt(hex.substr(5, 2), 16);
+                    }
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+
+                // Override styles (using !important logic or direct style)
+                badge.style.borderColor = player.color;
+                badge.style.background = hexToRgba(player.color, 0.25);
+                badge.style.color = player.color; // Text/Icon color
+            }
+
+            badge.innerHTML = `<div class="skill-icon" ${player.color ? `style="color: ${player.color}"` : ''}>${skillDef.icon}<div class="active-skill-level">${level}</div></div>`;
+            badge.title = `${skillDef.name} (Lv ${level})`;
+            skillsContainer.appendChild(badge);
+        });
     }
-
-    // Display earned skills first, then custom skills (reversed due to flex-direction: row-reverse)
-    // This results in: grey custom skills on left, colored earned skills on right
-    [...earnedSkills, ...customSkills].forEach(({ skillId, level, skillDef }) => {
-        const skillBadge = document.createElement('div');
-        const isCustomSkill = game.customSkillIds && game.customSkillIds.has(skillId);
-        const categoryClass = skillDef.category || 'defensive';
-        skillBadge.className = isCustomSkill ? `active-skill custom-skill ${categoryClass}` : `active-skill ${categoryClass}`;
-
-        skillBadge.innerHTML = `
-            <div class="skill-icon">
-                ${skillDef.icon}
-                <div class="active-skill-level">${level}</div>
-            </div>
-        `;
-        skillBadge.title = `${skillDef.name} (Level ${level}/${skillDef.maxLevel})${isCustomSkill ? ' - Starting skill' : ''}`;
-        dom.activeSkills.appendChild(skillBadge);
-    });
 }
+
+function createPassiveBadge(skill, level, title) {
+    return `<div class="status-effect passive" title="${title}">
+        <div class="status-icon">${skill.icon}</div>
+        <span class="status-level">${level}</span>
+    </div>`;
+}
+

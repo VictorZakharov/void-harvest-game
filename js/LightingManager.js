@@ -12,6 +12,7 @@ export class LightingManager {
         this.scene = scene;
         this.cursorLight = null;
         this.cursorGlow = null;
+        this.p2Light = null; // New P2 Light
         this.reticle = null;
         this.reticleShadow = null;
         this.dirLight = null;
@@ -43,6 +44,22 @@ export class LightingManager {
         // Cursor Glow (Bright point source)
         this.cursorGlow = new THREE.PointLight(0xffffff, 1.5, 900, 2);
         this.scene.add(this.cursorGlow);
+
+        // Player 2 Personal Light (Hidden by default)
+        this.p2Light = new THREE.SpotLight(0xffaa44, 2.0); // Orange tint for P2
+        this.p2Light.position.set(0, 200, 0);
+        this.p2Light.angle = Math.PI / 3;
+        this.p2Light.penumbra = 0.5;
+        this.p2Light.decay = 1.0;
+        this.p2Light.distance = 3000;
+        this.p2Light.castShadow = true;
+        this.p2Light.shadow.mapSize.width = 1024; // Lower res for secondary light
+        this.p2Light.shadow.mapSize.height = 1024;
+        this.p2Light.shadow.bias = -0.0005;
+        this.p2Light.visible = false; // Initially hidden
+        this.scene.add(this.p2Light);
+        this.p2Light.target.position.set(0, 0, 0);
+        this.scene.add(this.p2Light.target);
 
         // Reticle (Spread Indicator)
         // 1. Shadow/Outline
@@ -101,10 +118,16 @@ export class LightingManager {
      * @param {THREE.Vector3} target - The 3D world position under the mouse cursor.
      * @param {Object} player - The player entity.
      */
-    update(target, player) {
-        // Update cursor light and glow
+    /**
+     * Updates the position and scale of lights and reticle based on player state and mouse target.
+     * @param {THREE.Vector3} target - The 3D world position under the mouse cursor.
+     * @param {Object} p1 - Player 1 entity.
+     * @param {Object} p2 - Player 2 entity (optional).
+     */
+    update(target, p1, p2) {
+        // Update cursor light and glow (P1 Control)
         if (target) {
-            const radiusMultiplier = player ? (1 + player.lightRadiusBonus) : 1;
+            const radiusMultiplier = p1 ? (1 + p1.lightRadiusBonus) : 1;
             const lightHeight = 300 * radiusMultiplier;
 
             if (this.cursorLight) {
@@ -117,16 +140,32 @@ export class LightingManager {
                 this.cursorGlow.position.set(target.x, 20, target.z);
             }
 
-            // Update reticle
-            if (this.reticle && player) {
+            // Update P2 Personal Light
+            if (this.p2Light) {
+                if (p2 && p2.hasPersonalLight && !p2.isDowned && p2.health > 0) {
+                    this.p2Light.visible = true;
+                    // Follow P2
+                    this.p2Light.position.set(p2.x + p2.width / 2, lightHeight, p2.y + p2.height / 2);
+                    this.p2Light.target.position.set(p2.x + p2.width / 2, 0, p2.y + p2.height / 2);
+
+                    // Match P1 Stats
+                    this.p2Light.intensity = 800 * radiusMultiplier;
+                    this.p2Light.distance = 3000 * radiusMultiplier;
+                } else {
+                    this.p2Light.visible = false;
+                }
+            }
+
+            // Update reticle (P1)
+            if (this.reticle && p1) {
                 this.reticle.position.set(target.x, 2, target.z);
-                const dx = target.x - (player.x + player.width / 2);
-                const dz = target.z - (player.y + player.height / 2);
+                const dx = target.x - (p1.x + p1.width / 2);
+                const dz = target.z - (p1.y + p1.height / 2);
                 const dist = Math.sqrt(dx * dx + dz * dz);
-                const spreadRadius = Math.max(10, dist * Math.tan(player.currentSpread));
+                const spreadRadius = Math.max(10, dist * Math.tan(p1.currentSpread));
                 this.reticle.scale.set(spreadRadius, spreadRadius, 1);
 
-                if (dist > player.range) {
+                if (dist > p1.range) {
                     this.reticle.material.color.setHex(0x888888);
                 } else {
                     this.reticle.material.color.setHex(0x00ffff);

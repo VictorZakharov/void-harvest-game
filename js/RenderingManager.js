@@ -24,7 +24,7 @@ export class RenderingManager {
         // Camera Orbital State
         this.camYaw = 0;
         this.camPitch = Math.PI / 4;
-        this.camDist = 1000;
+        this.camDist = 500; // Started 2x closer (was 1000)
 
         this.init();
     }
@@ -81,12 +81,13 @@ export class RenderingManager {
     }
 
     /**
-     * Updates camera position and rotation based on player movement and input.
-     * @param {Object} player - The player entity.
+     * Updates camera position and rotation based on target position and input.
+     * @param {number} targetX - The target center X.
+     * @param {number} targetZ - The target center Z (Y in 2D).
      * @param {Object} input - The input handler.
      */
-    updateCamera(player, input) {
-        if (!player) return;
+    updateCamera(targetX, targetZ, input) {
+        if (!input) return;
 
         // Handle Camera Rotation
         if (input.rightMouseDown) {
@@ -107,16 +108,16 @@ export class RenderingManager {
         if (zoomDelta !== 0) {
             const zoomSpeed = 50;
             this.camDist += zoomDelta * zoomSpeed;
-            this.camDist = Math.max(200, Math.min(1500, this.camDist));
+            this.camDist = Math.max(100, Math.min(750, this.camDist)); // Scaled limits (was 200/1500)
         }
 
         const hRadius = this.camDist * Math.cos(this.camPitch);
         const camY = this.camDist * Math.sin(this.camPitch);
-        const camX = player.x + hRadius * Math.sin(this.camYaw);
-        const camZ = player.y + hRadius * Math.cos(this.camYaw);
+        const camX = targetX + hRadius * Math.sin(this.camYaw);
+        const camZ = targetZ + hRadius * Math.cos(this.camYaw);
 
         this.camera3D.position.set(camX, camY, camZ);
-        this.camera3D.lookAt(player.x + player.width / 2, 10, player.y + player.height / 2);
+        this.camera3D.lookAt(targetX, 10, targetZ);
     }
 
     /**

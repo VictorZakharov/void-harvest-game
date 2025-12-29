@@ -18,13 +18,8 @@ export class Entity {
     updateMesh() {
         if (this.mesh) {
             this.mesh.position.set(this.x + this.width / 2, 10, this.y + this.height / 2);
-            // 2D angle is usually 0 = Right (+X), PI/2 = Down (+Y on screen, +Z in 3D logic here)
-            // So we rotate around Y axis (Up). 
-            // In 3D: +X is Right, +Z is Forward/Down.
-            // Angle corresponds to rotation around -Y (because 2D Y is down/inverted vs standard Cartesian)
-            // Actually, Math.atan2(y,x) expects y up. Canvas y is down. 
-            // So angle is inverted? 
-            // Let's just try negative angle first.
+            // Rotate mesh to match 2D facing angle.
+            // Invert angle because 3D Y-rotation is counter-clockwise, while 2D canvas coordinates are inverted Y.
             this.mesh.rotation.y = -this.angle;
         }
     }

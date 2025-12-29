@@ -402,7 +402,7 @@
     opacity: 0;
     pointer-events: none;
 
-    + label {
+    +label {
       position: relative;
       padding-left: 35px;
       cursor: pointer;
@@ -445,7 +445,7 @@
       }
     }
 
-    &:checked + label {
+    &:checked+label {
       color: v.$color-white;
 
       &::before {
@@ -459,9 +459,27 @@
       }
     }
 
-    &:hover + label::before {
+    &:hover+label::before {
       border-color: v.$color-white;
       box-shadow: 0 0 8px rgba(v.$color-primary, 0.5);
+    }
+
+    // Disabled State
+    &:disabled+label {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(100%);
+      pointer-events: none;
+
+      &::before {
+        border-color: #555;
+        background: rgba(0, 0, 0, 0.2);
+        box-shadow: none;
+      }
+
+      &::after {
+        display: none;
+      }
     }
   }
 }

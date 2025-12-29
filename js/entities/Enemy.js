@@ -84,7 +84,7 @@ export class Enemy extends Entity {
      * @param {number} speedModifier - Multiplier for movement speed.
      * @param {number} [timeScale=1.0] - Global game time scale.
      */
-    update(playerX, playerY, speedModifier = 1, timeScale = 1.0) {
+    update(players, speedModifier = 1, timeScale = 1.0) {
         // Update freeze timer
         if (this.freezeTimer > 0) {
             this.freezeTimer -= timeScale;
@@ -99,9 +99,40 @@ export class Enemy extends Entity {
             return;
         }
 
-        // Move towards player
-        const dx = playerX - this.x;
-        const dy = playerY - this.y;
+        // Find nearest player
+        let targetX = this.x;
+        let targetY = this.y;
+        let minDistSq = Infinity;
+        let hasTarget = false;
+
+        // Ensure players is an array (fallback compatibility)
+        const playerList = Array.isArray(players) ? players : [players];
+
+        for (const p of playerList) {
+            // Skip dead/downed players
+            if (p.health <= 0 || p.isDowned) continue;
+
+            const dx = p.x - this.x;
+            const dy = p.y - this.y;
+            const dSq = dx * dx + dy * dy;
+
+            if (dSq < minDistSq) {
+                minDistSq = dSq;
+                targetX = p.x;
+                targetY = p.y;
+                hasTarget = true;
+            }
+        }
+
+        // If no active players found, maybe target the first one just to have a direction
+        if (!hasTarget && playerList.length > 0) {
+            targetX = playerList[0].x;
+            targetY = playerList[0].y;
+        }
+
+        // Move towards target
+        const dx = targetX - this.x;
+        const dy = targetY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         // Calculate angle
@@ -219,7 +250,7 @@ export class Enemy extends Entity {
                     this.stateTimer -= timeScale;
 
                     // Shooting logic is handled in canShoot(), this state just manages the burst flow
-                    // Actually, canShoot() needs to look at this state.
+                    // Validate shooting state before firing.
                     if (this.burstCount >= 3) {
                         this.shooterState = 3; // Cooldown
                         this.stateTimer = this.shootRate;

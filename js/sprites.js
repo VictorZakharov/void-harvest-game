@@ -2,7 +2,7 @@
 import { ENEMY_SPRITE_COLORS } from './constants.js';
 
 export class SpriteGenerator {
-    static createPlayerSprite(size = 32) {
+    static createPlayerSprite(size = 32, color = '#00ffff') {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -10,8 +10,8 @@ export class SpriteGenerator {
 
         const scale = size / 16; // Scale factor
 
-        // Body (cyan)
-        ctx.fillStyle = '#00ffff';
+        // Body (custom color)
+        ctx.fillStyle = color;
         ctx.fillRect(4 * scale, 4 * scale, 8 * scale, 8 * scale);
 
         // Head

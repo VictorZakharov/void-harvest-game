@@ -239,6 +239,22 @@ export const SKILLS = [
         }
     },
     {
+        id: 'p2_light',
+        name: 'Personal Light',
+        description: 'Activates a personal light source around you.',
+        baseValue: 1,
+        unit: 'Toggle',
+        maxLevel: 1,
+        category: 'survival',
+        icon: ICONS.light,
+        // Only for Player 2 (ID 1)
+        allowedPlayerId: 1,
+        apply: (player) => {
+            player.hasPersonalLight = true;
+            player.skills.p2_light = 1;
+        }
+    },
+    {
         id: "stasis",
         name: "Polar Vortex",
         description: `A freezing storm surrounds you, slowing nearby enemies within ${POLAR_VORTEX_RADIUS} units. At Level 3, it also slows enemy projectiles.`,

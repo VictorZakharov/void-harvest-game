@@ -23,11 +23,20 @@
 }
 
 // Meta upgrades modal should be above other modals
+// Specific Override for Pause Modal
+#pause-modal {
+    .modal-content {
+        max-width: 1000px; // Much wider for 2 players
+        width: 95%;
+    }
+}
+
 #meta-modal {
     z-index: v.$z-modal-meta;
 
     // SAFE OVERRIDE: Strictly scoped to this modal
     .modal-content {
+        max-width: 600px; // Reset for meta
         padding: v.$spacing-sm v.$spacing-xl; // Tighter padding
     }
 
@@ -74,6 +83,13 @@
     width: 90%;
     text-align: center;
     box-shadow: 0 0 30px rgba(v.$color-primary, 0.5);
+
+    // Context-specific overrides
+    // Pause Modal needs to be wider for 2P stats
+    .pause-content & {
+        max-width: 900px; // Wider for split stats
+        width: 95%;
+    }
 
     h1 {
         font-size: v.$font-size-mega;
@@ -155,6 +171,61 @@
 
     #guide-btn {
         right: 30px;
+    }
+
+    // PILL UI for Main Buttons
+    .main-menu-pill {
+        display: inline-flex;
+        background: rgba(0, 0, 0, 0.4);
+        border: 2px solid v.$color-primary;
+        border-radius: v.$border-radius-lg;
+        overflow: hidden; // Clip child corners
+        box-shadow: v.$shadow-lg;
+
+        .pill-btn {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            padding: 12px 20px;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: v.$color-primary;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            position: relative;
+
+            // Separator line
+            border-right: 1px solid rgba(v.$color-primary, 0.3);
+
+            &:last-child {
+                border-right: none;
+            }
+
+            &:hover {
+                background: rgba(v.$color-primary, 0.2);
+                color: v.$color-white;
+                z-index: 1; // Bring above borders
+            }
+
+            &:active {
+                background: rgba(v.$color-primary, 0.4);
+            }
+
+            // Specific styling
+            &.pill-main {
+                padding: 12px 40px; // Wider for Start button
+                font-size: 20px;
+                font-weight: bold;
+                background: rgba(v.$color-primary, 0.1); // Slightly highlighted default
+
+                &:hover {
+                    background: rgba(v.$color-primary, 0.3);
+                }
+            }
+        }
     }
 }
 

@@ -63,10 +63,75 @@ export function showPauseScreen(game, dom) {
             ${UIStatItem.render(game, 'Kills', game.kills, null, game.kills, null, 'Total enemies defeated this run.<br>Used to calculate Bonus Souls.', { direction: 'bottom', showMath: false })}
             ${UIStatItem.render(game, 'Souls', originalSouls, pendingSouls, totalSouls, 'xp', 'Currency for permanent upgrades.<br>Earned from kills (1 Soul per 5 Kills).', { direction: 'bottom', baseLabel: 'Collected', bonusLabel: 'From Kills' })}
         </div>
+    `;
 
-        <div class="pause-section-title">Player Stats</div>
-        <div class="pause-stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-             ${UIStatItem.render(game, 'Level', game.player.level, null, game.player.level, 'xp', 'Current character level.<br>Higher levels unlock new skills.')}
+    if (game.isMultiplayer) {
+        // Multi-Column Layout
+        html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px;">`;
+
+        // Player 1 Column
+        html += `<div>`;
+        html += `<div class="pause-section-title" style="color: #44ccff;">Player 1</div>`;
+        html += renderStatsBlock(game, game.players[0]);
+        html += renderSkillsBlock(game, game.players[0]);
+        html += `</div>`;
+
+        // Player 2 Column
+        html += `<div>`;
+        html += `<div class="pause-section-title" style="color: #ffaa44;">Player 2</div>`;
+        html += renderStatsBlock(game, game.players[1]);
+        html += renderSkillsBlock(game, game.players[1]);
+        html += `</div>`;
+
+        html += `</div>`; // End Grid
+    } else {
+        // Single Player Layout
+        html += `<div class="pause-section-title">Player Stats</div>`;
+        html += renderStatsBlock(game, game.player || game.players[0], 3);
+        html += renderSkillsBlock(game, game.player || game.players[0]);
+    }
+
+    dom.setHTML(dom.pauseStats, html);
+    dom.show(dom.pauseModal);
+}
+
+function renderStatsBlock(game, player, columns = 2) {
+    const baseHealth = PLAYER_BASE_HEALTH || 100;
+    const maxHealth = Math.floor(player.maxHealth);
+    const healthBonus = maxHealth > baseHealth ? maxHealth - baseHealth : 0;
+
+    const baseSpeed = PLAYER_BASE_SPEED;
+    const speedMult = player.speed / baseSpeed;
+    const totalSpeedPercent = Math.round(speedMult * 100);
+    const speedBonusPercent = totalSpeedPercent - 100;
+
+    const baseDamage = PLAYER_BASE_DAMAGE;
+    const damageMult = player.damage / baseDamage;
+    const totalDamagePercent = Math.round(damageMult * 100);
+    const damageBonusPercent = totalDamagePercent - 100;
+
+    const baseFireRate = PLAYER_BASE_FIRE_RATE;
+    const speedMultRate = baseFireRate / player.fireRate;
+    const totalFireRatePercent = Math.round(speedMultRate * 100);
+    const fireRateBonusPercent = totalFireRatePercent - 100;
+
+    const baseRange = BULLET_BASE_RANGE;
+    const rangeMult = player.range / baseRange;
+    const totalRangePercent = Math.round(rangeMult * 100);
+    const rangeBonusPercent = totalRangePercent - 100;
+
+    const armor = player.armor || 0;
+    const regen = player.healthRegen || 0;
+
+    const vampire = player.vampire || 0;
+    const pierce = player.piercing || 0;
+
+    // Use default columns style if columns > 2, else compact grid
+    const style = columns > 2 ? `style="grid-template-columns: repeat(${columns}, 1fr);"` : `style="grid-template-columns: 1fr 1fr;"`;
+
+    return `
+        <div class="pause-stats-grid" ${style}>
+             ${UIStatItem.render(game, 'Level', player.level, null, player.level, 'xp', 'Current character level.<br>Higher levels unlock new skills.')}
              ${UIStatItem.render(game, 'Health', baseHealth, healthBonus, maxHealth, 'health', 'Maximum Hit Points.<br>Increase via Health Skill.')}
              ${UIStatItem.render(game, 'Speed', '100%', speedBonusPercent > 0 ? `${speedBonusPercent}%` : null, `${totalSpeedPercent}%`, 'speed', `Movement speed %.<br>Base: 100% (${baseSpeed} units).`)}
              ${UIStatItem.render(game, 'Damage', '100%', damageBonusPercent > 0 ? `${damageBonusPercent}%` : null, `${totalDamagePercent}%`, 'damage', `Damage multiplier.<br>Base: 100% (${baseDamage} dmg).`)}
@@ -74,17 +139,20 @@ export function showPauseScreen(game, dom) {
              ${UIStatItem.render(game, 'Range', '100%', rangeBonusPercent > 0 ? `${rangeBonusPercent}%` : null, `${totalRangePercent}%`, 'range', `Range multiplier.<br>Base: 100% (${baseRange} units).`)}
              ${UIStatItem.render(game, 'Armor', '0', armor > 0 ? armor : null, armor, 'armor', 'Flat damage reduction.<br>Reduces damage taken from hits.')}
              ${UIStatItem.render(game, 'Regen', '0', regen > 0 ? regen : null, `${regen}/s`, 'regen', 'Health recovered per second.<br>Passive healing.')}
+
              ${UIStatItem.render(game, 'Vampire', '0', vampire > 0 ? vampire : null, vampire, 'vampire', 'Health recovered per kill.<br>Sustain during combat.')}
+             ${UIStatItem.render(game, 'Pierce', '0', pierce > 0 ? pierce : null, pierce, 'pierce', 'Number of enemies bullets pass through.<br>Base: 0.')}
         </div>
     `;
+}
 
-    // Skills Overview Section
+function renderSkillsBlock(game, player) {
     let skillsHtml = '';
     const activeSkills = [];
 
-    // Collect all active skills (earned and custom)
-    for (let skillId in game.player.skills) {
-        const level = game.player.skills[skillId];
+    // Collect all active skills
+    for (let skillId in player.skills) {
+        const level = player.skills[skillId];
         if (level > 0) {
             const skillDef = SKILLS.find(s => s.id === skillId);
             if (skillDef) {
@@ -98,7 +166,7 @@ export function showPauseScreen(game, dom) {
     activeSkills.sort((a, b) => (a.isCustom === b.isCustom ? 0 : a.isCustom ? 1 : -1));
 
     if (activeSkills.length > 0) {
-        skillsHtml += `<div class="pause-section-title">Skills Overview</div>
+        skillsHtml += `<div class="pause-section-title" style="margin-top: 15px;">Skills</div>
         <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start;">`;
 
         activeSkills.forEach(({ skillId, level, skillDef, isCustom }) => {
@@ -143,9 +211,7 @@ export function showPauseScreen(game, dom) {
         skillsHtml += `</div>`;
     }
 
-    html += skillsHtml;
-    dom.setHTML(dom.pauseStats, html);
-    dom.show(dom.pauseModal);
+    return skillsHtml;
 }
 
 /**
