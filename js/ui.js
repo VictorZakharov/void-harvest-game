@@ -410,7 +410,7 @@ export class UIManager {
 
         // Resume ONLY if not paused by ESC
         if (this.game.state === 'paused' && this.dom.pauseModal.classList.contains('hidden')) {
-          this.game.setFrozen(false);
+          if (this.game.gameInputSystem) this.game.gameInputSystem.setFrozen(false);
           this.game.state = 'playing';
         }
       }

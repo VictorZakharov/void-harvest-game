@@ -24,6 +24,8 @@ js/
 │   ├── PlayerMeshFactory.js       - Procedural mesh generation for player
 │   └── PlayerVisuals.js           - Three.js rendering component for the player
 ├── systems/
+│   ├── CameraSystem.js            - Camera follow, smoothing, and shake logic
+│   ├── GameInputSystem.js         - Global state toggles (Pause, Freeze, Training)
 │   ├── PhysicsSystem.js           - Centralized collision detection & resolution
 │   ├── ResurrectionSystem.js      - Multiplayer revive mechanics and input handling
 │   ├── SpatialHash.js             - O(1) spatial partitioning for collision optimization
@@ -124,10 +126,10 @@ Mesh generation complexity is extracted into Factories:
 
 ## Project Size Analysis
 - **Generated At**: 2025-12-29
-- **Total JS Files**: 53
-- **Total Project Size**: 387.3 KB
-- **Total Raw LOC**: 10276
-- **Total Logical LOC**: 6900
+- **Total JS Files**: 55
+- **Total Project Size**: 392.0 KB
+- **Total Raw LOC**: 10409
+- **Total Logical LOC**: 6982
 
 - **Generating:** `node scripts/analyze-project-size.js` will recurse through the directory, count LOC, and generate the markdown table below.
 - **Why?** Keeping track of file bloat helps identify candidates for refactoring (like `game.js`, which was recently split).
@@ -135,8 +137,8 @@ Mesh generation complexity is extracted into Factories:
 ### Full File List (Sorted by Logic LOC)
 | File | Size | Raw LOC | Logic LOC ▼ |
 |---|---|---|---|
-| `js/game.js` | 32.2 KB | 942 | 639 |
-| `js/ui.js` | 16.6 KB | 560 | 417 |
+| `js/game.js` | 29.8 KB | 853 | 554 |
+| `js/ui.js` | 16.7 KB | 560 | 417 |
 | `js/entities/PlayerVisuals.js` | 21.0 KB | 594 | 356 |
 | `js/skills.js` | 11.7 KB | 360 | 336 |
 | `js/entities/bullet-manager.js` | 22.0 KB | 456 | 281 |
@@ -147,8 +149,8 @@ Mesh generation complexity is extracted into Factories:
 | `js/ui-templates.js` | 13.4 KB | 242 | 211 |
 | `js/texture-generator.js` | 11.1 KB | 293 | 209 |
 | `js/entities/enemy-spawner.js` | 10.6 KB | 290 | 188 |
+| `js/ui-levelup.js` | 11.7 KB | 279 | 186 |
 | `js/entities/EnemyInstancedRenderer.js` | 11.8 KB | 290 | 185 |
-| `js/ui-levelup.js` | 11.6 KB | 278 | 185 |
 | `js/ui-custom.js` | 9.0 KB | 252 | 179 |
 | `js/LightingManager.js` | 9.4 KB | 246 | 166 |
 | `js/ui-pause.js` | 10.9 KB | 227 | 165 |
@@ -157,12 +159,13 @@ Mesh generation complexity is extracted into Factories:
 | `js/entities/PlayerMeshFactory.js` | 6.6 KB | 174 | 129 |
 | `js/ui/HealthBarSystem.js` | 8.0 KB | 225 | 124 |
 | `js/DOMCache.js` | 9.2 KB | 204 | 123 |
+| `js/systems/GameInputSystem.js` | 4.7 KB | 142 | 115 |
 | `js/entities/EnemyInstancedAnimation.js` | 7.5 KB | 218 | 101 |
 | `js/ui/UISkillDetail.js` | 5.3 KB | 115 | 101 |
 | `js/ui/PlayerOverheadUI.js` | 5.1 KB | 156 | 99 |
 | `js/entities/Bullet.js` | 4.9 KB | 137 | 97 |
+| `js/WeatherManager.js` | 5.6 KB | 155 | 97 |
 | `js/RenderingManager.js` | 5.7 KB | 158 | 93 |
-| `js/WeatherManager.js` | 5.4 KB | 146 | 92 |
 | `js/ui/UI3DRenderer.js` | 4.9 KB | 132 | 91 |
 | `js/entities/item-manager.js` | 5.5 KB | 155 | 90 |
 | `js/ui/UIStatItem.js` | 5.0 KB | 118 | 86 |
@@ -174,7 +177,8 @@ Mesh generation complexity is extracted into Factories:
 | `js/systems/ResurrectionSystem.js` | 5.1 KB | 115 | 69 |
 | `js/stats.js` | 2.0 KB | 68 | 59 |
 | `js/entities/EnemyInstancedGeometry.js` | 3.4 KB | 110 | 57 |
-| `js/systems/PhysicsSystem.js` | 2.4 KB | 76 | 56 |
+| `js/systems/PhysicsSystem.js` | 2.5 KB | 76 | 56 |
+| `js/systems/CameraSystem.js` | 2.1 KB | 70 | 46 |
 | `js/systems/SpatialHash.js` | 2.6 KB | 78 | 45 |
 | `js/entities/particle-manager.js` | 2.1 KB | 73 | 38 |
 | `js/biomes.js` | 1.2 KB | 39 | 36 |

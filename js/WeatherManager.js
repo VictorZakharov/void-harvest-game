@@ -142,4 +142,13 @@ export class WeatherManager {
             this.dom.setText(this.dom.weatherWarning, text);
         }
     }
+
+    /**
+     * Force hides the weather warning.
+     */
+    hideWarning() {
+        if (this.dom.weatherWarning) {
+            this.dom.hide(this.dom.weatherWarning);
+        }
+    }
 }

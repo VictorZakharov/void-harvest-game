@@ -36,6 +36,8 @@ import { PhysicsSystem } from './systems/PhysicsSystem.js';
 import { SpatialHash } from './systems/SpatialHash.js';
 import { TargetingSystem } from './systems/TargetingSystem.js';
 import { ResurrectionSystem } from './systems/ResurrectionSystem.js';
+import { CameraSystem } from './systems/CameraSystem.js';
+import { GameInputSystem } from './systems/GameInputSystem.js';
 
 export class Game {
   constructor() {
@@ -119,6 +121,8 @@ export class Game {
     this.enemySpawner = new EnemySpawner(this.scene, this.enemies, this.healthBarSystem);
     this.targetingSystem = new TargetingSystem(this.spatialHash, this.lighting);
     this.resurrectionSystem = new ResurrectionSystem(this.particleManager);
+    this.cameraSystem = new CameraSystem(this.rendering, this.input);
+    this.gameInputSystem = new GameInputSystem(this);
 
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
@@ -133,7 +137,7 @@ export class Game {
         }
       },
       onCameraShake: (amount) => {
-        this.camera.shake = amount;
+        this.cameraSystem.addShake(amount);
       },
       onEnemyDeath: (enemy) => this.onEnemyDeath(enemy),
       onEnemyHit: (enemy, damage) => { /* Optional hook */
@@ -258,12 +262,10 @@ export class Game {
     this.wave = 1;
 
     // Reset camera
-    this.camera = { shake: 0 };
+    if (this.cameraSystem) this.cameraSystem.reset();
 
     // Reset input state
-    if (this.input) {
-      this.input.mouseDown = false;
-    }
+    if (this.gameInputSystem) this.gameInputSystem.reset();
 
     // Initialize stats
     this.persistence.resetRunStats();
@@ -417,18 +419,11 @@ export class Game {
     }
     // -----------------------
 
-    if (this.input.escapePressed) {
-      this.input.escapePressed = false;
-      this.togglePause();
-    }
 
-    if (this.input.spacePressed) {
-      this.input.spacePressed = false;
-      this.toggleFreeze();
-    }
 
-    if (this.state === 'frozen') {
-      this.handleFrozenState();
+    // --- Input System Update ---
+    if (this.gameInputSystem) {
+      this.gameInputSystem.update(dt);
     }
 
     // Initialize perf stats if missing
@@ -525,27 +520,7 @@ export class Game {
 
     const target = this.rendering.getMouseWorldPosition(this.input.mouseX, this.input.mouseY);
 
-    // Autoshoot Input Toggle (Q) - Disabled in Training Mode
-    if (!this.trainingMode && (this.input.keys['q'] || this.input.keys['Q'])) {
-      if (!this.lastQ) {
-        this.autoshootEnabled = !this.autoshootEnabled;
-        this.metaProgress.autoshootEnabled = this.autoshootEnabled;
-        this.saveMetaProgress();
 
-        const msg = this.autoshootEnabled ? "[Q] Autoshoot: ON" : "[Q] Autoshoot: OFF";
-        if (this.ui.showStatusMessage) this.ui.showStatusMessage(msg, 2000);
-      }
-      this.lastQ = true;
-    } else {
-      this.lastQ = false;
-    }
-
-    // Manual Override Logic (2s)
-    if (this.input.mouseDown) {
-      this.autoshootOverrideTimer = 2.0;
-    } else if (this.autoshootOverrideTimer > 0) {
-      this.autoshootOverrideTimer -= dt / 1000;
-    }
 
     let aimX = target.x;
     let aimZ = target.z;
@@ -743,8 +718,6 @@ export class Game {
     this.itemManager.update(effectiveScale);
     this.particleManager.update();
 
-    if (this.camera.shake > 0) this.camera.shake--;
-
     this.ui.updateHUD();
   }
 
@@ -755,35 +728,12 @@ export class Game {
    */
   render3D(dt = 16) {
     this.rendering.updateFog(this.baseFogDensity, 800, DEFAULT_FOG_DENSITY);
-    // Camera Logic (Average Position)
-    // Runs every frame to allow looking around while paused/frozen
-    let camX = 0, camZ = 0;
-    let livePlayers = this.players.filter(p => !p.isDowned && p.health > 0);
-    if (livePlayers.length === 0) livePlayers = this.players; // Fallback if all dead
+    this.rendering.updateFog(this.baseFogDensity, 800, DEFAULT_FOG_DENSITY);
 
-    livePlayers.forEach(p => {
-      const bounds = p.getBounds();
-      camX += bounds.centerX;
-      camZ += bounds.centerY;
-    });
-    // Protect against 0 players (shouldn't happen with fallback)
-    if (livePlayers.length > 0) {
-      camX /= livePlayers.length;
-      camZ /= livePlayers.length;
+    // Camera System Update
+    if (this.cameraSystem) {
+      this.cameraSystem.update(dt, this.players, this.state);
     }
-
-    // Initialize smoothing variables if missing
-    if (this._smoothCamX === undefined) {
-      this._smoothCamX = camX;
-      this._smoothCamZ = camZ;
-    }
-
-    // LERP (Linear Interpolation) for smoothness
-    const lerpFactor = 0.1;
-    this._smoothCamX += (camX - this._smoothCamX) * lerpFactor;
-    this._smoothCamZ += (camZ - this._smoothCamZ) * lerpFactor;
-
-    this.rendering.updateCamera(this._smoothCamX, this._smoothCamZ, this.input);
 
     const target = this.lighting.getCursorTarget();
 
@@ -807,13 +757,15 @@ export class Game {
 
     this.bulletManager.updateMeshes();
     this.itemManager.updateMeshes();
-    this.rendering.applyShake(this.camera.shake, this.state);
+    // Shake applied in CameraSystem update() now, but needs to be called per frame? 
+    // Wait, update() does logic. render3D does interpolate.
+    // The cameraSystem.update() includes applyShake().
     this.rendering.render();
   }
 
   onEnemyDeath(enemy) {
     if (enemy.type === 'tank') {
-      this.camera.shake = 5;
+      this.cameraSystem.addShake(5);
     }
     this.kills++;
     this.stats.enemiesKilled[enemy.type]++;
@@ -834,10 +786,12 @@ export class Game {
   gameOver() {
     // Hide Revive Prompt
     if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
+    // Hide Weather Warning
+    if (this.weather) this.weather.hideWarning();
 
 
     this.state = 'gameover';
-    this.camera.shake = 0;
+    if (this.cameraSystem) this.cameraSystem.reset();
     const souls = this.getRunSouls();
     this.totalSouls += souls;
     this.metaProgress.souls = this.totalSouls;
@@ -850,10 +804,12 @@ export class Game {
   win() {
     // Hide Revive Prompt
     if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
+    // Hide Weather Warning
+    if (this.weather) this.weather.hideWarning();
 
 
     this.state = 'gameover';
-    this.camera.shake = 0;
+    if (this.cameraSystem) this.cameraSystem.reset();
     const souls = Math.floor(this.kills / 3) + 50;
     this.totalSouls += souls;
     this.metaProgress.souls = this.totalSouls;
@@ -863,56 +819,11 @@ export class Game {
     this.ui.showGameOverStats(souls, true);
   }
 
-  togglePause() {
-    if (this.state === 'playing') {
-      this.state = 'paused';
-      this.ui.showPauseScreen();
-      // Hide Revive Prompt
-      if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
-    } else if (this.state === 'paused') {
-      this.state = 'playing';
-      this.ui.hidePauseScreen();
-      // Revive prompt will reappear in next update() if conditions met
-    } else if (this.state === 'frozen') {
-      this.state = 'paused';
-      this.ui.showPauseScreen();
-      this.ui.showFrozenMessage(false);
-    }
-  }
+  // Input/State methods (togglePause, toggleFreeze, handleFrozenState, etc) 
+  // have been moved to GameInputSystem. Checks in update() call them. 
+  // However, `win`, `gameOver`, `win` still manipulate state directly.
+  // We can keep specific helpers if needed, but the bulk logic is extracted.
 
-  toggleFreeze() {
-    if (this.state === 'playing') {
-      this.setFrozen(true);
-      this.manualFreeze = true;
-      this.ignoreKeys = new Set();
-      ['w', 'a', 's', 'd'].forEach(k => {
-        if (this.input.keys[k]) this.ignoreKeys.add(k);
-      });
-      this.ignoreMouse = this.input.mouseDown;
-    } else if (this.state === 'frozen') {
-      this.setFrozen(false);
-      this.manualFreeze = false;
-    }
-  }
-
-  setFrozen(frozen) {
-    if (frozen) {
-      // Hide Revive Prompt when frozen (e.g. Level Up)
-      if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
-      this.state = 'frozen';
-      this.ui.showFrozenMessage(true);
-      this.lastTime = performance.now();
-    } else {
-      this.unfreeze();
-    }
-  }
-
-  unfreeze() {
-    this.state = 'playing';
-    this.manualFreeze = false;
-    this.ui.showFrozenMessage(false);
-    this.lastTime = performance.now();
-  }
 
   updateGlobalLights() {
     this.lighting.updateGlobalLights(this.player);

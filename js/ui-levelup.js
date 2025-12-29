@@ -4,6 +4,7 @@ import { SKILL_CHOICES_BASE, SKILL_CHOICES_WITH_EXTRA } from './constants.js';
 
 export function showLevelUpScreen(game, dom, player, onComplete) {
     game.state = 'paused';
+    if (game.weather) game.weather.hideWarning();
 
     // State for this level-up instance
     let rerollUsed = false;

@@ -30,7 +30,7 @@ export class PhysicsSystem {
     }
 
     handlePlayerCollision(enemy, player) {
-        const { stats, particleManager, camera, scene, enemies } = this.game;
+        const { stats, particleManager, cameraSystem, scene, enemies } = this.game;
 
         const blocked = player.shieldActive;
         if (!blocked) {
@@ -60,10 +60,10 @@ export class PhysicsSystem {
 
         if (!blocked) {
             particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_HIT);
-            camera.shake = 10;
+            if (cameraSystem) cameraSystem.addShake(10);
         } else {
             particleManager.create(enemy.x, enemy.y, '#00ffff', 10);
-            camera.shake = 5;
+            if (cameraSystem) cameraSystem.addShake(5);
         }
 
         enemy.dispose(scene);
