@@ -34,6 +34,8 @@ import { PersistenceManager } from './PersistenceManager.js';
 import { WeatherManager } from './WeatherManager.js';
 import { PhysicsSystem } from './systems/PhysicsSystem.js';
 import { SpatialHash } from './systems/SpatialHash.js';
+import { TargetingSystem } from './systems/TargetingSystem.js';
+import { ResurrectionSystem } from './systems/ResurrectionSystem.js';
 
 export class Game {
   constructor() {
@@ -115,6 +117,9 @@ export class Game {
     this.overheadUI = new PlayerOverheadUI(this.scene);
 
     this.enemySpawner = new EnemySpawner(this.scene, this.enemies, this.healthBarSystem);
+    this.targetingSystem = new TargetingSystem(this.spatialHash, this.lighting);
+    this.resurrectionSystem = new ResurrectionSystem(this.particleManager);
+
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
       createExplosion: (x, y, c, r) => this.particleManager.createExplosion(x, y, c, r),
@@ -548,45 +553,7 @@ export class Game {
 
     // Autoshoot Targeting
     if (this.autoshootEnabled && this.autoshootOverrideTimer <= 0) {
-      const range = this.player.range || 600;
-      // Use true light radius
-      const light = this.player.getLightRadius ? this.player.getLightRadius() : 500;
-
-      let nearest = null;
-      let minDst = Infinity;
-
-      // Optimization: Query SpatialHash for candidates around player
-      // Note: SpatialHash uses 2D coords (x, y) which match Entity x, y
-      // We search in slightly larger weapon range box
-      const candidates = this.spatialHash.query(
-        this.player.x - range,
-        this.player.y - range,
-        range * 2,
-        range * 2
-      );
-
-      // Cursor world position for light check
-      const cursorP = this.lighting.getCursorTarget();
-
-      for (const e of candidates) {
-        if (e.health <= 0 || e.isDummy) continue;
-
-        // 1. Check Weapon Range (Player to Enemy)
-        const pdx = (e.x + e.width / 2) - (this.player.x + this.player.width / 2);
-        const pdy = (e.y + e.height / 2) - (this.player.y + this.player.height / 2);
-        const pDistSq = pdx * pdx + pdy * pdy;
-
-        if (pDistSq > range * range) continue;
-
-        // 2. Check Light Visibility (Must be lit by any source)
-        if (!this.lighting.isPointLit(e.x + e.width / 2, e.y + e.height / 2)) continue;
-
-        // Sort by distance to PLAYER (shooting priority usually proximity to self)
-        if (pDistSq < minDst) {
-          minDst = pDistSq;
-          nearest = e;
-        }
-      }
+      const nearest = this.targetingSystem.findTarget(this.player);
 
       if (nearest) {
         aimX = nearest.x + nearest.width / 2;
@@ -619,37 +586,7 @@ export class Game {
         pAimZ = aimZ;
       } else {
         // P2 uses Auto-Aim ONLY (Nearest Enemy)
-        // Scan for nearest enemy to P2
-        let nearestP2 = null;
-        let minDstP2 = Infinity;
-        const rangeP2 = p.range || 200; // Use player range
-
-        // Perform spatial query for P2
-        const candidatesP2 = this.spatialHash.query(
-          p.x - rangeP2,
-          p.y - rangeP2,
-          rangeP2 * 2,
-          rangeP2 * 2
-        );
-
-        for (const e of candidatesP2) {
-          if (e.health <= 0 || e.isDummy) continue;
-
-          // Visibility Check: Must be lit
-          if (!this.lighting.isPointLit(e.x + e.width / 2, e.y + e.height / 2)) continue;
-
-          // Distance to P2
-          const pdx = (e.x + e.width / 2) - (p.x + p.width / 2);
-          const pdy = (e.y + e.height / 2) - (p.y + p.height / 2);
-          const pDistSq = pdx * pdx + pdy * pdy;
-
-          if (pDistSq < rangeP2 * rangeP2) {
-            if (pDistSq < minDstP2) {
-              minDstP2 = pDistSq;
-              nearestP2 = e;
-            }
-          }
-        }
+        const nearestP2 = this.targetingSystem.findTarget(p);
 
         if (nearestP2) {
           pAimX = nearestP2.x + nearestP2.width / 2;
@@ -684,98 +621,9 @@ export class Game {
     });
 
     // Resurrection Logic (Multiplayer Only)
-    // Also manage Revive Prompt UI
-    if (this.isMultiplayer && this.players.length === 2 && this.state === 'playing') {
-      const p1 = this.players[0];
-      const p2 = this.players[1];
-      const promptEl = document.getElementById('revive-prompt');
-
-      let showingPrompt = false;
-
-      const handleRevive = (reviver, downed) => {
-        const dist = Math.hypot(reviver.x - downed.x, reviver.y - downed.y);
-        const REVIVE_RANGE = 100;
-        const REVIVE_TIME = 2 * 60; // 2 Seconds at 60fps (Game Time)
-
-        let isReviving = false;
-
-        // Check Input & Range
-        if (dist < REVIVE_RANGE && !reviver.isDowned && reviver.health > 0) {
-
-          // Show Prompt
-          if (promptEl) {
-            const keyName = reviver.id === 0 ? "E" : "R-CTRL";
-            promptEl.innerHTML = `HOLD <span class="key-hint">[${keyName}]</span> TO REVIVE`;
-            promptEl.classList.remove('hidden');
-            showingPrompt = true;
-          }
-
-          // P1 reviving P2 -> Key 'e'
-          if (reviver.id === 0 && this.input.keys['e']) isReviving = true;
-          // P2 reviving P1 -> Key 'ControlRight'
-          if (reviver.id === 1 && this.input.codes['ControlRight']) isReviving = true;
-        }
-
-        if (isReviving) {
-          downed.reviveProgress += effectiveScale; // Use game time scale
-
-          // Update visual progress
-          const pct = Math.min(100, (downed.reviveProgress / REVIVE_TIME) * 100);
-          if (promptEl) {
-            // Target the key-hint span specifically or set on parent
-            const hintEl = promptEl.querySelector('.key-hint');
-            if (hintEl) hintEl.style.setProperty('--revive-progress', pct);
-          }
-
-          // Update 3D Ring
-          const progress01 = downed.reviveProgress / REVIVE_TIME;
-          downed.visuals.setReviveProgress(progress01, reviver.color);
-
-          if (downed.reviveProgress >= REVIVE_TIME) {
-            downed.revive();
-            // Trigger resurrection particle effect
-            this.particleManager.create(downed.x, downed.y, '#00ff00', 30);
-            downed.visuals.setReviveProgress(0); // Reset and hide ring
-          }
-        } else {
-          downed.reviveProgress = Math.max(0, downed.reviveProgress - effectiveScale); // Decay
-
-          // Show empty ring if still downed (out of range/not reviving)
-          if (downed.isDowned) {
-            downed.visuals.setReviveProgress(downed.reviveProgress / REVIVE_TIME, reviver.color);
-          }
-
-          // Reset visual progress
-          if (promptEl) {
-            const hintEl = promptEl.querySelector('.key-hint');
-            if (hintEl) hintEl.style.setProperty('--revive-progress', 0);
-          }
-        }
-      };
-
-      if (p1.isDowned && !p2.isDowned) handleRevive(p2, p1);
-      if (p2.isDowned && !p1.isDowned) handleRevive(p1, p2);
-
-      // Hide prompt if not showing
-      if (!showingPrompt && promptEl) {
-        promptEl.classList.add('hidden');
-      }
-
-      // Ensure visual state for downed players (even if out of revive range)
-      this.players.forEach(p => {
-        if (p.isDowned) {
-          // If not actively being revived (reviveProgress decreasing or 0), just update visuals
-          // But existing handleRevive updates it IF in range.
-          // We need a way to detect if handleRevive updated it.
-          // or just check reviveProgress.
-          // If reviveProgress == 0 and Downed, show empty ring.
-          if (p.reviveProgress <= 0) {
-            p.visuals.setReviveProgress(0, p.color); // Show own color if waiting
-          }
-        } else {
-          p.visuals.setReviveProgress(0); // Hide if not downed
-        }
-      });
+    // Delegated to ResurrectionSystem
+    if (this.isMultiplayer && this.state === 'playing') {
+      this.resurrectionSystem.update(this.players, this.input, effectiveScale);
     }
 
     // Camera Logic (Average Position or P1?)
@@ -985,8 +833,8 @@ export class Game {
 
   gameOver() {
     // Hide Revive Prompt
-    const promptEl = document.getElementById('revive-prompt');
-    if (promptEl) promptEl.classList.add('hidden');
+    if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
+
 
     this.state = 'gameover';
     this.camera.shake = 0;
@@ -1001,8 +849,8 @@ export class Game {
 
   win() {
     // Hide Revive Prompt
-    const promptEl = document.getElementById('revive-prompt');
-    if (promptEl) promptEl.classList.add('hidden');
+    if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
+
 
     this.state = 'gameover';
     this.camera.shake = 0;
@@ -1020,8 +868,7 @@ export class Game {
       this.state = 'paused';
       this.ui.showPauseScreen();
       // Hide Revive Prompt
-      const promptEl = document.getElementById('revive-prompt');
-      if (promptEl) promptEl.classList.add('hidden');
+      if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
     } else if (this.state === 'paused') {
       this.state = 'playing';
       this.ui.hidePauseScreen();
@@ -1051,8 +898,7 @@ export class Game {
   setFrozen(frozen) {
     if (frozen) {
       // Hide Revive Prompt when frozen (e.g. Level Up)
-      const promptEl = document.getElementById('revive-prompt');
-      if (promptEl) promptEl.classList.add('hidden');
+      if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
       this.state = 'frozen';
       this.ui.showFrozenMessage(true);
       this.lastTime = performance.now();

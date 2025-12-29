@@ -25,7 +25,9 @@ js/
 │   └── PlayerVisuals.js           - Three.js rendering component for the player
 ├── systems/
 │   ├── PhysicsSystem.js           - Centralized collision detection & resolution
-│   └── SpatialHash.js             - O(1) spatial partitioning for collision optimization
+│   ├── ResurrectionSystem.js      - Multiplayer revive mechanics and input handling
+│   ├── SpatialHash.js             - O(1) spatial partitioning for collision optimization
+│   └── TargetingSystem.js         - Centralized enemy detection logic for autoshoot/AI
 ├── ui/
 │   ├── UISkillDetail.js     - Logic for skill bonus/scaling calculations
 │   ├── UIStatItem.js        - Component for interactive stat rows/tooltips
@@ -121,63 +123,69 @@ Mesh generation complexity is extracted into Factories:
 ---
 
 ## Project Size Analysis
-- **Generated At**: 2025-12-27
-- **Total JS Files**: 50
-- **Total Project Size**: 318.5 KB
-- **Total Raw LOC**: 6736
-- **Total Logical LOC**: 4774
+- **Generated At**: 2025-12-29
+- **Total JS Files**: 53
+- **Total Project Size**: 387.3 KB
+- **Total Raw LOC**: 10276
+- **Total Logical LOC**: 6900
+
+- **Generating:** `node scripts/analyze-project-size.js` will recurse through the directory, count LOC, and generate the markdown table below.
+- **Why?** Keeping track of file bloat helps identify candidates for refactoring (like `game.js`, which was recently split).
 
 ### Full File List (Sorted by Logic LOC)
 | File | Size | Raw LOC | Logic LOC ▼ |
 |---|---|---|---|
-| `js/entities/Player.js` | 24.1 KB | 532 | 432 |
-| `js/ui.js` | 22.8 KB | 654 | 389 |
-| `js/game.js` | 22.6 KB | 1070 | 370 |
-| `js/entities/PlayerVisuals.js` | 21.0 KB | 861 | 311 |
-| `js/skills.js` | 13.0 KB | 313 | 296 |
-| `js/ui-custom.js` | 14.5 KB | 368 | 289 |
-| `js/ui-levelup.js` | 8.3 KB | 218 | 179 |
-| `js/ui-pause.js` | 8.2 KB | 204 | 177 |
-| `js/texture-generator.js` | 8.2 KB | 269 | 170 |
-| `js/sprites.js` | 7.5 KB | 175 | 162 |
-| `js/ui/HealthBarSystem.js` | 7.1 KB | 178 | 155 |
-| `js/entities/bullet-manager.js` | 6.3 KB | 185 | 150 |
-| `js/weather-system.js` | 7.1 KB | 186 | 146 |
-| `js/entities/EnemyInstancedRenderer.js` | 8.5 KB | 212 | 137 |
-| `js/entities/Enemy.js` | 7.7 KB | 162 | 132 |
-| `js/entities/PlayerMeshFactory.js` | 7.0 KB | 167 | 129 |
-| `js/entities/EnemyMeshFactory.js` | 6.4 KB | 149 | 126 |
-| `js/entities/enemy-spawner.js` | 6.7 KB | 173 | 124 |
-| `js/entities/EnemyInstancedAnimation.js` | 5.6 KB | 162 | 121 |
-| `js/RenderingManager.js` | 5.6 KB | 207 | 119 |
-| `js/LightingManager.js` | 6.3 KB | 235 | 114 |
-| `js/ui/UISkillDetail.js` | 5.3 KB | 108 | 101 |
-| `js/ui-hud.js` | 7.9 KB | 120 | 100 |
-| `js/WeatherManager.js` | 5.4 KB | 167 | 92 |
-| `js/ui/UI3DRenderer.js` | 4.9 KB | 116 | 91 |
-| `js/entities/Bullet.js` | 4.2 KB | 110 | 87 |
-| `js/ui/UIStatItem.js` | 5.0 KB | 98 | 86 |
+| `js/game.js` | 32.2 KB | 942 | 639 |
+| `js/ui.js` | 16.6 KB | 560 | 417 |
+| `js/entities/PlayerVisuals.js` | 21.0 KB | 594 | 356 |
+| `js/skills.js` | 11.7 KB | 360 | 336 |
+| `js/entities/bullet-manager.js` | 22.0 KB | 456 | 281 |
+| `js/entities/Player.js` | 11.0 KB | 400 | 249 |
+| `js/weather-system.js` | 13.3 KB | 371 | 242 |
+| `js/entities/EnemyMeshFactory.js` | 13.5 KB | 336 | 221 |
+| `js/entities/Enemy.js` | 11.2 KB | 332 | 216 |
+| `js/ui-templates.js` | 13.4 KB | 242 | 211 |
+| `js/texture-generator.js` | 11.1 KB | 293 | 209 |
+| `js/entities/enemy-spawner.js` | 10.6 KB | 290 | 188 |
+| `js/entities/EnemyInstancedRenderer.js` | 11.8 KB | 290 | 185 |
+| `js/ui-levelup.js` | 11.6 KB | 278 | 185 |
+| `js/ui-custom.js` | 9.0 KB | 252 | 179 |
+| `js/LightingManager.js` | 9.4 KB | 246 | 166 |
+| `js/ui-pause.js` | 10.9 KB | 227 | 165 |
+| `js/ui-hud.js` | 9.7 KB | 232 | 164 |
+| `js/sprites.js` | 6.6 KB | 169 | 134 |
+| `js/entities/PlayerMeshFactory.js` | 6.6 KB | 174 | 129 |
+| `js/ui/HealthBarSystem.js` | 8.0 KB | 225 | 124 |
+| `js/DOMCache.js` | 9.2 KB | 204 | 123 |
+| `js/entities/EnemyInstancedAnimation.js` | 7.5 KB | 218 | 101 |
+| `js/ui/UISkillDetail.js` | 5.3 KB | 115 | 101 |
+| `js/ui/PlayerOverheadUI.js` | 5.1 KB | 156 | 99 |
+| `js/entities/Bullet.js` | 4.9 KB | 137 | 97 |
+| `js/RenderingManager.js` | 5.7 KB | 158 | 93 |
+| `js/WeatherManager.js` | 5.4 KB | 146 | 92 |
+| `js/ui/UI3DRenderer.js` | 4.9 KB | 132 | 91 |
+| `js/entities/item-manager.js` | 5.5 KB | 155 | 90 |
+| `js/ui/UIStatItem.js` | 5.0 KB | 118 | 86 |
 | `js/ui-gameover.js` | 5.3 KB | 96 | 79 |
-| `js/entities/EnemyInstancedAnimation.js` | 5.6 KB | 162 | 78 |
 | `js/ui-meta.js` | 3.8 KB | 112 | 77 |
+| `js/input.js` | 4.0 KB | 115 | 76 |
 | `js/constants.js` | 5.2 KB | 157 | 73 |
-| `js/input.js` | 3.8 KB | 112 | 73 |
 | `js/entities/Item.js` | 4.1 KB | 107 | 70 |
-| `js/entities/item-manager.js` | 3.6 KB | 115 | 68 |
+| `js/systems/ResurrectionSystem.js` | 5.1 KB | 115 | 69 |
 | `js/stats.js` | 2.0 KB | 68 | 59 |
 | `js/entities/EnemyInstancedGeometry.js` | 3.4 KB | 110 | 57 |
+| `js/systems/PhysicsSystem.js` | 2.4 KB | 76 | 56 |
 | `js/systems/SpatialHash.js` | 2.6 KB | 78 | 45 |
-| `js/systems/PhysicsSystem.js` | 1.9 KB | 57 | 39 |
 | `js/entities/particle-manager.js` | 2.1 KB | 73 | 38 |
 | `js/biomes.js` | 1.2 KB | 39 | 36 |
-| `js/entities/Entity.js` | 1.5 KB | 50 | 36 |
+| `js/entities/Entity.js` | 1.2 KB | 45 | 36 |
 | `js/particles.js` | 1.3 KB | 46 | 34 |
 | `js/entities/ExplosionRing.js` | 1.4 KB | 45 | 31 |
+| `js/systems/TargetingSystem.js` | 1.8 KB | 53 | 31 |
 | `js/PersistenceManager.js` | 1.5 KB | 54 | 23 |
 | `js/icons.js` | 7.8 KB | 27 | 22 |
 | `js/ui-modals.js` | 498 B | 20 | 9 |
 | `js/ui/UIUtils.js` | 443 B | 18 | 7 |
-| `js/ui/ui-templates.js` | 6.8 KB | 4 |
 | `js/main.js` | 207 B | 8 | 3 |
 | `js/entities.js` | 234 B | 6 | 0 |
 
