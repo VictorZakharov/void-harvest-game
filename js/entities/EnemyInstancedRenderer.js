@@ -16,38 +16,42 @@ export class EnemyInstancedRenderer {
         this.limbGeo = geos.limbs;
         this.gunGeo = geos.gun;
 
+        // --- Instance Opacity Attribute ---
+        // We add this to each geometry so the shader can access 'instanceOpacity'
+        const opacityAttribute = new THREE.InstancedBufferAttribute(new Float32Array(maxEnemies).fill(1.0), 1);
+        // Limbs have 4x count
+        const limbOpacityAttribute = new THREE.InstancedBufferAttribute(new Float32Array(maxEnemies * 4).fill(1.0), 1);
+        // Guns need their own buffer because they are indexed sparsely (only shooters)
+        const gunOpacityAttribute = new THREE.InstancedBufferAttribute(new Float32Array(maxEnemies).fill(1.0), 1);
+
+        this.bodyGeo.setAttribute('instanceOpacity', opacityAttribute);
+        this.eyeGeo.setAttribute('instanceOpacity', opacityAttribute);
+        this.gunGeo.setAttribute('instanceOpacity', gunOpacityAttribute);
+        this.limbGeo.setAttribute('instanceOpacity', limbOpacityAttribute);
+
         // --- Materials ---
-        this.bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff }); // Tinted per instance
-        this.eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-        this.gunMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        // We modify materials to support per-instance opacity
+        this.bodyMat = this._createOpacityMaterial(0xffffff); // Tinted per instance
+        this.eyeMat = this._createOpacityMaterial(0x000000);
+        this.gunMat = this._createOpacityMaterial(0x333333);
 
         // --- Instanced Meshes ---
         this.meshes = {};
 
-        // Body
-        this.meshes.body = new THREE.InstancedMesh(this.bodyGeo, this.bodyMat, maxEnemies);
-        this.meshes.body.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        this.meshes.body.castShadow = false;
-        this.meshes.body.receiveShadow = false;
-        this.meshes.body.frustumCulled = false; // Disable culling to ensure rendering map-wide
+        // Helper to create mesh with common settings
+        const createMesh = (geo, mat, count) => {
+            const mesh = new THREE.InstancedMesh(geo, mat, count);
+            mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            mesh.castShadow = false;
+            mesh.receiveShadow = false;
+            mesh.frustumCulled = false; // Disable culling to ensure rendering map-wide
+            return mesh;
+        };
 
-        // Eyes
-        this.meshes.eyes = new THREE.InstancedMesh(this.eyeGeo, this.eyeMat, maxEnemies);
-        this.meshes.eyes.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        this.meshes.eyes.receiveShadow = false;
-        this.meshes.eyes.frustumCulled = false;
-
-        // Limbs (4 per enemy)
-        this.meshes.limbs = new THREE.InstancedMesh(this.limbGeo, this.bodyMat, maxEnemies * 4);
-        this.meshes.limbs.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        this.meshes.limbs.receiveShadow = false;
-        this.meshes.limbs.frustumCulled = false;
-
-        // Guns (1 per shooter, optimistically allocate maxEnemies)
-        this.meshes.guns = new THREE.InstancedMesh(this.gunGeo, this.gunMat, maxEnemies);
-        this.meshes.guns.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        this.meshes.guns.receiveShadow = false;
-        this.meshes.guns.frustumCulled = false;
+        this.meshes.body = createMesh(this.bodyGeo, this.bodyMat, maxEnemies);
+        this.meshes.eyes = createMesh(this.eyeGeo, this.eyeMat, maxEnemies);
+        this.meshes.limbs = createMesh(this.limbGeo, this.bodyMat, maxEnemies * 4);
+        this.meshes.guns = createMesh(this.gunGeo, this.gunMat, maxEnemies);
 
         // Add to scene
         this.scene.add(this.meshes.body);
@@ -60,7 +64,45 @@ export class EnemyInstancedRenderer {
         this._color = new THREE.Color();
     }
 
+    /**
+     * Creates a MeshStandardMaterial extended to support 'instanceOpacity'.
+     */
+    _createOpacityMaterial(color) {
+        const mat = new THREE.MeshStandardMaterial({
+            color: color,
+            transparent: true, // Enable transparency
+            opacity: 1.0,
+            depthWrite: true,  // Important: Keep depth write for correct sorting/occlusion where opaque
+            // Note: Transparent sorting can be tricky. Z-write true helps "solid-looking" fade-ins.
+        });
 
+        mat.onBeforeCompile = (shader) => {
+            shader.vertexShader = `
+                attribute float instanceOpacity;
+                varying float vInstanceOpacity;
+                ${shader.vertexShader}
+            `.replace(
+                '#include <begin_vertex>',
+                `
+                #include <begin_vertex>
+                vInstanceOpacity = instanceOpacity;
+                `
+            );
+
+            shader.fragmentShader = `
+                varying float vInstanceOpacity;
+                ${shader.fragmentShader}
+            `.replace(
+                '#include <color_fragment>',
+                `
+                #include <color_fragment>
+                diffuseColor.a *= vInstanceOpacity;
+                `
+            );
+        };
+
+        return mat;
+    }
 
     update(enemies, dt, player, cursorTarget) {
         let bodyIdx = 0;
@@ -68,54 +110,75 @@ export class EnemyInstancedRenderer {
         let gunIdx = 0;
 
         const dummy = this.dummy;
+        const opacityAttr = this.bodyGeo.getAttribute('instanceOpacity');
+        const limbOpacityAttr = this.limbGeo.getAttribute('instanceOpacity');
 
         for (const enemy of enemies) {
             // Safety: Do not exceed buffer capacity
             if (bodyIdx >= this.maxEnemies) break;
 
-            // --- Visibility Check (Fog of War) ---
+            // --- Visibility / Opacity Calculation ---
+            let alpha = 1.0;
             let isVisible = true;
 
             if (cursorTarget) {
-
                 const dCursor = Math.sqrt((enemy.x - cursorTarget.x) ** 2 + (enemy.y - cursorTarget.z) ** 2);
                 const radiusMultiplier = player ? (1 + player.lightRadiusBonus) : 1;
                 const lightHeight = 300 * radiusMultiplier;
-                // Cone logic: radius = height * tan(theta).
-                // Max radius (cEnd) is at Pi/3 (tan=1.73). 300 * 1.73 = ~520.
-                const cEnd = lightHeight * Math.tan(Math.PI / 3);
 
-                if (dCursor > cEnd) {
-                    // Outside light cone
+                // Matches LightingManager logic: radius = height * 1.8
+                const lightRadius = lightHeight * 1.8;
+                const fadeDistance = 150; // Distance over which to fade from 0 to 1
+
+                // Dist > lightRadius -> Alpha 0
+                // Dist < lightRadius - fadeDistance -> Alpha 1
+
+                if (dCursor > lightRadius) {
+                    alpha = 0.0;
                     isVisible = false;
+                } else if (dCursor > (lightRadius - fadeDistance)) {
+                    // In fade zone
+                    // Normalize: 0 at outer edge, 1 at inner edge
+                    const distInFade = lightRadius - dCursor;
+                    alpha = Math.min(1.0, Math.max(0.0, distInFade / fadeDistance));
 
-                    // Extra check: Player Bullet light? 
-                    // (Skipping bullet light check for perf, or TODO: pass bullets)
+                    // Optimization: If alpha is very low, treat as invisible cull?
+                    if (alpha < 0.05) isVisible = false;
+                } else {
+                    alpha = 1.0;
                 }
             }
 
-            // If hidden, scale to 0 and skip math
+            // If completely hidden, scale to 0 and skip math
             if (!isVisible) {
                 dummy.position.set(0, -1000, 0); // Move away to be safe
                 dummy.scale.set(0, 0, 0);
                 dummy.updateMatrix();
 
-                // Update all parts to hidden
+                // Update transforms to hide
                 this.meshes.body.setMatrixAt(bodyIdx, dummy.matrix);
                 this.meshes.eyes.setMatrixAt(bodyIdx, dummy.matrix);
 
-                // Advance indices but don't draw limbs
+                // Opacity 0
+                opacityAttr.setX(bodyIdx, 0);
+
                 bodyIdx++;
+
                 // Limbs (4)
-                this.meshes.limbs.setMatrixAt(limbIdx++, dummy.matrix);
-                this.meshes.limbs.setMatrixAt(limbIdx++, dummy.matrix);
-                this.meshes.limbs.setMatrixAt(limbIdx++, dummy.matrix);
-                this.meshes.limbs.setMatrixAt(limbIdx++, dummy.matrix);
+                for (let i = 0; i < 4; i++) {
+                    this.meshes.limbs.setMatrixAt(limbIdx, dummy.matrix);
+                    limbOpacityAttr.setX(limbIdx, 0);
+                    limbIdx++;
+                }
 
                 // Gun
                 const isShooter = (enemy.type === 'shooter' || enemy.type === 'ice');
                 if (isShooter) {
-                    this.meshes.guns.setMatrixAt(gunIdx++, dummy.matrix);
+                    this.meshes.guns.setMatrixAt(gunIdx, dummy.matrix);
+                    // Gun Opacity
+                    // We must access the specific attribute for gun geometry and use gunIdx,
+                    // as guns are sparsely populated and their buffer index differs from the body index.
+                    // This ensures the correct opacity is applied to the shooter's gun.
                 }
                 continue;
             }
@@ -139,6 +202,9 @@ export class EnemyInstancedRenderer {
             }
             this.meshes.body.setColorAt(bodyIdx, this._color);
 
+            // Set Opacity
+            opacityAttr.setX(bodyIdx, alpha);
+
             // Set Eyes (welded)
             this.meshes.eyes.setMatrixAt(bodyIdx, dummy.matrix);
 
@@ -161,6 +227,7 @@ export class EnemyInstancedRenderer {
                 EnemyInstancedAnimation.applyLimbTransform(dummy, enemy, animState, rot, xOff, yOff, len, wid);
                 this.meshes.limbs.setMatrixAt(limbIdx, dummy.matrix);
                 this.meshes.limbs.setColorAt(limbIdx, this._color);
+                limbOpacityAttr.setX(limbIdx, alpha);
                 limbIdx++;
             };
 
@@ -185,7 +252,13 @@ export class EnemyInstancedRenderer {
                 } else if (enemy.frozen) {
                     this._color.setHex(0x00ffff);
                 }
-                this.meshes.guns.setColorAt(gunIdx++, this._color);
+                this.meshes.guns.setColorAt(gunIdx, this._color);
+
+                // Gun Opacity
+                // Access the specific attribute for gun geometry
+                this.gunGeo.getAttribute('instanceOpacity').setX(gunIdx, alpha);
+
+                gunIdx++;
             }
 
             // Note: Health Bars are handled by a separate system/layer.
@@ -195,17 +268,22 @@ export class EnemyInstancedRenderer {
         this.meshes.body.count = bodyIdx;
         this.meshes.body.instanceMatrix.needsUpdate = true;
         if (this.meshes.body.instanceColor) this.meshes.body.instanceColor.needsUpdate = true;
+        opacityAttr.needsUpdate = true;
 
         this.meshes.eyes.count = bodyIdx;
         this.meshes.eyes.instanceMatrix.needsUpdate = true;
         if (this.meshes.eyes.instanceColor) this.meshes.eyes.instanceColor.needsUpdate = true;
+        // Eyes share opacityAttr with body, so it is already marked for update
 
         this.meshes.limbs.count = limbIdx;
         this.meshes.limbs.instanceMatrix.needsUpdate = true;
         if (this.meshes.limbs.instanceColor) this.meshes.limbs.instanceColor.needsUpdate = true;
+        limbOpacityAttr.needsUpdate = true;
 
         this.meshes.guns.count = gunIdx;
         this.meshes.guns.instanceMatrix.needsUpdate = true;
         if (this.meshes.guns.instanceColor) this.meshes.guns.instanceColor.needsUpdate = true;
+        this.gunGeo.getAttribute('instanceOpacity').needsUpdate = true;
     }
 }
+
