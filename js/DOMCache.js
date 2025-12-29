@@ -27,10 +27,7 @@ export class DOMCache {
         this.exitPauseBtn = document.getElementById('exit-pause-btn');
 
         // Game Over Modal
-        this.gameoverExitBtn = document.getElementById('gameover-exit-btn');
         this.closeGameoverX = document.getElementById('close-gameover-x');
-        this.restartBtn = document.getElementById('restart-btn');
-        this.upgradesBtn = document.getElementById('upgrades-btn');
         this.finalStats = document.getElementById('final-stats');
 
         // Level Up Modal

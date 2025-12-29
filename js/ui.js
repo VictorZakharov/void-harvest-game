@@ -223,32 +223,6 @@ export class UIManager {
 
     // Custom Game Speed Buttons are handled globally by setupSpeedControls()
 
-    this.dom.restartBtn.onclick = () => {
-      this.dom.hide(this.dom.gameoverModal);
-
-      // If custom game, return to custom config screen
-      if (this.game.customEnemies) {
-        const wasCustom = this.game.customEnemies;
-        this.game.reset();
-
-        // Restore enemy selection
-        this.customEnemies = { ...wasCustom };
-        this.renderCustomEnemySelection();
-        this.renderCustomSkillSelection();
-
-        this.dom.show(this.dom.customModal);
-      } else {
-        this.game.debugWeather = false;
-        this.game.reset();
-        this.game.start();
-      }
-    };
-
-    this.dom.upgradesBtn.onclick = () => {
-      this.dom.hide(this.dom.gameoverModal);
-      this.showMetaUpgrades();
-    };
-
     // Game Over Exit Buttons
     const exitGameOver = () => {
       this.dom.hide(this.dom.gameoverModal);
@@ -258,8 +232,9 @@ export class UIManager {
       this.updateMainMenuSouls();
     };
 
-    this.dom.gameoverExitBtn.onclick = exitGameOver;
-    this.dom.closeGameoverX.onclick = exitGameOver;
+    if (this.dom.closeGameoverX) {
+      this.dom.closeGameoverX.onclick = exitGameOver;
+    }
 
     this.dom.resetMetaBtn.onclick = () => {
       this.showResetConfirmation();

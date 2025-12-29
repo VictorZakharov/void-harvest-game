@@ -21,6 +21,7 @@ export class Enemy extends Entity {
                 this.speed = 1.5;
                 this.damage = 10;
                 this.xpValue = 1;
+                this.soulsValue = 0;
                 this.width = this.height = 32;
                 break;
             case 'fast':
@@ -28,6 +29,7 @@ export class Enemy extends Entity {
                 this.speed = 2.7; // Reduced from 3 to 0.9x
                 this.damage = 5;
                 this.xpValue = 2;
+                this.soulsValue = 0;
                 this.width = this.height = 28;
                 break;
             case 'tank':
@@ -35,6 +37,7 @@ export class Enemy extends Entity {
                 this.speed = 0.8;
                 this.damage = 20;
                 this.xpValue = 5;
+                this.soulsValue = 1;
                 this.width = this.height = 40;
                 break;
             case 'shooter':
@@ -42,6 +45,7 @@ export class Enemy extends Entity {
                 this.speed = 1;
                 this.damage = 5;
                 this.xpValue = 3;
+                this.soulsValue = 0;
                 this.shootTimer = 0;
                 this.shootRate = 240; // Reduced from 120 (2x slower)
                 this.width = this.height = 32;
@@ -51,6 +55,7 @@ export class Enemy extends Entity {
                 this.speed = 0.9;
                 this.damage = 5;
                 this.xpValue = XP_ITEM_BASE_VALUE;
+                this.soulsValue = 0;
                 this.shootTimer = 0;
                 this.shootRate = 180;
                 this.width = this.height = 32;

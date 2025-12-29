@@ -3,7 +3,7 @@ import { META_UPGRADES } from './skills.js';
 
 export function showMetaUpgrades(game, dom) {
     // Stop screen shake when viewing upgrades
-    game.camera.shake = 0;
+    if (game.cameraSystem) game.cameraSystem.shake = 0;
 
     dom.setText(dom.currencyText, `${game.totalSouls}`);
     dom.setHTML(dom.metaUpgrades, '');

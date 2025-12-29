@@ -37,7 +37,7 @@ export class PhysicsSystem {
             stats.damageReceived[enemy.type] += enemy.damage;
         }
 
-        if (player.takeDamage(enemy.damage)) {
+        if (player.takeDamage(enemy.damage, enemy.type)) {
             // Check if ALL players are dead/downed before ending game
             let allDead = true;
             if (this.game.isMultiplayer && this.game.players) {

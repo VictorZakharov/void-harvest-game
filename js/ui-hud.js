@@ -12,8 +12,9 @@ export function updateHUD(game, dom) {
 
     if (dom.soulsBankedText && dom.soulsRunText) {
         dom.setText(dom.soulsBankedText, `${game.totalSouls}`);
-        const runSouls = game.getRunSouls ? game.getRunSouls() : Math.floor(game.kills / 5);
-        dom.setText(dom.soulsRunText, `(+${runSouls})`);
+        const runBonus = game.getRunSouls ? game.getRunSouls() : Math.floor(game.kills / 5);
+        const currentRunTotal = (game.runSouls || 0) + runBonus;
+        dom.setText(dom.soulsRunText, `(+${currentRunTotal})`);
     }
 
     // Wave & Enemy Icons

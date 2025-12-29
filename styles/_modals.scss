@@ -582,3 +582,118 @@
         font-size: v.$font-size-xxl;
     }
 }
+
+// ============================================
+// Fancy Help Icon & Professional Tooltip System
+// ============================================
+
+@keyframes pulse-cyan {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(0, 255, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 255, 0);
+    }
+}
+
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 255, 255, 0.15);
+    border: 1px solid rgba(0, 255, 255, 0.4);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: bold;
+    color: #00ffff;
+    cursor: help;
+    margin-left: 8px;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+    position: relative;
+    user-select: none;
+    font-family: 'Courier New', monospace;
+    animation: pulse-cyan 2s infinite;
+
+    &:hover {
+        background: #00ffff;
+        color: #000;
+        box-shadow: 0 0 12px #00ffff;
+        transform: scale(1.15) rotate(-10deg);
+        border-color: #fff;
+
+        .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    &::before {
+        content: "?";
+        display: block;
+    }
+}
+
+.tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: linear-gradient(180deg, #161625 0%, #0a0a14 100%);
+    border: 1px solid #00ffff;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    width: 240px;
+    text-align: left;
+    white-space: normal;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 255, 0.15);
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+    font-weight: normal;
+    backdrop-filter: blur(8px);
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -6px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: #00ffff transparent transparent transparent;
+    }
+
+    strong {
+        color: #00ffff;
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .example-box {
+        margin-top: 10px;
+        padding: 8px;
+        background: rgba(0, 255, 136, 0.1);
+        border-radius: 4px;
+        border-left: 2px solid #00ff88;
+        color: #00ff88;
+        font-style: italic;
+        font-size: 11px;
+    }
+}

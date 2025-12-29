@@ -14,6 +14,7 @@ js/
 │   ├── EnemyInstancedAnimation.js - CPU-side animation state calculator
 │   ├── EnemyInstancedGeometry.js  - Shared geometry definitions for instancing
 │   ├── EnemyInstancedRenderer.js  - High-perf InstancedMesh renderer (2500+ entities)
+├── EnemyManager.js            - Logic manager for enemy updates/behavior
 │   ├── EnemyMeshFactory.js        - Visual asset generation for enemies
 │   ├── Entity.js                  - Base class for all physical game objects
 │   ├── ExplosionRing.js           - Visual effect for periodic explosions
@@ -39,7 +40,9 @@ js/
 ├── biomes.js                - Environment configuration (fog, ground, weather)
 ├── constants.js             - Global game constants and balancing parameters
 ├── entities.js              - Centralized export point for entity classes
+
 ├── game.js                  - Main Orchestrator; manages the core loop
+├── GameSessionManager.js    - Handles game lifecycle (start, reset, end)
 ├── icons.js                 - Consolidated SVG asset repository
 ├── input.js                 - Keyboard/Mouse handler with delta tracking
 ├── LightingManager.js       - Encapsulates Three.js lighting and glow logic
@@ -137,13 +140,14 @@ Mesh generation complexity is extracted into Factories:
 ### Full File List (Sorted by Logic LOC)
 | File | Size | Raw LOC | Logic LOC ▼ |
 |---|---|---|---|
-| `js/game.js` | 29.8 KB | 853 | 554 |
+| `js/game.js` | 23.0 KB | 679 | 420 |
 | `js/ui.js` | 16.7 KB | 560 | 417 |
 | `js/entities/PlayerVisuals.js` | 21.0 KB | 594 | 356 |
 | `js/skills.js` | 11.7 KB | 360 | 336 |
 | `js/entities/bullet-manager.js` | 22.0 KB | 456 | 281 |
 | `js/entities/Player.js` | 11.0 KB | 400 | 249 |
 | `js/weather-system.js` | 13.3 KB | 371 | 242 |
+| `js/GameSessionManager.js` | 10.8 KB | 298 | 225 |
 | `js/entities/EnemyMeshFactory.js` | 13.5 KB | 336 | 221 |
 | `js/entities/Enemy.js` | 11.2 KB | 332 | 216 |
 | `js/ui-templates.js` | 13.4 KB | 242 | 211 |
@@ -180,6 +184,7 @@ Mesh generation complexity is extracted into Factories:
 | `js/systems/PhysicsSystem.js` | 2.5 KB | 76 | 56 |
 | `js/systems/CameraSystem.js` | 2.1 KB | 70 | 46 |
 | `js/systems/SpatialHash.js` | 2.6 KB | 78 | 45 |
+| `js/entities/EnemyManager.js` | 2.6 KB | 67 | 43 |
 | `js/entities/particle-manager.js` | 2.1 KB | 73 | 38 |
 | `js/biomes.js` | 1.2 KB | 39 | 36 |
 | `js/entities/Entity.js` | 1.2 KB | 45 | 36 |

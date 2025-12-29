@@ -38,12 +38,14 @@ import { TargetingSystem } from './systems/TargetingSystem.js';
 import { ResurrectionSystem } from './systems/ResurrectionSystem.js';
 import { CameraSystem } from './systems/CameraSystem.js';
 import { GameInputSystem } from './systems/GameInputSystem.js';
+import { GameSessionManager } from './GameSessionManager.js';
+import { EnemyManager } from './entities/EnemyManager.js';
 
 export class Game {
   constructor() {
     this.persistence = new PersistenceManager();
     this.metaProgress = this.persistence.loadMetaProgress();
-    this.metaProgress = this.persistence.loadMetaProgress();
+
 
     // Robust Initialization of Souls
     let loadedSouls = Number(this.metaProgress.souls);
@@ -75,9 +77,13 @@ export class Game {
     this.spatialHash = new SpatialHash(150); // Cell size approx max enemy size + speed buffer
     this.physicsSystem = new PhysicsSystem(this); // Physics & Collision
 
+    // Phase 3 Managers
+    this.sessionManager = new GameSessionManager(this);
+    this.enemyManager = new EnemyManager(this);
+
     this.init3D();
 
-    this.reset();
+    this.sessionManager.reset();
   }
 
   init3D() {
@@ -289,114 +295,19 @@ export class Game {
   }
 
   applyMetaUpgrades() {
-    for (let upgrade of META_UPGRADES) {
-      const level = this.metaProgress.upgrades[upgrade.id] || 0;
-      if (level > 0) {
-        this.players.forEach(p => upgrade.apply(p, level));
-      }
-    }
+    this.sessionManager.applyMetaUpgrades();
   }
 
   applyCustomSkills() {
-    if (!this.customSkills) return;
-    this.customSkillIds = new Set();
-    for (let skillId in this.customSkills) {
-      const level = this.customSkills[skillId];
-      if (level > 0) {
-        const skill = SKILLS.find(s => s.id === skillId);
-        if (skill) {
-          this.customSkillIds.add(skillId);
-          for (let i = 0; i < level; i++) {
-            this.players.forEach(p => skill.apply(p));
-          }
-        }
-      }
-    }
+    this.sessionManager.applyCustomSkills();
   }
 
   applyBiomeVisuals() {
-    if (!this.currentBiome) return;
-    const texture = TextureGenerator.generateGround(this.currentBiome.id);
-    if (this.groundMaterial) {
-      this.groundMaterial.map = texture;
-      this.groundMaterial.color.setHex(0xffffff);
-      this.groundMaterial.roughness = 1.0;
-      this.groundMaterial.metalness = 0.0;
-      this.groundMaterial.needsUpdate = true;
-    }
-    if (this.scene && this.scene.fog) {
-      this.scene.fog.color.setHex(this.currentBiome.fogColor);
-      this.baseFogDensity = this.currentBiome.fogDensity || DEFAULT_FOG_DENSITY;
-    }
-    if (this.scene) {
-      this.scene.background.setHex(this.currentBiome.fogColor);
-    }
-    if (this.weather && this.weather.weatherState === 'active' && this.weatherSystem) {
-      this.weatherSystem.startWeather(this.currentBiome.weather);
-    }
+    this.sessionManager.applyBiomeVisuals();
   }
 
   start() {
-    const savedCustomEnemies = this.customEnemies;
-    const savedCustomSkills = this.customSkills;
-    const savedCustomBiome = this.customBiome;
-    const savedDebugWeather = this.debugWeather;
-    const savedIsMultiplayer = this.isMultiplayer;
-    const savedFriendlyFire = this.friendlyFire; // Persist Friendly Fire
-    const savedSpawnRate = this.customSpawnRate;
-    const savedMaxEnemies = this.customMaxEnemies;
-
-    // Ensure Multiplayer flag is set & persisted BEFORE reset calls check it for player creation
-    this.isMultiplayer = savedIsMultiplayer;
-
-    // Reset game state (recreates players based on isMultiplayer)
-    this.reset(true);
-
-    // Restore Flags that reset() might have cleared or that we want to persist
-    this.isMultiplayer = savedIsMultiplayer;
-    this.friendlyFire = savedFriendlyFire;
-    this.customEnemies = savedCustomEnemies;
-    this.customSkills = savedCustomSkills;
-    this.customBiome = savedCustomBiome;
-    this.debugWeather = savedDebugWeather;
-    this.debugPerf = this.customDebugPerf;
-    this.customSpawnRate = savedSpawnRate;
-    this.customMaxEnemies = savedMaxEnemies;
-
-    // Apply Custom Spawn Rate (Interval in seconds)
-    if (this.customSpawnRate) {
-      this.spawnRate = this.customSpawnRate * 60;
-    }
-
-    if (this.customBiome) {
-      this.currentBiome = BIOMES[this.customBiome.toUpperCase()] || BIOMES.NEUTRAL;
-    }
-
-    this.applyBiomeVisuals();
-    this.state = 'playing';
-    this.lastTime = performance.now();
-    this.applyCustomSkills();
-
-    // Autoshoot State (Refresh on start)
-    if (this.trainingMode) {
-      this.autoshootEnabled = false;
-    } else {
-      this.autoshootEnabled = (this.metaProgress.autoshootEnabled !== undefined) ? this.metaProgress.autoshootEnabled : true;
-    }
-    this.autoshootOverrideTimer = 0;
-
-    // Show Hint at start (Always, unless training mode)
-    if (this.ui.showStatusMessage && !this.trainingMode) {
-      const status = this.autoshootEnabled ? "[Q] Autoshoot: ON" : "[Q] Autoshoot: OFF";
-      this.ui.showStatusMessage(status, 3000);
-    }
-
-    if (!this.gameLoopRunning) {
-      this.gameLoopRunning = true;
-      // Initial Input State
-      this.lastQ = false;
-      this.gameLoop();
-    }
+    this.sessionManager.start();
   }
 
   gameLoop() {
@@ -643,71 +554,14 @@ export class Game {
     }
 
     // Populate Spatial Hash
-    // Populate Spatial Hash
+
     this.spatialHash.clear();
     for (const enemy of this.enemies) {
       this.spatialHash.insert(enemy);
     }
 
-    // Standard update loop (No sorting needed anymore for LOD, but sorting back-to-front or front-to-back can help overdraw)
-    // Iterate through entities.
-    // If overdraw is a concern, sorting front-to-back (closest first) is good.
-    // But Array.sort is O(N log N).
-    // Iterate backwards to safely remove items.
-
-    for (let i = this.enemies.length - 1; i >= 0; i--) {
-      const enemy = this.enemies[i];
-      let currentSpeedMod = speedMod;
-
-      if (this.player.stasisUnlocked) {
-        const dx = (enemy.x + enemy.width / 2) - (this.player.x + this.player.width / 2);
-        const dy = (enemy.y + enemy.height / 2) - (this.player.y + this.player.height / 2);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        // Use defined radius or fallback constant. 
-        // Add enemy radius (width/2) to make it edge-to-edge detection, matching visuals better.
-        const effectiveRadius = (this.player.stasisRadius || POLAR_VORTEX_RADIUS) + (enemy.width / 2);
-
-        if (dist < effectiveRadius) {
-          currentSpeedMod *= (1 - this.player.stasisSlow);
-        }
-      }
-
-      // Apply Global Time Scale to Enemy Speed
-      // We use effectiveScale here to include both TimeScale and DT correction
-      // enemy.update expects a timeScale factor.
-
-      enemy.update(this.players, currentSpeedMod, effectiveScale);
-
-      if (enemy.canShoot()) {
-        // Find nearest valid target (ignoring downed players)
-        let targetX = playerBounds.centerX;
-        let targetY = playerBounds.centerY;
-        let minDistSq = Infinity;
-        let foundTarget = false;
-
-        const pList = Array.isArray(this.players) ? this.players : [this.player];
-        for (const p of pList) {
-          if (p.health > 0 && !p.isDowned) {
-            const dx = p.x - enemy.x;
-            const dy = p.y - enemy.y;
-            const dSq = dx * dx + dy * dy;
-            if (dSq < minDistSq) {
-              minDistSq = dSq;
-              const pB = p.getBounds();
-              targetX = pB.centerX;
-              targetY = pB.centerY;
-              foundTarget = true;
-            }
-          }
-        }
-
-        // Fallback Strategy:
-        // If no valid active target is found (e.g., all players are downed), default to the primary player's position.
-        // This ensures the shooting logic has valid coordinates until the Game Over state triggers.
-        this.bulletManager.createEnemyBullet(enemy, targetX, targetY);
-      }
-    }
+    // --- Enemy Updates (Delegate to Manager) ---
+    this.enemyManager.update(effectiveScale, playerBounds, speedMod);
 
     // --- System Updates ---
     // Update physics simulation with scaled delta time to maintain consistency during slow-motion.
@@ -728,7 +582,7 @@ export class Game {
    */
   render3D(dt = 16) {
     this.rendering.updateFog(this.baseFogDensity, 800, DEFAULT_FOG_DENSITY);
-    this.rendering.updateFog(this.baseFogDensity, 800, DEFAULT_FOG_DENSITY);
+
 
     // Camera System Update
     if (this.cameraSystem) {
@@ -773,7 +627,7 @@ export class Game {
     this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
     this.itemManager.spawnXP(enemy.x, enemy.y, enemy.xpValue);
 
-    this.totalSouls += enemy.soulsValue;
+    this.runSouls = (this.runSouls || 0) + (enemy.soulsValue || 0);
 
     // Cleanup
     this.healthBarSystem.unregister(enemy);
@@ -784,39 +638,11 @@ export class Game {
   }
 
   gameOver() {
-    // Hide Revive Prompt
-    if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
-    // Hide Weather Warning
-    if (this.weather) this.weather.hideWarning();
-
-
-    this.state = 'gameover';
-    if (this.cameraSystem) this.cameraSystem.reset();
-    const souls = this.getRunSouls();
-    this.totalSouls += souls;
-    this.metaProgress.souls = this.totalSouls;
-    this.persistence.saveMeta(this.metaProgress);
-    this.stats.finalWave = this.wave;
-    this.stats.survived = false;
-    this.ui.showGameOverStats(souls);
+    this.sessionManager.gameOver();
   }
 
   win() {
-    // Hide Revive Prompt
-    if (this.resurrectionSystem) this.resurrectionSystem.hidePrompt();
-    // Hide Weather Warning
-    if (this.weather) this.weather.hideWarning();
-
-
-    this.state = 'gameover';
-    if (this.cameraSystem) this.cameraSystem.reset();
-    const souls = Math.floor(this.kills / 3) + 50;
-    this.totalSouls += souls;
-    this.metaProgress.souls = this.totalSouls;
-    this.persistence.saveMeta(this.metaProgress);
-    this.stats.finalWave = this.wave;
-    this.stats.survived = true;
-    this.ui.showGameOverStats(souls, true);
+    this.sessionManager.win();
   }
 
   // Input/State methods (togglePause, toggleFreeze, handleFrozenState, etc) 
@@ -846,7 +672,7 @@ export class Game {
   }
 
   getRunSouls() {
-    return Math.floor(this.kills / 5);
+    return Math.floor(this.kills / 5) + Math.max(0, (this.player.level - 1) * 2);
   }
 
 }

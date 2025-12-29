@@ -113,6 +113,8 @@ export class Player extends Entity {
     this.minSpread = 0.02;
     this.spreadPerShot = 0.08;
     this.spreadRecovery = 0.005;
+
+    this.killedBy = null; // Track cause of death
   }
 
   /**
@@ -275,7 +277,7 @@ export class Player extends Entity {
         this.freezeDoTTimer = 0;
         // Damage scaling: 1 damage per stack (Same DPS as 5 dmg/sec, but smoother ticks)
         const damage = this.slowEffects.length * 1;
-        this.takeDamage(damage);
+        this.takeDamage(damage, 'ice');
       }
     } else {
       this.freezeDoTTimer = 0;
@@ -342,9 +344,10 @@ export class Player extends Entity {
   /**
    * Applies damage to player, considering shield and armor.
    * @param {number} amount - Raw damage amount.
+   * @param {string} source - Source of damage (id or enemyType).
    * @returns {boolean} True if dead.
    */
-  takeDamage(amount) {
+  takeDamage(amount, source = null) {
     if (this.shieldActive) {
       this.shieldActive = false;
       this.shieldTimer = this.shieldCooldown;
@@ -361,6 +364,7 @@ export class Player extends Entity {
       this.health = 0; // Clamp
       this.isDowned = true;
       this.downedTimer = this.maxDownedTime;
+      this.killedBy = source;
     }
 
     return this.isDowned; // Returns true if incapacitated

@@ -209,7 +209,7 @@ export class BulletManager {
 
                             if (distSq < hitRad * hitRad) {
                                 // Hit Player!
-                                p.takeDamage(bullet.damage);
+                                p.takeDamage(bullet.damage, 'friendly');
                                 this.callbacks.createParticles(p.x + p.width / 2, p.y + p.height / 2, '#ff0000', 5);
 
                                 // Destroy Bullet
@@ -230,11 +230,19 @@ export class BulletManager {
                         bullet.hitEnemies.add(enemy);
 
                         if (enemy.takeDamage(bullet.damage)) {
+                            // Update Stats
+                            this.stats.shotsHit++;
+                            this.stats.damageDealt += bullet.damage;
+
                             // Trigger callback for enemy death
                             if (this.callbacks.onEnemyDeath) {
                                 this.callbacks.onEnemyDeath(enemy);
                             }
                         } else {
+                            // Update Stats for non-lethal hit
+                            this.stats.shotsHit++;
+                            this.stats.damageDealt += bullet.damage;
+
                             // Check for freeze chance: Standard OR Forced (Ice bullet deflection)
                             // Use BULLET stats, not player (since we don't know which player here easily)
                             if (bullet.forceFreeze || (bullet.freezeChance > 0 && Math.random() < bullet.freezeChance)) {
@@ -276,7 +284,10 @@ export class BulletManager {
                                 const dy = other.y - enemy.y;
                                 if (dx * dx + dy * dy <= rangeSq) {
                                     if (other.takeDamage(splashDmg)) {
+                                        this.stats.damageDealt += splashDmg;
                                         if (this.callbacks.onEnemyDeath) this.callbacks.onEnemyDeath(other);
+                                    } else {
+                                        this.stats.damageDealt += splashDmg;
                                     }
                                     this.callbacks.createParticles(other.x, other.y, '#ff8800', 3);
                                 }
@@ -422,7 +433,7 @@ export class BulletManager {
                             // Ice bullets deal NO initial damage, only DoT via stacks (handled in Player.js)
                         } else {
                             this.stats.damageReceived.bullet += bullet.damage;
-                            if (player.takeDamage(bullet.damage)) {
+                            if (player.takeDamage(bullet.damage, bullet.enemyType || 'bullet')) {
                                 this.callbacks.onGameOver();
                             }
                             this.callbacks.createParticles(player.x, player.y, '#ff0000', PARTICLE_COUNT_HIT);
