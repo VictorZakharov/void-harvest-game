@@ -67,6 +67,16 @@ Welcome to Void Harvest, a fast-paced twin-stick roguelite where you fight waves
   - Configuration screen shows after restart/death for quick retries
   - Perfect for testing ice mechanics or practicing against specific threats
 
+### 2-Player Co-op Mode
+- **Access:** Toggle "2 Player Mode" on the main menu
+- **Type:** Local "Hotseat" Co-op (Shared Screen)
+- **Gameplay:**
+  - Two players share the same screen and fight together
+  - **Shared Camera:** Camera dynamically follows the midpoint between players
+  - **Revive System:** If a player loses all health, they are "Downed". The other player can revive them by standing close and holding the interaction key (E for P1, Right Ctrl for P2).
+  - **Game Over:** Game only ends when BOTH players are downed/dead.
+  - **XP & Leveling:** XP is shared evenly; both players level up simultaneously and choose skills from their own menus.
+
 ## Controls
 
 | Input | Action |
@@ -82,6 +92,19 @@ Welcome to Void Harvest, a fast-paced twin-stick roguelite where you fight waves
 | **ESC** | Open Pause Menu |
 | **Q** | Toggle Autoshoot |
 | **SPACE** | Quick Freeze (Toggle) |
+
+### 2-Player Controls
+
+| Action | Player 1 | Player 2 |
+|--------|----------|----------|
+| **Move** | **WASD** | **Arrow Keys** |
+| **Shoot** | **Mouse Click** (or Autoshoot) | **Autoshoot** (Always On)* |
+| **Aim** | **Mouse Cursor** | **Nearest Enemy** (Auto) |
+| **Revive Ally** | **E** (Hold) | **Right Ctrl** (Hold)** |
+| **Choose Skill**| **WASD + E/Space** | **Arrows + Enter/RCtrl** |
+
+*\*Note: Player 2 currently relies on Autoshoot for targeting. Manual aim for P2 is experimental/TBD.*
+*\*\*Note: Revive keys are only active when near a downed ally.*
 
 **Notes:**
 *   **Camera-Relative Movement:** "Forward" (W) always moves your character away from the camera view.

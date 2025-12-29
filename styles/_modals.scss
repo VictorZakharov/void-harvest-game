@@ -176,29 +176,38 @@
     // PILL UI for Main Buttons
     .main-menu-pill {
         display: inline-flex;
-        background: rgba(0, 0, 0, 0.4);
-        border: 2px solid v.$color-primary;
-        border-radius: v.$border-radius-lg;
+        background: linear-gradient(135deg, #1a1a2e, #0f3460); // Match standard btn bg
+        border: 2px solid v.$color-primary; // Match standard btn border
+        border-radius: v.$border-radius-lg; // Match standard btn radius
         overflow: hidden; // Clip child corners
-        box-shadow: v.$shadow-lg;
+        box-shadow: v.$shadow-md, v.$glow-cyan; // Match standard btn shadow
+        transition: all 0.2s ease;
+        // margin-bottom: 20px; // Removed to align with Game Speed controls
+
+        &:hover {
+            box-shadow: v.$shadow-lg, v.$glow-cyan-md; // Match standard btn hover glow
+        }
 
         .pill-btn {
             background: transparent;
             border: none;
             border-radius: 0;
             margin: 0;
-            padding: 12px 20px;
+            padding: 15px 25px; // Larger padding closer to btn-large feel
             height: auto;
             display: flex;
             align-items: center;
             justify-content: center;
             color: v.$color-primary;
-            font-size: 16px;
+            font-size: 18px; // Larger font
+            font-weight: bold;
+            font-family: v.$font-family; // Standard font
             transition: all 0.2s ease;
             position: relative;
+            cursor: pointer;
 
             // Separator line
-            border-right: 1px solid rgba(v.$color-primary, 0.3);
+            border-right: 1px solid rgba(v.$color-primary, 0.5);
 
             &:last-child {
                 border-right: none;
@@ -207,7 +216,7 @@
             &:hover {
                 background: rgba(v.$color-primary, 0.2);
                 color: v.$color-white;
-                z-index: 1; // Bring above borders
+                text-shadow: 0 0 8px rgba(v.$color-primary, 0.8);
             }
 
             &:active {
@@ -216,13 +225,12 @@
 
             // Specific styling
             &.pill-main {
-                padding: 12px 40px; // Wider for Start button
-                font-size: 20px;
-                font-weight: bold;
-                background: rgba(v.$color-primary, 0.1); // Slightly highlighted default
+                padding: 15px 50px; // Prominent center button
+                font-size: 24px; // Larger text like Start Game should have
+                background: rgba(v.$color-primary, 0.05); // Subtle highlight for main action
 
                 &:hover {
-                    background: rgba(v.$color-primary, 0.3);
+                    background: rgba(v.$color-primary, 0.25);
                 }
             }
         }
