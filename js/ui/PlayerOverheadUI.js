@@ -55,6 +55,26 @@ export class PlayerOverheadUI {
         return sprite;
     }
 
+    /**
+     * Multiplies a hex color's channels by the given factor.
+     * @param {string} color - Hex color (#rrggbb or #rgb)
+     * @param {number} factor - 0..1 brightness multiplier
+     * @returns {string} rgb() color string
+     */
+    dimColor(color, factor) {
+        let r = 0, g = 255, b = 0;
+        if (color && color.length === 7) {
+            r = parseInt(color.substr(1, 2), 16);
+            g = parseInt(color.substr(3, 2), 16);
+            b = parseInt(color.substr(5, 2), 16);
+        } else if (color && color.length === 4) {
+            r = parseInt(color[1] + color[1], 16);
+            g = parseInt(color[2] + color[2], 16);
+            b = parseInt(color[3] + color[3], 16);
+        }
+        return `rgb(${Math.round(r * factor)}, ${Math.round(g * factor)}, ${Math.round(b * factor)})`;
+    }
+
     drawCanvas(ctx, health, maxHealth, color) {
         const w = ctx.canvas.width;
         const h = ctx.canvas.height;
@@ -76,8 +96,9 @@ export class PlayerOverheadUI {
         // Health Bar Fill
         const pct = Math.max(0, health / maxHealth);
 
-        // Use Player Color for the bar
-        ctx.fillStyle = color || '#00ff00';
+        // Use a dimmed Player Color for the bar (keeps luminance under the
+        // bloom threshold so the overhead UI doesn't glow / distract)
+        ctx.fillStyle = this.dimColor(color || '#00ff00', 0.72);
 
         const pad = 32; // Scaled padding
         ctx.beginPath();

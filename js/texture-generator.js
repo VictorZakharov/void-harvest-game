@@ -54,7 +54,85 @@ export class TextureGenerator {
         return texture;
     }
 
+    /**
+     * Generates the full PBR map set for the ground: albedo, normal and roughness.
+     * Normal/roughness are derived from the albedo luminance so surface detail
+     * (dunes, ice, grass) catches the spotlight and reads as real relief.
+     * @param {string} biomeType
+     * @returns {{map: THREE.CanvasTexture, normalMap: THREE.CanvasTexture, roughnessMap: THREE.CanvasTexture}}
+     */
+    static generateGroundMaps(biomeType) {
+        const canvas = this.generateGroundCanvas(biomeType);
+        const size = canvas.width;
+        const ctx = canvas.getContext('2d');
+        const src = ctx.getImageData(0, 0, size, size).data;
+
+        // Height field from luminance
+        const height = new Float32Array(size * size);
+        for (let i = 0; i < size * size; i++) {
+            const j = i * 4;
+            height[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255;
+        }
+
+        // Sobel-derived normal map (wrapping sample for seamless tiling)
+        const normalCanvas = document.createElement('canvas');
+        normalCanvas.width = size;
+        normalCanvas.height = size;
+        const nCtx = normalCanvas.getContext('2d');
+        const nData = nCtx.createImageData(size, size);
+
+        // Roughness: brighter (icy/sandy highlight) areas are smoother
+        const roughCanvas = document.createElement('canvas');
+        roughCanvas.width = size;
+        roughCanvas.height = size;
+        const rCtx = roughCanvas.getContext('2d');
+        const rData = rCtx.createImageData(size, size);
+
+        const strength = 2.0;
+        const at = (x, y) => height[((y + size) % size) * size + ((x + size) % size)];
+
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const dx = (at(x - 1, y) - at(x + 1, y)) * strength;
+                const dy = (at(x, y - 1) - at(x, y + 1)) * strength;
+                const len = Math.sqrt(dx * dx + dy * dy + 1);
+                const idx = (y * size + x) * 4;
+
+                nData.data[idx] = ((dx / len) * 0.5 + 0.5) * 255;
+                nData.data[idx + 1] = ((dy / len) * 0.5 + 0.5) * 255;
+                nData.data[idx + 2] = ((1 / len) * 0.5 + 0.5) * 255;
+                nData.data[idx + 3] = 255;
+
+                const rough = 255 * (0.95 - at(x, y) * 0.45);
+                rData.data[idx] = rough;
+                rData.data[idx + 1] = rough;
+                rData.data[idx + 2] = rough;
+                rData.data[idx + 3] = 255;
+            }
+        }
+        nCtx.putImageData(nData, 0, 0);
+        rCtx.putImageData(rData, 0, 0);
+
+        const configure = (texture, isColor) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(16, 16);
+            if (isColor) texture.colorSpace = THREE.SRGBColorSpace;
+            return texture;
+        };
+
+        return {
+            map: configure(new THREE.CanvasTexture(canvas), true),
+            normalMap: configure(new THREE.CanvasTexture(normalCanvas), false),
+            roughnessMap: configure(new THREE.CanvasTexture(roughCanvas), false)
+        };
+    }
+
     static generateGround(biomeType) {
+        return this.generateGroundMaps(biomeType).map;
+    }
+
+    static generateGroundCanvas(biomeType) {
         const size = 512;
         const canvas = document.createElement('canvas');
         canvas.width = size;
@@ -281,12 +359,6 @@ export class TextureGenerator {
         }
         ctx.putImageData(imageData, 0, 0);
 
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        // Tile the texture significantly over the large map
-        texture.repeat.set(16, 16);
-
-        return texture;
+        return canvas;
     }
 }

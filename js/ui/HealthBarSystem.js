@@ -193,8 +193,9 @@ export class HealthBarSystem {
                 fg.scale.x = pct;
 
                 // Color tint (Green -> Red)
+                // Lightness 0.4 keeps luminance under the bloom threshold so bars don't glow
                 const hue = pct * 0.3;
-                fg.material.color.setHSL(hue, 1, 0.5);
+                fg.material.color.setHSL(hue, 1, 0.4);
 
                 // Billboard
                 if (camera) {

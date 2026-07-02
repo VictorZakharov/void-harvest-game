@@ -111,7 +111,7 @@ export class Game {
       new THREE.Vector3(0, 2, CANVAS_HEIGHT),
       new THREE.Vector3(0, 2, 0)
     ]);
-    const boundaryMat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+    const boundaryMat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2, toneMapped: false });
     const boundaryLine = new THREE.Line(boundaryGeo, boundaryMat);
     this.scene.add(boundaryLine);
 
