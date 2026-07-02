@@ -14,7 +14,14 @@ export class Particle {
 
         // 3D Mesh
         const geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
-        const material = new THREE.MeshBasicMaterial({ color: color, transparent: true });
+        // toneMapped:false keeps sparks HDR-bright so they feed the bloom pass
+        const material = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            toneMapped: false
+        });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(x, 5, y);
     }
@@ -29,7 +36,11 @@ export class Particle {
         // Update mesh
         if (this.mesh) {
             this.mesh.position.set(this.x, 5 + Math.random() * 2, this.y);
-            this.mesh.material.opacity = this.lifetime / this.maxLifetime;
+            const life = this.lifetime / this.maxLifetime;
+            this.mesh.material.opacity = life;
+            // Sparks shrink as they burn out
+            const s = 0.3 + life * 0.7;
+            this.mesh.scale.set(s, s, s);
             this.mesh.rotation.x += 0.1;
             this.mesh.rotation.y += 0.1;
         }

@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Void Harvest - Roguelite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
@@ -65,32 +70,37 @@
             </div>
 
             <div id="game-stats-content">
-                <div id="time-stats">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    <span id="time-val">0:00</span>
-                    <span id="fps-counter">FPS: 60</span>
+                <div class="hud-topbar">
+                    <div id="time-stats" class="hud-stat">
+                        <span class="stat-label">Time</span>
+                        <span id="time-val" class="stat-value">0:00</span>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div id="wave-stats" class="hud-stat">
+                        <span class="stat-label">Wave</span>
+                        <span id="wave-val" class="stat-value">1</span>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div id="kills-stats" class="hud-stat">
+                        <span class="stat-label">Kills</span>
+                        <span id="kills-val" class="stat-value">0</span>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div id="souls-stats" class="hud-stat">
+                        <span class="stat-label">Souls</span>
+                        <span class="stat-value souls-value">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                            </svg>
+                            <span id="souls-banked-text" title="Banked Souls">0</span>
+                            <span id="souls-run-text" title="Current Run Souls">(+0)</span>
+                        </span>
+                    </div>
                 </div>
-                <div id="wave-stats">
-                    <span class="stat-label">WAVE</span>
-                    <span id="wave-val">1</span>
-                    <div id="wave-icons"></div>
-                </div>
-                <div id="kills-stats">
-                    <span class="stat-label">KILLS</span>
-                    <span id="kills-val">0</span>
-                </div>
-                <div id="souls-stats">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
-                    </svg>
-                    <span id="souls-banked-text" title="Banked Souls">0</span>
-                    <span id="souls-run-text" title="Current Run Souls">(+0)</span>
-                </div>
+                <div id="wave-icons"></div>
             </div>
+            <div id="fps-counter">FPS: 60</div>
 
             <!-- Frozen State Message -->
             <div id="frozen-message" class="hidden">

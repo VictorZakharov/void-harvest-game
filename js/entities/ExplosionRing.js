@@ -13,7 +13,10 @@ export class ExplosionRing {
             color: color,
             transparent: true,
             opacity: 0.8,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            toneMapped: false
         });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.set(x, 6, y); // Slightly higher than particles

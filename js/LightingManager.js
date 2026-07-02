@@ -86,7 +86,8 @@ export class LightingManager {
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending,
             depthTest: true,
-            depthWrite: false
+            depthWrite: false,
+            toneMapped: false // Stays HDR-bright so the bloom pass gives it a neon halo
         });
         this.reticle = new THREE.Mesh(reticleGeo, reticleMat);
         this.reticle.rotation.x = -Math.PI / 2;
@@ -96,6 +97,11 @@ export class LightingManager {
         // Ambient Light
         this.ambientLight = new THREE.AmbientLight(0x000000, 0.0);
         this.scene.add(this.ambientLight);
+
+        // Hemisphere fill: cool sky / dark ground bounce so shadowed areas
+        // keep a hint of shape instead of collapsing to pure black.
+        this.hemiLight = new THREE.HemisphereLight(0x334466, 0x080808, 0.35);
+        this.scene.add(this.hemiLight);
 
         // Directional Light
         this.dirLight = new THREE.DirectionalLight(0xaaccff, 0.05);

@@ -85,11 +85,13 @@ export class Bullet extends Entity {
 
         // Cache Material
         if (!Bullet.materials[colorStr]) {
+            // toneMapped:false keeps tracers HDR-bright so the bloom pass makes them glow
             Bullet.materials[colorStr] = new THREE.MeshBasicMaterial({
                 color: colorHex,
                 transparent: true,
                 opacity: 1.0,
                 blending: THREE.NormalBlending,
+                toneMapped: false
             });
         }
 
@@ -102,7 +104,8 @@ export class Bullet extends Entity {
                 transparent: true,
                 opacity: 0.6,
                 blending: THREE.AdditiveBlending,
-                depthWrite: false
+                depthWrite: false,
+                toneMapped: false
             });
         }
 

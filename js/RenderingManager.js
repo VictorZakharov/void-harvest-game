@@ -1,7 +1,48 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 /**
- * Manages the Three.js rendering pipeline, including scene setup, 
+ * Cinematic finishing pass: smooth radial vignette.
+ * Applied after bloom, before the output (tone mapping / color space) pass.
+ */
+const CinematicShader = {
+    uniforms: {
+        tDiffuse: { value: null },
+        vignetteDarkness: { value: 0.85 },
+        vignetteOffset: { value: 1.15 }
+    },
+    vertexShader: /* glsl */`
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: /* glsl */`
+        uniform sampler2D tDiffuse;
+        uniform float vignetteDarkness;
+        uniform float vignetteOffset;
+        varying vec2 vUv;
+
+        void main() {
+            vec4 color = texture2D(tDiffuse, vUv);
+
+            // Vignette (smooth radial falloff toward corners)
+            vec2 uv = (vUv - 0.5) * 2.0;
+            float vignette = smoothstep(vignetteOffset + 0.5, vignetteOffset - 0.6, length(uv));
+            color.rgb *= mix(1.0 - vignetteDarkness, 1.0, vignette);
+
+            gl_FragColor = color;
+        }
+    `
+};
+
+/**
+ * Manages the Three.js rendering pipeline, including scene setup,
  * camera control, and the render loop.
  */
 export class RenderingManager {
@@ -17,6 +58,7 @@ export class RenderingManager {
         this.scene = new THREE.Scene();
         this.camera3D = null;
         this.renderer = null;
+        this.composer = null;
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -40,11 +82,44 @@ export class RenderingManager {
         this.camera3D = new THREE.PerspectiveCamera(60, aspect, 0.1, 5000);
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight, false);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.15;
+
+        this.initPostProcessing();
 
         window.addEventListener('resize', () => this.onResize());
+    }
+
+    /**
+     * Builds the post-processing chain: scene render -> bloom -> vignette/grain -> output.
+     * Bloom only picks up HDR emissives (toneMapped:false materials) and hot light spots.
+     */
+    initPostProcessing() {
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.composer.setSize(width, height);
+
+        this.composer.addPass(new RenderPass(this.scene, this.camera3D));
+
+        this.bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(width, height),
+            0.55,   // strength: noticeable neon glow without washing out
+            0.6,    // radius: soft halo spread
+            0.85    // threshold: only genuinely bright pixels bloom
+        );
+        this.composer.addPass(this.bloomPass);
+
+        this.cinematicPass = new ShaderPass(CinematicShader);
+        this.composer.addPass(this.cinematicPass);
+
+        this.composer.addPass(new OutputPass());
     }
 
     /**
@@ -60,6 +135,12 @@ export class RenderingManager {
         }
         if (this.renderer) {
             this.renderer.setSize(width, height, false);
+        }
+        if (this.composer) {
+            this.composer.setSize(width, height);
+        }
+        if (this.bloomPass) {
+            this.bloomPass.resolution.set(width, height);
         }
     }
 
@@ -149,9 +230,9 @@ export class RenderingManager {
     }
 
     /**
-     * Renders the current frame.
+     * Renders the current frame through the post-processing chain.
      */
     render() {
-        this.renderer.render(this.scene, this.camera3D);
+        this.composer.render();
     }
 }

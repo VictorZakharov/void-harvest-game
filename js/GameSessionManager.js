@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { BIOMES, WEATHER_TYPES, DEFAULT_FOG_DENSITY } from './biomes.js';
 import { Player } from './entities/Player.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, INITIAL_SPAWN_RATE, WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, GAME_DURATION } from './constants.js';
@@ -221,9 +222,19 @@ export class GameSessionManager {
     applyBiomeVisuals() {
         const game = this.game;
         if (!game.currentBiome) return;
-        const texture = TextureGenerator.generateGround(game.currentBiome.id);
+        const maps = TextureGenerator.generateGroundMaps(game.currentBiome.id);
         if (game.groundMaterial) {
-            game.groundMaterial.map = texture;
+            // Sharp textures at grazing angles (top-down camera looks across the plane)
+            const maxAniso = game.rendering && game.rendering.renderer
+                ? game.rendering.renderer.capabilities.getMaxAnisotropy()
+                : 1;
+            maps.map.anisotropy = maxAniso;
+            maps.normalMap.anisotropy = maxAniso;
+
+            game.groundMaterial.map = maps.map;
+            game.groundMaterial.normalMap = maps.normalMap;
+            game.groundMaterial.normalScale = new THREE.Vector2(0.8, 0.8);
+            game.groundMaterial.roughnessMap = maps.roughnessMap;
             game.groundMaterial.color.setHex(0xffffff);
             game.groundMaterial.roughness = 1.0;
             game.groundMaterial.metalness = 0.0;
