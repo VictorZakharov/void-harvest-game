@@ -30,7 +30,7 @@ export function updateHUD(game, dom) {
 
     const wave = game.wave;
     let enemyIconsHtml = '';
-    const getIcon = (type) => `<span class="enemy-indicator ${type}">● <span style="font-size: 0.8em; color: #fff;">${counts[type]}</span></span>`;
+    const getIcon = (type) => `<span class="enemy-indicator ${type}"><span class="dot"></span><span class="count">${counts[type]}</span></span>`;
 
     if (game.customEnemies) {
         if (game.customEnemies.basic) enemyIconsHtml += getIcon('basic') + ' ';
@@ -85,35 +85,17 @@ function updatePlayerStats(player, game, dom, prefix) {
     if (lvlText) dom.setText(lvlText, `Lv ${player.level}`);
 
     // Dynamic Color Theming (UX Polish)
+    // A single CSS variable drives label color, XP fill, level badge and glow
+    // (see --player-color usage in styles/_hud.scss)
     if (player.color) {
-        // 1. Panel Label Color
         const panel = dom[prefix + 'Panel'];
         if (panel) {
+            panel.style.setProperty('--player-color', player.color);
             const label = panel.querySelector('.panel-label');
             if (label) {
                 label.style.color = player.color;
                 label.style.textShadow = `0 0 10px ${player.color}`;
             }
-        }
-
-        // 2. XP Bar Border Color & Fill
-        // Find the stat-bar container for XP
-        if (xpBar) {
-            const xpContainer = xpBar.closest('.stat-bar');
-            if (xpContainer) {
-                xpContainer.style.borderTop = `2px solid ${player.color}`;
-                xpContainer.style.boxShadow = `0 -4px 4px -2px ${player.color}40`; // Subtle glow
-                // Also theme the "Lv X" text
-                if (lvlText) lvlText.style.color = player.color;
-            }
-
-            // Dynamic XP Bar Fill
-            // Use CSS variables or direct linear-gradient
-            // Standard XP is green. We want player color.
-            // Darken it slightly for the 'end' of the gradient
-
-            // User requested SOLID color
-            xpBar.style.background = player.color;
         }
     }
 
