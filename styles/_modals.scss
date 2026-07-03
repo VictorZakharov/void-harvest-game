@@ -204,15 +204,9 @@
     .modal-content {
         max-width: 950px;
         width: 95%;
-        position: relative; // Needed for absolute positioning of buttons
+        position: relative;
         @include hud.modal-chrome;
         animation: hud-modal-rise 0.35s ease-out;
-
-        h1 {
-            @include hud.modal-title(42px);
-            letter-spacing: 8px;
-            margin-bottom: v.$spacing-md;
-        }
 
         // Tagline under the title
         >p {
@@ -220,6 +214,33 @@
             font-size: 16px;
             letter-spacing: 1px;
             color: rgba(v.$color-white, 0.6);
+        }
+    }
+
+    // Header row: Upgrades | title | Guide. Grid keeps the buttons out of
+    // the title's column, so a wide souls count can never overlap it —
+    // the title shrinks instead when space runs out.
+    .start-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: v.$spacing-md;
+        margin-bottom: v.$spacing-md;
+
+        h1 {
+            @include hud.modal-title(42px);
+            font-size: clamp(24px, 4vw, 42px);
+            letter-spacing: 8px;
+            white-space: nowrap;
+            margin-bottom: 0;
+        }
+
+        #meta-btn {
+            justify-self: start;
+        }
+
+        #guide-btn {
+            justify-self: end;
         }
     }
 
@@ -263,8 +284,6 @@
 
     #meta-btn,
     #guide-btn {
-        position: absolute;
-        top: 40px; // Aligned roughly with the center of the H1 title
         padding: 8px 16px;
         font-size: 16px;
         z-index: 100;
@@ -307,14 +326,6 @@
                 font-variant-numeric: tabular-nums;
             }
         }
-    }
-
-    #meta-btn {
-        left: 30px;
-    }
-
-    #guide-btn {
-        right: 30px;
     }
 
     // PILL UI for Main Buttons
