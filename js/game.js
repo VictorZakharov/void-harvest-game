@@ -39,6 +39,7 @@ import { TargetingSystem } from './systems/TargetingSystem.js';
 import { ResurrectionSystem } from './systems/ResurrectionSystem.js';
 import { CameraSystem } from './systems/CameraSystem.js';
 import { GameInputSystem } from './systems/GameInputSystem.js';
+import { LevelUpEffectSystem } from './systems/LevelUpEffectSystem.js';
 import { GameSessionManager } from './GameSessionManager.js';
 import { EnemyManager } from './entities/EnemyManager.js';
 
@@ -131,6 +132,7 @@ export class Game {
     this.resurrectionSystem = new ResurrectionSystem(this.particleManager);
     this.cameraSystem = new CameraSystem(this.rendering, this.input);
     this.gameInputSystem = new GameInputSystem(this);
+    this.levelUpEffect = new LevelUpEffectSystem(this, this.scene);
 
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
@@ -159,6 +161,7 @@ export class Game {
 
   reset(commitHistory = false) {
     // Clear existing objects
+    if (this.levelUpEffect) this.levelUpEffect.cancel();
 
     // 1. Standard Cleanup via References
     if (this.players) {
@@ -605,6 +608,10 @@ export class Game {
     const animDelta = (this.state === 'playing' ? this.timeScale : 0) * dt;
     // Update mesh for ALL players
     this.players.forEach(p => p.updateMesh(animDelta));
+
+    // Level-up invigoration runs on real time while gameplay is frozen.
+    // Must run after updateMesh so its body glow overrides the restore pass.
+    if (this.levelUpEffect) this.levelUpEffect.update(dt);
 
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)

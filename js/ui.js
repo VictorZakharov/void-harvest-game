@@ -372,12 +372,26 @@ export class UIManager {
 
     this.isLevelUpActive = true;
 
+    // Play the invigoration animation (freeze + heal-to-full sweep) first,
+    // then present the skill choices.
+    const beginFor = (p) => {
+      if (this.game.levelUpEffect) {
+        this.game.levelUpEffect.play(p, () => showLevelUpScreen(this.game, this.dom, p, onComplete));
+      } else {
+        showLevelUpScreen(this.game, this.dom, p, onComplete);
+      }
+    };
+
     const onComplete = () => {
       if (this.levelUpQueue.length > 0) {
         const nextPlayer = this.levelUpQueue.shift();
+        // Hide the previous player's choices during the next animation —
+        // a lingering modal is clickable and a stray click would re-enter
+        // onComplete with an empty queue and unfreeze the game mid-animation
+        this.dom.hide(this.dom.levelupModal);
         // Small delay to prevent instant flash or allow UI update
         setTimeout(() => {
-          showLevelUpScreen(this.game, this.dom, nextPlayer, onComplete);
+          beginFor(nextPlayer);
         }, 100);
       } else {
         this.isLevelUpActive = false;
@@ -391,7 +405,7 @@ export class UIManager {
       }
     };
 
-    showLevelUpScreen(this.game, this.dom, player, onComplete);
+    beginFor(player);
   }
 
   showGameOverStats(souls, isVictory = false) {
