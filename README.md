@@ -1,6 +1,6 @@
 # Void Harvest - Roguelite
 
-A twin-stick shooter roguelite built with vanilla JavaScript and Canvas.
+A twin-stick shooter roguelite built with vanilla JavaScript and Three.js, featuring a full 3D world with dynamic lighting, instanced rendering, and 2-player local co-op.
 
 ## Documentation
 
@@ -119,3 +119,7 @@ The game tracks detailed stats including:
 - Accuracy percentage
 - Skills picked during run
 - Run-to-run comparison with delta highlights
+
+## License
+
+[MIT](LICENSE)
