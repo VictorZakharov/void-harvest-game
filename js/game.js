@@ -616,7 +616,7 @@ export class Game {
     this.physicsSystem.update(dt * this.timeScale * this.timeDilation);
 
     // Update game systems (Bullets, Items, Particles) with the effective time scale (including DT correction).
-    this.bulletManager.update(this.players, this.enemies, effectiveScale);
+    this.bulletManager.update(this.players, this.enemies, effectiveScale, this.friendlyFire);
     this.itemManager.update(effectiveScale);
     this.particleManager.update();
 
@@ -659,9 +659,8 @@ export class Game {
     const cursorTargetForCull = this.lighting.getCursorTarget();
     this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
-    // Update BulletManager with Friendly Fire flag
-    const effectiveScale = (this.state === 'playing' ? this.timeScale * this.timeDilation : 0);
-    this.bulletManager.update(this.players, this.enemies, effectiveScale, this.friendlyFire);
+    // Bullet logic runs once per tick in update() — a second update here
+    // would advance bullets per render frame (frame-rate dependent speed).
 
     // Update Overlay Visuals (Heath Bars)
     this.healthBarSystem.update(this.rendering.camera3D, this.player, cursorTargetForCull, this.enemies);
