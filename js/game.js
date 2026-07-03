@@ -55,8 +55,10 @@ export class Game {
     if (isNaN(loadedSouls)) loadedSouls = 0;
     this.totalSouls = loadedSouls;
 
-    // Load Game Speed (Default 1.0)
-    this.timeScale = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 1.0;
+    // Load Game Speed (Default 0.85 = Fast). Clamp legacy saves — Fast
+    // used to be 1.0; snap them onto the current Fast button.
+    const savedSpeed = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 0.85;
+    this.timeScale = Math.min(savedSpeed, 0.85);
     // Transient multiplier on top of timeScale (0..1), used by the skill
     // card cinematic to ramp gameplay speed back up after a level-up freeze
     this.timeDilation = 1.0;
@@ -449,10 +451,10 @@ export class Game {
     }
 
     // SP death sequence: the world keeps running while the downed animation
-    // plays, then the game over screen appears. Real-time (dtFactor), so the
-    // slow-motion setting doesn't stretch the wait.
+    // plays, then the game over screen appears. Fast mode shortens the wait
+    // (game time), but slow mode never stretches it past real time.
     if (this.gameOverPending) {
-      this.gameOverTimer -= dtFactor;
+      this.gameOverTimer -= Math.max(dtFactor, effectiveScale);
       if (this.gameOverTimer <= 0) {
         this.gameOverPending = false;
         this.sessionManager.gameOver();
@@ -559,7 +561,9 @@ export class Game {
 
 
 
-    if (this.trainingMode) {
+    if (this.gameOverPending) {
+      // Death sequence: no new enemies while the world is frozen
+    } else if (this.trainingMode) {
       // Training Mode: Maintain constant dummy population
       this.enemySpawner.updateTrainingMode(this.player);
     } else {
@@ -614,7 +618,7 @@ export class Game {
     this.physicsSystem.update(dt * this.timeScale * this.timeDilation);
 
     // Update game systems (Bullets, Items, Particles) with the effective time scale (including DT correction).
-    this.bulletManager.update(this.players, this.enemies, effectiveScale);
+    this.bulletManager.update(this.players, this.enemies, effectiveScale, this.friendlyFire);
     this.itemManager.update(effectiveScale);
     this.particleManager.update();
 
@@ -657,9 +661,8 @@ export class Game {
     const cursorTargetForCull = this.lighting.getCursorTarget();
     this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
-    // Update BulletManager with Friendly Fire flag
-    const effectiveScale = (this.state === 'playing' ? this.timeScale * this.timeDilation : 0);
-    this.bulletManager.update(this.players, this.enemies, effectiveScale, this.friendlyFire);
+    // Bullet logic runs once per tick in update() — a second update here
+    // would advance bullets per render frame (frame-rate dependent speed).
 
     // Update Overlay Visuals (Heath Bars)
     this.healthBarSystem.update(this.rendering.camera3D, this.player, cursorTargetForCull, this.enemies);

@@ -30,6 +30,17 @@ export class EnemyManager {
                 continue;
             }
 
+            // Player death sequence: live enemies freeze in place (no
+            // movement, no shooting) while corpses above still animate out.
+            // Velocity must be zeroed too — the instanced renderer keys the
+            // walk-cycle animation off vx/vy, so stale values would leave
+            // enemies walking in place.
+            if (game.gameOverPending) {
+                enemy.vx = 0;
+                enemy.vy = 0;
+                continue;
+            }
+
             let currentSpeedMod = speedMod;
 
             // Stasis / Polar Vortex Logic
