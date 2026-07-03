@@ -1,0 +1,306 @@
+// ============================================
+// GAME OVER / STATS SCREEN - HUD-themed panels
+// ============================================
+
+@use 'variables' as v;
+
+#gameover-modal .modal-content {
+    max-width: 640px;
+    background:
+        linear-gradient(180deg,
+            rgba(6, 12, 20, 0.96) 0%,
+            rgba(10, 18, 28, 0.94) 100%);
+    border: 1px solid rgba(v.$color-primary, 0.45);
+    box-shadow:
+        0 10px 50px rgba(0, 0, 0, 0.7),
+        inset 0 0 60px rgba(v.$color-primary, 0.04);
+}
+
+// Header band: side buttons + centered title
+.go-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+
+    .btn {
+        width: 130px;
+        font-size: 13px;
+        flex-shrink: 0;
+        padding: 8px 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.go-title {
+    flex-grow: 1;
+    text-align: center;
+
+    h2 {
+        margin: 0;
+        font-family: v.$font-display;
+        font-size: 26px;
+        line-height: 1.1;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: v.$color-primary;
+        text-shadow: 0 0 14px rgba(v.$color-primary, 0.6);
+
+        &.victory {
+            color: v.$color-success;
+            text-shadow: 0 0 14px rgba(v.$color-success, 0.6);
+        }
+    }
+
+    .go-subtitle {
+        font-family: v.$font-ui;
+        font-size: 14px;
+        margin: 4px 0 0 0;
+        color: #ff6666;
+
+        strong {
+            color: #ff4444;
+        }
+
+        &.victory {
+            color: v.$color-success;
+        }
+    }
+}
+
+// HUD-style panel: dark translucent, thin cyan border, cut corners.
+// The clipped shape lives on a ::before layer — clip-path on the panel
+// itself would clip overflowing children (help tooltips).
+.go-panel {
+    position: relative;
+    isolation: isolate; // Keep the z-index:-1 layer inside this panel
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    text-align: left;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(180deg,
+                rgba(6, 12, 20, 0.85),
+                rgba(12, 22, 34, 0.65));
+        border: 1px solid rgba(v.$color-primary, 0.3);
+        clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+        box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.6);
+    }
+}
+
+// Section header in HUD stat-label style
+.go-panel-title {
+    font-family: v.$font-ui;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(v.$color-primary, 0.65);
+    border-bottom: 1px solid rgba(v.$color-primary, 0.2);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+}
+
+// Label / value payout rows
+.go-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+    font-family: v.$font-ui;
+    font-size: 15px;
+    color: v.$color-light-gray;
+
+    .go-value {
+        font-family: v.$font-display;
+        font-variant-numeric: tabular-nums;
+        font-size: 15px;
+        color: v.$color-white;
+    }
+
+    &.bonus {
+        color: v.$color-success;
+
+        .go-value {
+            color: v.$color-success;
+        }
+    }
+
+    // Earned this run — soul purple, like the HUD souls readout
+    &.total {
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(v.$color-primary, 0.25);
+        font-size: 17px;
+        font-weight: 700;
+        color: #b388ff;
+
+        .go-value {
+            font-size: 18px;
+            color: #b388ff;
+            text-shadow: 0 0 10px rgba(179, 136, 255, 0.5);
+        }
+    }
+
+    &.bank {
+        margin-top: 8px;
+        font-size: 13px;
+        color: v.$color-gray;
+
+        .go-value {
+            font-size: 13px;
+            color: v.$color-gray;
+        }
+    }
+
+    &.grand {
+        margin-top: 5px;
+        padding-top: 7px;
+        border-top: 1px dashed rgba(v.$color-primary, 0.25);
+        font-size: 18px;
+        font-weight: 700;
+        color: #00ffd0;
+
+        .go-value {
+            font-size: 21px;
+            color: #00ffd0;
+            text-shadow: 0 0 12px rgba(0, 255, 208, 0.5);
+        }
+    }
+}
+
+.go-custom-warning {
+    font-family: v.$font-ui;
+    color: v.$enemy-shooter;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-shadow: 0 0 5px v.$color-black;
+}
+
+// Footer action buttons
+.go-actions {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 15px;
+    margin-top: 4px;
+
+    .btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #gameover-exit-btn {
+        background: rgba(v.$color-dark-gray, 0.8);
+        font-size: 17px;
+        font-weight: bold;
+        padding: 14px 0;
+    }
+
+    #restart-btn {
+        border: 1px solid v.$color-primary !important;
+        white-space: nowrap;
+        font-size: 19px;
+    }
+}
+
+// ============================================
+// Detailed stats view
+// ============================================
+
+.go-stats-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.go-stats-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+// HUD command-bar style cell: small label over Orbitron value
+.go-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: v.$font-ui;
+    font-size: 14px;
+    color: v.$color-light-gray;
+    margin-bottom: 8px;
+
+    .go-stat-label {
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: rgba(v.$color-white, 0.6);
+    }
+
+    .go-stat-value {
+        font-family: v.$font-display;
+        font-variant-numeric: tabular-nums;
+        font-size: 15px;
+        color: v.$color-white;
+        text-shadow: 0 0 10px rgba(v.$color-primary, 0.25);
+        white-space: nowrap;
+    }
+}
+
+// Delta annotations next to values
+.go-delta {
+    font-family: v.$font-ui;
+    font-size: 0.85em;
+
+    &.up {
+        color: v.$color-success;
+    }
+
+    &.down {
+        color: #ff6666;
+    }
+
+    &.same {
+        color: v.$color-gray;
+    }
+}
+
+// Enemy chips (reuses .enemy-indicator theme colors from the HUD)
+.go-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+
+    .enemy-indicator {
+        font-size: 13px;
+        padding: 4px 11px;
+    }
+}
+
+// Skills picked list
+.go-skill-list {
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: v.$font-ui;
+    font-size: 13px;
+    color: v.$color-light-gray;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 14px;
+
+    strong {
+        color: rgba(v.$color-primary, 0.8);
+        font-variant-numeric: tabular-nums;
+    }
+}
