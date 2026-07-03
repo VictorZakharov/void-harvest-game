@@ -25,9 +25,12 @@ export function showGameOverStats(game, dom, souls, isVictory = false) {
         }
     };
 
-    // Initial render
+    // Initial render — the zoom-in plays only on this first reveal;
+    // re-shows (e.g. returning from Upgrades) skip it
     render();
+    dom.gameoverModal.classList.add('animate-in');
     dom.show(dom.gameoverModal);
+    setTimeout(() => dom.gameoverModal.classList.remove('animate-in'), 600);
 
     function attachEventListeners(game, container) {
         const statsBtn = container.querySelector('#view-stats-btn');
