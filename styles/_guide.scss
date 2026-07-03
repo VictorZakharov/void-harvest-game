@@ -75,6 +75,32 @@
     @include hud.panel(rgba(v.$color-white, 0.15));
     padding: v.$spacing-md v.$spacing-lg;
     margin: v.$spacing-md 0;
+    display: flex;
+    align-items: center;
+    gap: v.$spacing-xl;
+
+    // 3D model portrait (same renderer as the custom config cards,
+    // just displayed larger)
+    .enemy-card-model {
+        flex-shrink: 0;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+        }
+    }
+
+    .enemy-card-body {
+        flex: 1;
+        min-width: 0;
+    }
 
     // Type accent on the clipped layer so the color follows the shape
     &.basic::before {

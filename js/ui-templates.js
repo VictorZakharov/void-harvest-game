@@ -53,44 +53,59 @@ export function getGuideHTML() {
         <p>Four types of hostile entities will hunt you. Learn their patterns to survive.</p>
 
         <div class="enemy-card basic">
-            <h4 style="color: #ff3333; margin-top: 0;">⬤ Basic Enemy</h4>
-            <p><strong>Health:</strong> 30 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 10</p>
-            <p>The most common threat. They move directly toward you and deal moderate damage on contact.
-            Easy to kill individually, but deadly in swarms.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 1</p>
+            <div class="enemy-card-model"><img data-enemy-model="basic" alt="Basic Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #ff3333; margin-top: 0;">Basic Enemy</h4>
+                <p><strong>Health:</strong> 30 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 10</p>
+                <p>The most common threat. They move directly toward you and deal moderate damage on contact.
+                Easy to kill individually, but deadly in swarms.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 1</p>
+            </div>
         </div>
 
         <div class="enemy-card fast">
-            <h4 style="color: #ff66aa; margin-top: 0;">⬤ Fast Enemy</h4>
-            <p><strong>Health:</strong> 15 | <strong>Speed:</strong> Fast | <strong>Damage:</strong> 5</p>
-            <p>Fragile but quick. These enemies close the distance rapidly and are hard to avoid.
-            They die easily but yield double the XP as a reward for your precision.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 3</p>
+            <div class="enemy-card-model"><img data-enemy-model="fast" alt="Fast Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #ff66aa; margin-top: 0;">Fast Enemy</h4>
+                <p><strong>Health:</strong> 15 | <strong>Speed:</strong> Fast | <strong>Damage:</strong> 5</p>
+                <p>Fragile but quick. These enemies close the distance rapidly and are hard to avoid.
+                They die easily but yield double the XP as a reward for your precision.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 3</p>
+            </div>
         </div>
 
         <div class="enemy-card tank">
-            <h4 style="color: #cc88cc; margin-top: 0;">⬤ Tank Enemy</h4>
-            <p><strong>Health:</strong> 100 | <strong>Speed:</strong> Slow | <strong>Damage:</strong> 20</p>
-            <p>Living walls that soak tremendous damage. They move slowly but hit hard.
-            Killing one grants massive XP. Often block your escape routes.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 7</p>
+            <div class="enemy-card-model"><img data-enemy-model="tank" alt="Tank Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #cc88cc; margin-top: 0;">Tank Enemy</h4>
+                <p><strong>Health:</strong> 100 | <strong>Speed:</strong> Slow | <strong>Damage:</strong> 20</p>
+                <p>Living walls that soak tremendous damage. They move slowly but hit hard.
+                Killing one grants massive XP. Often block your escape routes.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 7</p>
+            </div>
         </div>
 
         <div class="enemy-card shooter">
-            <h4 style="color: #ffaa44; margin-top: 0;">⬤ Shooter Enemy</h4>
-            <p><strong>Health:</strong> 20 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 5 (contact + ranged)</p>
-            <p>The most dangerous foe. They maintain distance and fire projectiles at you every 2 seconds.
-            Priority targets - eliminate them before they overwhelm you with bullets.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 5</p>
+            <div class="enemy-card-model"><img data-enemy-model="shooter" alt="Shooter Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #ffaa44; margin-top: 0;">Shooter Enemy</h4>
+                <p><strong>Health:</strong> 20 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 5 (contact + ranged)</p>
+                <p>The most dangerous foe. They maintain distance and fire projectiles at you every 2 seconds.
+                Priority targets - eliminate them before they overwhelm you with bullets.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 5</p>
+            </div>
         </div>
 
-        <div class="enemy-card" style="border-left-color: #66ccff;">
-            <h4 style="color: #66ccff; margin-top: 0;">⬤ Ice Shooter Enemy</h4>
-            <p><strong>Health:</strong> 25 | <strong>Speed:</strong> Medium-Slow | <strong>Damage:</strong> 5 (contact), Slow (ranged)</p>
-            <p>A chilling threat that fires ice projectiles. Each bullet applies a <span class="stat-highlight">15% slow for 1 second</span>, and <strong>effects stack cumulatively!</strong>
-            Multiple hits can reduce your speed by 30%, 45%, or even freeze you completely at 100% slow.
-            Watch for the ❄ counter next to your health bar - it shows how many slow stacks you have. Screen glow intensifies dramatically with more stacks!</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 8</p>
+        <div class="enemy-card ice">
+            <div class="enemy-card-model"><img data-enemy-model="ice" alt="Ice Shooter Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #66ccff; margin-top: 0;">Ice Shooter Enemy</h4>
+                <p><strong>Health:</strong> 25 | <strong>Speed:</strong> Medium-Slow | <strong>Damage:</strong> 5 (contact), Slow (ranged)</p>
+                <p>A chilling threat that fires ice projectiles. Each bullet applies a <span class="stat-highlight">15% slow for 1 second</span>, and <strong>effects stack cumulatively!</strong>
+                Multiple hits can reduce your speed by 30%, 45%, or even freeze you completely at 100% slow.
+                Watch for the ❄ counter next to your health bar - it shows how many slow stacks you have. Screen glow intensifies dramatically with more stacks!</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 8</p>
+            </div>
         </div>
 
         <h3>📈 Difficulty Scaling</h3>
