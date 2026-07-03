@@ -48,7 +48,11 @@ export class Player extends Entity {
     this.isBledOut = false; // Downed timer expired: an inert grey husk, no revive, no level-up turns
     this.downedTimer = 0;
     this.reviveProgress = 0;
-    this.maxDownedTime = 30 * 144; // 30 seconds (game ticks run at 144/sec)
+    // 30 game-clock seconds: the timer decrements by effectiveScale,
+    // the same quantity game.gameTime accumulates, and the HUD clock
+    // counts a second per 60 of those — so this stays in lockstep with
+    // the top timer across every game-speed setting and slow-mo.
+    this.maxDownedTime = 30 * 60;
 
     // Combat stats
     this.damage = PLAYER_BASE_DAMAGE;

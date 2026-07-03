@@ -572,6 +572,11 @@ export class PlayerVisuals {
     // fresh visuals.
     if (this.player.isBledOut && !this._bledOutGrey) {
       this._bledOutGrey = true;
+      // Lights out — a husk doesn't glow in the dark. Intensity, not
+      // .visible: toggling a light's visibility forces THREE to
+      // recompile every shader program (visible hitch).
+      if (this.selfLight) this.selfLight.intensity = 0;
+      if (this.spotLight) this.spotLight.intensity = 0;
       this.mesh.traverse((child) => {
         if (child.isMesh && child.material && child.material.color) {
           const mat = child.material;
