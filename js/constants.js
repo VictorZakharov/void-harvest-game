@@ -143,6 +143,10 @@ export const SKILLCARD_HOLD_MS = 550;    // Card hovers at center over the froze
 export const SKILLCARD_FLY_MS = 800;     // Card shrinks and flies into the player's skill HUD
 export const SKILLCARD_TAIL_MS = 600;    // Particle afterglow at the landing spot
 
+// Single player death: game-time ticks (144/sec baseline) the downed
+// animation plays before the game over screen appears (~3 seconds)
+export const GAMEOVER_DOWNED_DELAY = 3 * 144;
+
 // ============================================
 // BALANCE MODIFIERS
 // ============================================

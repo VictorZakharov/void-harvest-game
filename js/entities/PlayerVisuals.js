@@ -567,9 +567,9 @@ export class PlayerVisuals {
       });
     }
 
-    // Revive Ring Visibility
+    // Revive Ring Visibility (only when a partner could actually revive us)
     if (this.reviveRing) {
-      if (this.player.isDowned) {
+      if (this.player.isDowned && this.player.canBeRevived) {
         this.reviveRing.visible = true;
         this.reviveRing.position.set(this.player.x + this.player.width / 2, 5, this.player.y + this.player.height / 2);
         // Rotate slowly

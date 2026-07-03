@@ -6,7 +6,7 @@ import {
   WEATHER_DURATION, WEATHER_FADE_TIME, WEATHER_WARNING_TIME,
   WEATHER_INTERVAL_MIN, WEATHER_INTERVAL_MAX, WEATHER_SLOW_AMOUNT,
   HEALTH_DROP_BASE_RATE, HEALTH_RESTORE_AMOUNT,
-  POLAR_VORTEX_RADIUS
+  POLAR_VORTEX_RADIUS, GAMEOVER_DOWNED_DELAY
 } from './constants.js';
 import { BIOMES, WEATHER_TYPES, DEFAULT_FOG_DENSITY } from './biomes.js';
 import { Player } from './entities/Player.js';
@@ -60,6 +60,10 @@ export class Game {
     // Transient multiplier on top of timeScale (0..1), used by the skill
     // card cinematic to ramp gameplay speed back up after a level-up freeze
     this.timeDilation = 1.0;
+
+    // SP death sequence: downed animation plays before the game over screen
+    this.gameOverPending = false;
+    this.gameOverTimer = 0;
 
     this.ui = new UIManager(this);
     this.canvas = this.ui.dom.gameCanvas;
@@ -169,6 +173,8 @@ export class Game {
     if (this.levelUpEffect) this.levelUpEffect.cancel();
     if (this.skillCardEffect) this.skillCardEffect.cancel();
     this.timeDilation = 1.0;
+    this.gameOverPending = false;
+    this.gameOverTimer = 0;
 
     // 1. Standard Cleanup via References
     if (this.players) {
@@ -245,6 +251,8 @@ export class Game {
       const c2 = this.playerColors ? this.playerColors[1] : '#0088ff';
       const p1 = new Player(CANVAS_WIDTH / 2 - 60, CANVAS_HEIGHT / 2, this.scene, 0, c1); // ID 0
       const p2 = new Player(CANVAS_WIDTH / 2 + 60, CANVAS_HEIGHT / 2, this.scene, 1, c2); // ID 1
+      p1.canBeRevived = true;
+      p2.canBeRevived = true;
       this.players = [p1, p2];
     } else {
       // Single Player (ID 0)
@@ -433,6 +441,24 @@ export class Game {
 
     // Advance game time by the scaled amount
     this.gameTime += effectiveScale;
+
+    // SP catch-all: any damage source can down the player (e.g. the freeze
+    // DoT bypasses the collision game-over checks), so detect it centrally.
+    if (!this.isMultiplayer && this.player && this.player.isDowned) {
+      this.gameOver();
+    }
+
+    // SP death sequence: the world keeps running while the downed animation
+    // plays, then the game over screen appears. Real-time (dtFactor), so the
+    // slow-motion setting doesn't stretch the wait.
+    if (this.gameOverPending) {
+      this.gameOverTimer -= dtFactor;
+      if (this.gameOverTimer <= 0) {
+        this.gameOverPending = false;
+        this.sessionManager.gameOver();
+        return;
+      }
+    }
 
     if (this.weather) {
       const newFog = this.weather.update(this.player, this.currentBiome, DEFAULT_FOG_DENSITY, effectiveScale);
@@ -669,6 +695,16 @@ export class Game {
   }
 
   gameOver() {
+    if (this.state === 'gameover' || this.gameOverPending) return;
+
+    // Single player: don't cut straight to the modal — let the downed
+    // animation play out first (delay handled in update()).
+    if (!this.isMultiplayer) {
+      this.gameOverPending = true;
+      this.gameOverTimer = GAMEOVER_DOWNED_DELAY;
+      return;
+    }
+
     this.sessionManager.gameOver();
   }
 

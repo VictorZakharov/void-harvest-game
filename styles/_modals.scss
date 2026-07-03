@@ -74,6 +74,24 @@
     }
 }
 
+// Game Over screen grows in from small after the death sequence
+// (.hidden is display:none, so the animation replays on every show)
+#gameover-modal .modal-content {
+    animation: gameover-zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes gameover-zoom-in {
+    from {
+        transform: scale(0.15);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 .modal-content {
     background: v.$color-bg-darker;
     border: v.$border-width-lg solid v.$color-primary;
