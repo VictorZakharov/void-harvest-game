@@ -166,7 +166,13 @@ export class Game {
     });
 
     this.itemManager = new ItemManager(this.scene, this.player, this.metaProgress, {
-      onLevelUp: (player) => this.ui.showLevelUpScreen(player)
+      onLevelUp: (player) => {
+        // Downed players skip the skill pick — the level/xp rollover
+        // already happened in addXP; no invigoration or modal for a
+        // player lying on the floor (2P shared-XP levels both at once)
+        if (player && player.isDowned) return;
+        this.ui.showLevelUpScreen(player);
+      }
     });
   }
 

@@ -354,10 +354,15 @@ export class LevelUpEffectSystem {
         const sweepY = 2 + sweep * LEVELUP_ANIM_SWEEP_HEIGHT;
 
         // --- Health refill, synced to the sweep ---
-        const targetHealth = this.startHealth +
-            (player.maxHealth - this.startHealth) * sweep;
-        player.health = Math.min(player.maxHealth, targetHealth);
-        if (surgeT >= 1) player.health = player.maxHealth;
+        // Downed players don't get the heal: in 2P both players level
+        // together (shared XP), and the refill must not act as a free
+        // revive — health only restores if you're up.
+        if (!player.isDowned) {
+            const targetHealth = this.startHealth +
+                (player.maxHealth - this.startHealth) * sweep;
+            player.health = Math.min(player.maxHealth, targetHealth);
+            if (surgeT >= 1) player.health = player.maxHealth;
+        }
         this.game.ui.updateHUD();
         this._updateBadge(burstT);
 

@@ -28,6 +28,14 @@
     margin-top: 20px;
 }
 
+// Each 2P column carries the player's chosen lobby color in
+// --player-accent (set inline by ui-pause.js); section titles pick
+// it up so the columns read as "their" color, not a hardcoded theme
+.pause-player-column .pause-section-title.player-accent {
+    color: var(--player-accent, #{v.$color-primary});
+    border-bottom-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 30%, transparent);
+}
+
 .stat-item {
     @include hud.panel(rgba(v.$color-primary, 0.25));
     padding: 10px 15px;
