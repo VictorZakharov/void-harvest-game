@@ -302,7 +302,9 @@
                 color: #d1c4e9;
                 font-weight: bold;
                 text-shadow: 0 0 5px #b388ff, 0 0 10px rgba(179, 136, 255, 0.5);
-                font-family: 'Courier New', monospace; // Tech/Sci-fi feel
+                // Match the souls readouts in the HUD and meta modal
+                font-family: v.$font-display;
+                font-variant-numeric: tabular-nums;
             }
         }
     }
