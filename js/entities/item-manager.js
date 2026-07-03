@@ -70,12 +70,22 @@ export class ItemManager {
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
 
-            // Magnetism: Find closest player? Or average?
-            // Usually closest player attracts.
+            // Health packs only attract players who are actually hurt;
+            // at full HP they are ignored and stay on the ground.
+            let candidates = playerBounds;
+            if (item.type === 'health') {
+                candidates = playerBounds.filter(({ p }) => p.health < p.maxHealth);
+            }
+            const canPickup = candidates.length > 0;
+
+            // Magnetism: closest eligible player attracts. With no eligible
+            // player, fall back to the closest player just to keep toss
+            // physics and discovery running (no magnet/pickup).
+            const pool = canPickup ? candidates : playerBounds;
             let closest = null;
             let minDistSq = Infinity;
 
-            playerBounds.forEach(({ p, bounds }) => {
+            pool.forEach(({ p, bounds }) => {
                 const distSq = (item.x - bounds.centerX) ** 2 + (item.y - bounds.centerY) ** 2;
                 if (distSq < minDistSq) {
                     minDistSq = distSq;
@@ -92,10 +102,11 @@ export class ItemManager {
                     closest.p.speed,
                     closest.p,
                     null, null,
-                    timeScale
+                    timeScale,
+                    canPickup
                 );
 
-                if (item.collidesWith(closest.p)) {
+                if (canPickup && item.collidesWith(closest.p)) {
                     this.collect(item, closest.p);
                     this.scene.remove(item.mesh);
                     this.items.splice(i, 1);

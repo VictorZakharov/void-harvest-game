@@ -119,18 +119,17 @@ export class DOMCache {
         if (!this.statusMessage) {
             this.statusMessage = document.createElement('div');
             this.statusMessage.id = 'status-message';
-            // Default styling for "Above Player" / Center Screen
-            // Using transform: translate(-50%, -50%) to center, then margin-top to offset?
-            // Position relative to screen center with offset.
-            // Place at 40% height (slightly above center).
+            // Anchored under the player each frame by
+            // UIManager.updateStatusMessagePosition(); these are fallbacks.
             Object.assign(this.statusMessage.style, {
                 position: 'absolute',
-                top: '40%',
+                top: '60%',
                 left: '50%',
-                transform: 'translate(-50%, -50%)',
+                transform: 'translate(-50%, 0)',
                 color: '#aaaaaa', // Grey as requested
                 fontFamily: "'Orbitron', sans-serif",
-                fontSize: '24px',
+                fontSize: '16px',
+                whiteSpace: 'nowrap',
                 fontWeight: 'bold',
                 textShadow: '0 0 5px rgba(0,0,0,0.8)',
                 pointerEvents: 'none',
