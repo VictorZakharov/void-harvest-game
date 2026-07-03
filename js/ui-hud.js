@@ -137,7 +137,8 @@ function updatePlayerStats(player, game, dom, prefix) {
         // Revive Progress (Downed State) — revive is 2P-only; in SP the
         // death sequence handles it, so no countdown badge
         if (player.isDowned && player.canBeRevived) {
-            const timeLeft = Math.ceil(player.downedTimer / 60); // approx seconds
+            // Game ticks run at 144/sec (not 60 — old comments lie)
+            const timeLeft = Math.max(0, Math.ceil(player.downedTimer / 144));
             statusHtml += `<div class="status-effect" style="border-color: #ff0000; color: #ff0000; background: rgba(50,0,0,0.8);">DOWNED (${timeLeft}s)</div>`;
         }
 

@@ -47,7 +47,7 @@ export class Player extends Entity {
     this.canBeRevived = false; // Set true in multiplayer (game.js); gates the revive ring
     this.downedTimer = 0;
     this.reviveProgress = 0;
-    this.maxDownedTime = 30 * 60; // 30 seconds at 60fps
+    this.maxDownedTime = 30 * 144; // 30 seconds (game ticks run at 144/sec)
 
     // Combat stats
     this.damage = PLAYER_BASE_DAMAGE;
@@ -157,9 +157,17 @@ export class Player extends Entity {
   update(input, mouseX, mouseY, camYaw = 0, timeScale = 1.0) {
     // Downed State logic
     if (this.isDowned) {
-      this.downedTimer -= timeScale;
-      // If timer runs out, we remain downed (dead).
-      // Game Over logic checks if all are downed/dead.
+      // Bleed-out countdown: when it expires the player can no longer
+      // be revived — the revive ring, HUD badge and rescue banner all
+      // gate on canBeRevived and disappear with it. MP game over still
+      // triggers only when BOTH players are down.
+      if (this.downedTimer > 0) {
+        this.downedTimer = Math.max(0, this.downedTimer - timeScale);
+        if (this.downedTimer <= 0) {
+          this.health = 0;
+          this.canBeRevived = false;
+        }
+      }
       return; // No movement, no actions
     }
 
@@ -215,15 +223,6 @@ export class Player extends Entity {
 
     this.x = Math.max(0, Math.min(CANVAS_WIDTH - this.width, this.x));
     this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
-
-    // Update Downed Timer
-    if (this.isDowned && this.downedTimer > 0) {
-      this.downedTimer = Math.max(0, this.downedTimer - timeScale);
-      if (this.downedTimer <= 0) {
-        // Optional: Force Game Over logic here if needed, but Game.js handles 'allDead' check
-        this.health = 0;
-      }
-    }
 
     // Aiming
     const bounds = this.getBounds();
