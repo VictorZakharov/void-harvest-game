@@ -653,11 +653,12 @@
             transform: scale(1.15) rotate(10deg);
         }
 
-        // Tooltip settles with a slight right twist
+        // Tooltip settles with a right twist (same magnitude as the
+        // old inherited icon tilt, mirrored)
         .tooltip {
             visibility: visible;
             opacity: 1;
-            transform: translateX(-50%) translateY(0) rotate(3deg);
+            transform: translateX(-50%) translateY(0) rotate(10deg);
         }
     }
 
@@ -675,7 +676,7 @@
     left: 50%;
     // Starts slightly counter-twisted so the hover reveal swings it
     // to the right (see .help-icon:hover)
-    transform: translateX(-50%) translateY(8px) rotate(-2deg);
+    transform: translateX(-50%) translateY(8px) rotate(-4deg);
     background: linear-gradient(180deg, #161625 0%, #0a0a14 100%);
     border: 1px solid #00ffff;
     color: #fff;
