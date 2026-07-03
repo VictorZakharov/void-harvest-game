@@ -567,6 +567,31 @@ export class PlayerVisuals {
       });
     }
 
+    // Bled-out: the body desaturates to an inert grey husk. One-way —
+    // bleed-out is irreversible within a run, and a new run builds
+    // fresh visuals.
+    if (this.player.isBledOut && !this._bledOutGrey) {
+      this._bledOutGrey = true;
+      this.mesh.traverse((child) => {
+        if (child.isMesh && child.material && child.material.color) {
+          const mat = child.material;
+          if (mat.userData.bledOutGrey) return; // shared material, already done
+          mat.userData.bledOutGrey = true;
+          const c = mat.color;
+          const l = 0.3 * c.r + 0.59 * c.g + 0.11 * c.b;
+          c.setRGB(l * 0.5, l * 0.5, l * 0.5);
+          // Kill the glow too — including the "original" the per-frame
+          // emissive restore pass writes back
+          if (mat.emissive) {
+            mat.emissiveIntensity = 0;
+            if (child.userData.originalEmissiveIntensity !== undefined) {
+              child.userData.originalEmissiveIntensity = 0;
+            }
+          }
+        }
+      });
+    }
+
     // Revive Ring Visibility (only when a partner could actually revive us)
     if (this.reviveRing) {
       if (this.player.isDowned && this.player.canBeRevived) {

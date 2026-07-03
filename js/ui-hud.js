@@ -71,6 +71,13 @@ export function updateHUD(game, dom) {
 }
 
 function updatePlayerStats(player, game, dom, prefix) {
+    // Bled-out players read as inert: their whole panel greys out
+    const panel = dom[prefix + 'Panel'];
+    if (panel) {
+        if (player.isBledOut) dom.addClass(panel, 'bled-out');
+        else dom.removeClass(panel, 'bled-out');
+    }
+
     const healthPercent = (player.health / player.maxHealth) * 100;
     const hpBar = dom[prefix + 'HealthBar'];
     const hpText = dom[prefix + 'HealthText'];

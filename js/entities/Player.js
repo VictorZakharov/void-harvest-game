@@ -45,6 +45,7 @@ export class Player extends Entity {
     // Multiplayer States
     this.isDowned = false;
     this.canBeRevived = false; // Set true in multiplayer (game.js); gates the revive ring
+    this.isBledOut = false; // Downed timer expired: an inert grey husk, no revive, no level-up turns
     this.downedTimer = 0;
     this.reviveProgress = 0;
     this.maxDownedTime = 30 * 144; // 30 seconds (game ticks run at 144/sec)
@@ -166,6 +167,7 @@ export class Player extends Entity {
         if (this.downedTimer <= 0) {
           this.health = 0;
           this.canBeRevived = false;
+          this.isBledOut = true;
         }
       }
       return; // No movement, no actions

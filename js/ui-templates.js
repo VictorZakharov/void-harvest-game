@@ -58,7 +58,8 @@ export function getGuideHTML() {
                 <li><span class="stat-highlight">Shared XP:</span> pickups are split evenly, so both players level up together</li>
                 <li><span class="stat-highlight">Level-up heal:</span> leveling up restores a standing player to full health</li>
                 <li><span class="stat-highlight">Going down:</span> at 0 HP a player is downed, not dead. A rescue call marks them on screen
-                (with an edge arrow if they're off-screen) — but they bleed out if left too long</li>
+                (with an edge arrow if they're off-screen) — but after 30 seconds they bleed out: body and HUD turn grey,
+                no more revives, no more level-ups. The run continues on one survivor</li>
                 <li><span class="stat-highlight">Reviving:</span> stand next to your partner and hold <strong>[E]</strong> (P1) or
                 <strong>[R-Ctrl]</strong> (P2) for 2 seconds — the dashed ring fills as you channel. They get back up at 50% HP</li>
                 <li><span class="stat-highlight">Leveling while down:</span> a downed player still gains the level, but skips the skill pick

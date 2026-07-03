@@ -367,6 +367,10 @@ export class UIManager {
   showLevelUpScreen(player) {
     if (!player) player = this.game.players ? this.game.players[0] : this.game.player;
 
+    // Bled-out players level silently: no dust turn, no freeze — the
+    // level/xp rollover already happened in addXP and that's all they get
+    if (player && player.isBledOut) return;
+
     if (this.isLevelUpActive) {
       this.levelUpQueue.push(player);
       return;
