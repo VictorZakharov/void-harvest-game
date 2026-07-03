@@ -2,6 +2,17 @@
 
 A twin-stick shooter roguelite built with vanilla JavaScript and Three.js, featuring a full 3D world with dynamic lighting, instanced rendering, and 2-player local co-op.
 
+**▶ [Play it in your browser](https://vhgame.netlify.app/)** — deployed automatically from the latest commit.
+
+![Gameplay — surrounded by the swarm, mid-firefight](screenshots/gameplay.png)
+
+<details>
+<summary>Main menu</summary>
+
+![Main menu](screenshots/menu.png)
+
+</details>
+
 ## Documentation
 
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Complete gameplay guide with all stats and strategies
