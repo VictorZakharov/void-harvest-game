@@ -7,6 +7,7 @@ import { showGuide } from './ui-modals.js';
 import { showPauseScreen, resumeGame } from './ui-pause.js';
 import { CustomGameUI } from './ui-custom.js';
 import { DOMCache } from './DOMCache.js';
+import * as THREE from 'three';
 
 export class UIManager {
   constructor(game) {
@@ -461,6 +462,7 @@ export class UIManager {
       el.style.transition = 'opacity 0.5s';
       el.textContent = message;
       el.style.opacity = '1';
+      this.updateStatusMessagePosition();
 
       // Clear existing timer if any
       if (this.statusMessageTimer) clearTimeout(this.statusMessageTimer);
@@ -469,6 +471,30 @@ export class UIManager {
         el.style.opacity = '0';
       }, duration);
     }
+  }
+
+  /**
+   * Anchors the status message just below the player so it never sits on
+   * top of HUD elements. Called every frame from render3D while visible.
+   */
+  updateStatusMessagePosition() {
+    const el = this.dom.statusMessage;
+    if (!el || el.style.opacity !== '1') return;
+
+    const p = this.game.player;
+    const cam = this.game.rendering && this.game.rendering.camera3D;
+    if (!p || !cam || !this.game.canvas) return;
+
+    // Project the player's feet to screen space
+    const v = new THREE.Vector3(p.x + p.width / 2, 0, p.y + p.height / 2);
+    v.project(cam);
+    const rect = this.game.canvas.getBoundingClientRect();
+    const x = rect.left + (v.x * 0.5 + 0.5) * rect.width;
+    const y = rect.top + (-v.y * 0.5 + 0.5) * rect.height;
+
+    el.style.left = `${x}px`;
+    el.style.top = `${y + 36}px`;
+    el.style.transform = 'translate(-50%, 0)';
   }
 
 

@@ -623,6 +623,9 @@ export class Game {
     // Skill card pick cinematic (DOM clone + overlay particles + resume ramp)
     if (this.skillCardEffect) this.skillCardEffect.update(dt);
 
+    // Keep the status toast ([Q] Autoshoot etc.) anchored under the player
+    if (this.ui && this.ui.updateStatusMessagePosition) this.ui.updateStatusMessagePosition();
+
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)
     const cursorTargetForCull = this.lighting.getCursorTarget();

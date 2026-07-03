@@ -88,7 +88,7 @@ export class Item extends Entity {
         this.tossDuration = duration;
     }
 
-    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3, playerEntity = null, cursorX = null, cursorY = null, timeScale = 1.0) {
+    update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3, playerEntity = null, cursorX = null, cursorY = null, timeScale = 1.0, attract = true) {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -139,7 +139,9 @@ export class Item extends Entity {
             return;
         }
 
-        // Magnet effect with bonus range
+        // Magnet effect with bonus range (suppressed for items no one can use,
+        // e.g. health packs while every player is at full HP)
+        if (!attract) return;
         const effectiveMagnetRange = this.magnetRange * (1 + playerMagnetBonus);
         if (dist < effectiveMagnetRange && dist > 0) {
             // Magnet pull speed is always 10% faster than player speed
