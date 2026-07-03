@@ -44,6 +44,7 @@ export class Player extends Entity {
 
     // Multiplayer States
     this.isDowned = false;
+    this.canBeRevived = false; // Set true in multiplayer (game.js); gates the revive ring
     this.downedTimer = 0;
     this.reviveProgress = 0;
     this.maxDownedTime = 30 * 60; // 30 seconds at 60fps
