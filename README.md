@@ -23,7 +23,7 @@ A twin-stick shooter roguelite built with vanilla JavaScript and Three.js, featu
 
 - Twin-stick shooter mechanics (WASD + Mouse)
 - 5 enemy types with unique behaviors (Basic, Fast, Tank, Shooter, Ice)
-- 17 different skill upgrades with max levels
+- 18 different skill upgrades with max levels
 - Custom game mode with visual enemy and skill selection
 - Status effects display for passive skills and debuffs
 - Active skills HUD showing equipped abilities
@@ -92,20 +92,19 @@ For a complete and up-to-date file map with detailed descriptions, please refer 
 
 ### Skills
 
-**Combat Skills:**
+**Offensive:**
 - Increased Damage, Rapid Fire, Multi-Shot, Piercing Shots
-- Bullet Velocity -> EXPLOSIVE ROUNDS (Splash Damage), Extended Range, Freeze Chance
+- Explosive Rounds (Splash Damage), Extended Range
 
-**Survivability Skills:**
-- Max Health, Passive Heal, Vampiric Touch, Armor
+**Defensive:**
+- Max Health, Passive Heal, Armor
+- Polar Vortex, Energy Shield, Deflect
 
-**Utility Skills:**
-- Movement Speed, Magnet Range, Lucky Drops, Light Radius
+**Survival & Utility:**
+- Movement Speed, Freeze Chance, Magnet Range, Lucky Drops
+- Light Radius, Personal Light (2P co-op), Extra Choice
 
-**Special Skills:**
-- Extra Choice, Berserk Mode
-
-All skills have multiple levels (max 3, except Extra Choice which is max 1)
+Most skills level up to 3; Extra Choice, Energy Shield, and Personal Light are unique (max 1)
 
 ### Custom Game Mode
 
