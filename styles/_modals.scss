@@ -648,15 +648,16 @@
         border-color: #fff;
 
         // Wiggle only the "?" glyph — a transform on the container
-        // would rotate/scale the tooltip child along with it
+        // would drag the tooltip's coordinate space along with it
         &::before {
-            transform: scale(1.15) rotate(-10deg);
+            transform: scale(1.15) rotate(10deg);
         }
 
+        // Tooltip settles with a slight right twist
         .tooltip {
             visibility: visible;
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(0) rotate(3deg);
         }
     }
 
@@ -672,7 +673,9 @@
     position: absolute;
     bottom: calc(100% + 12px);
     left: 50%;
-    transform: translateX(-50%) translateY(8px);
+    // Starts slightly counter-twisted so the hover reveal swings it
+    // to the right (see .help-icon:hover)
+    transform: translateX(-50%) translateY(8px) rotate(-2deg);
     background: linear-gradient(180deg, #161625 0%, #0a0a14 100%);
     border: 1px solid #00ffff;
     color: #fff;

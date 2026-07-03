@@ -245,9 +245,8 @@ function renderStatsView(game, prevStats, souls, isVictory) {
                     ${enemyChip('basic', 'Basic', dr.basic)}
                     ${enemyChip('fast', 'Fast', dr.fast)}
                     ${enemyChip('tank', 'Tank', dr.tank)}
-                    ${enemyChip('shooter', 'Shooter', dr.shooter)}
+                    ${enemyChip('shooter', 'Shooter', dr.shooter + dr.bullet)}
                     ${enemyChip('ice', 'Ice', dr.ice)}
-                    ${enemyChip('shooter', 'Bullets', dr.bullet)}
                 </div>
             </div>
 
