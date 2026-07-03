@@ -385,13 +385,6 @@ export class Player extends Entity {
     this.health = Math.min(this.maxHealth, this.health + amount);
   }
 
-  onKill() {
-    if (this.vampire > 0 && this.vampireTimer === 0) {
-      this.heal(this.vampire);
-      this.vampireTimer = this.vampireCooldown;
-    }
-  }
-
   getLightRadius() {
     return PLAYER_BASE_LIGHT_RADIUS * (1 + this.lightRadiusBonus);
   }

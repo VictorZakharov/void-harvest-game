@@ -49,11 +49,6 @@ export class UISkillDetail {
                 currentBonusText = `+${level} Pierce Count`;
                 scalingText = `Total: ${level} (0 Base + Bonus)`;
                 break;
-            case 'bulletspeed':
-                const velBonus = Math.round((Math.pow(1.25, level) - 1) * 100);
-                currentBonusText = `+${velBonus}% Bullet Velocity`;
-                scalingText = 'Base: 8 units (+25% compounding/lvl)';
-                break;
             case 'range':
                 const rangeBonus = Math.round((Math.pow(1.5, level) - 1) * 100);
                 currentBonusText = `+${rangeBonus}% Attack Range`;
@@ -63,22 +58,11 @@ export class UISkillDetail {
                 currentBonusText = `+${level} HP/sec`;
                 scalingText = `Total: ${level} HP/sec (0 Base + Bonus)`;
                 break;
-            case 'vampire':
-                currentBonusText = `+${level} HP per Kill`;
-                scalingText = `Total: ${level} HP/kill (0 Base + Bonus)`;
-                break;
             case 'freeze':
                 const freezePct = Math.round(SKILL_FREEZE_CHANCE_PER_LEVEL * 100);
                 currentBonusText = `${Math.round(level * freezePct)}% Freeze Chance`;
                 scalingText = `Total: ${Math.round(level * freezePct)}% (0% Base + Bonus)`;
                 mechanicsText = 'Freezes enemies in place';
-                break;
-            case 'berserk':
-                const threshold = 10 + (level - 1) * 5;
-                const dmg = 50 * level;
-                currentBonusText = `+${dmg}% DMG at <${threshold}% HP`;
-                scalingText = 'Base: 0% (+50% DMG/lvl)';
-                mechanicsText = 'deal massive damage when low health';
                 break;
             case 'armor':
                 currentBonusText = `-${level} Damage Taken`;

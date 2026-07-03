@@ -147,9 +147,7 @@ export function getGuideHTML() {
         <div class="guide-skills-grid">
             ${SKILLS.map(skill => {
         let description;
-        if (skill.id === 'berserk') {
-            description = '+50% damage/level when health below 10% HP + 5%/level';
-        } else if (skill.id === 'luck') {
+        if (skill.id === 'luck') {
             description = '+2% health pickup drop rate per level (5% without skill)';
         } else {
             const space = skill.unit === '%' ? '' : ' ';
@@ -230,19 +228,19 @@ export function getGuideHTML() {
 
         <div class="guide-section">
             <h4>Glass Cannon</h4>
-            <p><strong>Focus:</strong> Damage, Fire Rate, Multi-Shot, Bullet Velocity</p>
+            <p><strong>Focus:</strong> Damage, Rapid Fire, Multi-Shot, Explosive Rounds</p>
             <p>Obliterate everything before it reaches you. High risk, high reward. Requires excellent positioning.</p>
         </div>
 
         <div class="guide-section">
             <h4>Immortal Tank</h4>
-            <p><strong>Focus:</strong> Max Health, Health Regen, Vampiric Touch</p>
+            <p><strong>Focus:</strong> Max Health, Passive Heal, Armor, Energy Shield</p>
             <p>Become unkillable. Slower clear speed, but very forgiving. Great for first victories.</p>
         </div>
 
         <div class="guide-section">
             <h4>Piercing Artillery</h4>
-            <p><strong>Focus:</strong> Multi-Shot, Piercing, Extended Range, Bullet Velocity</p>
+            <p><strong>Focus:</strong> Multi-Shot, Piercing Shots, Extended Range, Freeze Chance</p>
             <p>Turn yourself into a crowd-control machine. Projectiles tear through entire enemy formations.</p>
         </div>
 
