@@ -532,9 +532,13 @@ export class Game {
       if (this.spawnTimer >= this.spawnRate) {
         this.spawnTimer = 0;
 
-        // Check max enemies limit
+        // Check max enemies limit (corpses don't count against the cap)
         const maxEnemies = this.customMaxEnemies || 9999;
-        if (this.enemies.length < maxEnemies) {
+        let aliveCount = 0;
+        for (const e of this.enemies) {
+          if (!e.isDying) aliveCount++;
+        }
+        if (aliveCount < maxEnemies) {
           this.enemySpawner.spawn(this.wave, this.player, this.customEnemies);
         }
       }
@@ -562,7 +566,8 @@ export class Game {
 
     this.spatialHash.clear();
     for (const enemy of this.enemies) {
-      this.spatialHash.insert(enemy);
+      // Dying corpses are visual-only: no collisions, bullets, or targeting
+      if (!enemy.isDying) this.spatialHash.insert(enemy);
     }
 
     // --- Enemy Updates (Delegate to Manager) ---
@@ -624,6 +629,9 @@ export class Game {
   }
 
   onEnemyDeath(enemy) {
+    // Guard against double-kills in the same frame (pierce + splash, etc.)
+    if (enemy.isDying) return;
+
     if (enemy.type === 'tank') {
       this.cameraSystem.addShake(5);
     }
@@ -635,12 +643,9 @@ export class Game {
 
     this.runSouls = (this.runSouls || 0) + (enemy.soulsValue || 0);
 
-    // Cleanup
+    // The corpse topples and fades; EnemyManager removes it when done.
     this.healthBarSystem.unregister(enemy);
-    enemy.dispose(this.scene);
-
-    const index = this.enemies.indexOf(enemy);
-    if (index > -1) this.enemies.splice(index, 1);
+    enemy.startDeath();
   }
 
   gameOver() {

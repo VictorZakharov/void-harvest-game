@@ -125,6 +125,13 @@ export const PARTICLE_LIFETIME = 30; // frames
 export const PARTICLE_COUNT_HIT = 5;
 export const PARTICLE_COUNT_DEATH = 10;
 
+// Enemy death animation (frames at 60fps)
+export const ENEMY_DEATH_FALL_FRAMES = 25;   // Toppling to the ground
+export const ENEMY_DEATH_HOLD_FRAMES = 150;  // Lying still before fading
+export const ENEMY_DEATH_FADE_FRAMES = 60;   // Fading out
+export const ENEMY_DEATH_TOTAL_FRAMES =
+    ENEMY_DEATH_FALL_FRAMES + ENEMY_DEATH_HOLD_FRAMES + ENEMY_DEATH_FADE_FRAMES;
+
 // ============================================
 // BALANCE MODIFIERS
 // ============================================

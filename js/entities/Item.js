@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
-    ITEM_MAGNET_BASE_RANGE, ITEM_MOVE_SPEED
+    ITEM_MAGNET_BASE_RANGE, ITEM_MOVE_SPEED,
+    CANVAS_WIDTH, CANVAS_HEIGHT
 } from '../constants.js';
 import { SpriteGenerator } from '../sprites.js';
 import { Entity } from './Entity.js';
@@ -57,6 +58,12 @@ export class Item extends Entity {
         this.magnetRange = ITEM_MAGNET_BASE_RANGE;
         this.magnetSpeed = ITEM_MOVE_SPEED;
 
+        // Toss physics (item flies out of a dying enemy, arcs, then settles)
+        this.tossVx = 0;
+        this.tossVy = 0;
+        this.tossTimer = 0;
+        this.tossDuration = 0;
+
         // Illumination Memory
         this.isDiscovered = false;
         // Determine color based on type to store properly
@@ -68,6 +75,17 @@ export class Item extends Entity {
         }
 
         this.mesh = this.createMesh();
+    }
+
+    /**
+     * Launches the item horizontally toward `angle` with an airborne arc.
+     * Magnetism is suppressed until it lands.
+     */
+    toss(angle, speed, duration = 26) {
+        this.tossVx = Math.cos(angle) * speed;
+        this.tossVy = Math.sin(angle) * speed;
+        this.tossTimer = duration;
+        this.tossDuration = duration;
     }
 
     update(playerX, playerY, playerMagnetBonus = 0, playerSpeed = 3, playerEntity = null, cursorX = null, cursorY = null, timeScale = 1.0) {
@@ -104,6 +122,21 @@ export class Item extends Entity {
             // Backward compat fallback
             this.isDiscovered = true;
             this.applyDiscoveredVisuals();
+        }
+
+        // Airborne toss: fly to the side with decaying speed, no magnetism yet
+        if (this.tossTimer > 0) {
+            this.tossTimer -= timeScale;
+            this.x += this.tossVx * timeScale;
+            this.y += this.tossVy * timeScale;
+            const damp = Math.pow(0.94, timeScale);
+            this.tossVx *= damp;
+            this.tossVy *= damp;
+
+            // Keep drops inside the arena so they stay reachable
+            this.x = Math.max(0, Math.min(CANVAS_WIDTH - this.width, this.x));
+            this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
+            return;
         }
 
         // Magnet effect with bonus range
@@ -275,6 +308,12 @@ export class Item extends Entity {
         if (!this.mesh) return;
         const ud = this.mesh.userData;
         let hoverY = ud.hoverHeight || 5;
+
+        // Airborne arc while being tossed out of a corpse
+        if (this.tossDuration > 0 && this.tossTimer > 0) {
+            const p = 1 - this.tossTimer / this.tossDuration;
+            hoverY += Math.sin(p * Math.PI) * 28;
+        }
 
         if (this.type === 'xp') {
             ud.animTime += 1;

@@ -62,6 +62,34 @@ export class EnemyInstancedRenderer {
         // Helpers
         this.dummy = new THREE.Object3D();
         this._color = new THREE.Color();
+
+        // Death-topple scratch objects (avoid per-frame allocation)
+        this._toppleMatrix = new THREE.Matrix4();
+        this._toppleTemp = new THREE.Matrix4();
+        this._toppleAxis = new THREE.Vector3();
+    }
+
+    /**
+     * Builds the rigid "topple over" matrix for a dying enemy: a rotation
+     * around a ground-level horizontal axis through the enemy's center,
+     * perpendicular to its fall direction. Premultiplied onto every part
+     * so the whole figure falls as one body.
+     */
+    _computeToppleMatrix(enemy, fallAngle) {
+        const px = enemy.x + enemy.width / 2;
+        const pz = enemy.y + enemy.height / 2;
+
+        // Axis perpendicular to fall direction (see startDeath for fallDir)
+        this._toppleAxis.set(enemy.fallDirZ, 0, -enemy.fallDirX).normalize();
+
+        // M = T(pivot) * R(axis, angle) * T(-pivot), pivot slightly above
+        // ground so the lying body rests on the surface
+        this._toppleMatrix.makeRotationAxis(this._toppleAxis, fallAngle);
+        this._toppleTemp.makeTranslation(-px, -4, -pz);
+        this._toppleMatrix.multiply(this._toppleTemp);
+        this._toppleTemp.makeTranslation(px, 4, pz);
+        this._toppleMatrix.premultiply(this._toppleTemp);
+        return this._toppleMatrix;
     }
 
     /**
@@ -187,8 +215,18 @@ export class EnemyInstancedRenderer {
             const animState = EnemyInstancedAnimation.calculateState(enemy, dt);
             const s = animState.scale;
 
+            // Death: combine fade-out with fog alpha; rigid topple for all parts
+            let toppleMatrix = null;
+            if (animState.isDying) {
+                alpha *= animState.fade;
+                if (animState.fallAngle > 0.001) {
+                    toppleMatrix = this._computeToppleMatrix(enemy, animState.fallAngle);
+                }
+            }
+
             // --- 2. Body Transform ---
             EnemyInstancedAnimation.applyBodyTransform(dummy, enemy, animState);
+            if (toppleMatrix) dummy.matrix.premultiply(toppleMatrix);
             this.meshes.body.setMatrixAt(bodyIdx, dummy.matrix);
 
             // Set Color
@@ -225,6 +263,7 @@ export class EnemyInstancedRenderer {
             // Helper for applying and setting
             const applyLimb = (rot, xOff, yOff, len, wid) => {
                 EnemyInstancedAnimation.applyLimbTransform(dummy, enemy, animState, rot, xOff, yOff, len, wid);
+                if (toppleMatrix) dummy.matrix.premultiply(toppleMatrix);
                 this.meshes.limbs.setMatrixAt(limbIdx, dummy.matrix);
                 this.meshes.limbs.setColorAt(limbIdx, this._color);
                 limbOpacityAttr.setX(limbIdx, alpha);
@@ -243,6 +282,7 @@ export class EnemyInstancedRenderer {
             // --- 4. Gun ---
             if (animState.isShooter) {
                 EnemyInstancedAnimation.applyGunTransform(dummy, enemy, animState, shoulderY, armX, armL, s);
+                if (toppleMatrix) dummy.matrix.premultiply(toppleMatrix);
                 this.meshes.guns.setMatrixAt(gunIdx, dummy.matrix);
 
                 const gCol = (enemy.type === 'ice') ? 0x88ccff : 0x333333;

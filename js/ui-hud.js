@@ -22,6 +22,7 @@ export function updateHUD(game, dom) {
     const counts = { basic: 0, fast: 0, shooter: 0, tank: 0, ice: 0 };
     if (game.enemies) {
         for (const enemy of game.enemies) {
+            if (enemy.isDying) continue; // corpses don't count as active
             if (counts[enemy.type] !== undefined) {
                 counts[enemy.type]++;
             }

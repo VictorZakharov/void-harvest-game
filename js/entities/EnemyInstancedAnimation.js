@@ -1,11 +1,73 @@
+import {
+    ENEMY_DEATH_FALL_FRAMES,
+    ENEMY_DEATH_HOLD_FRAMES,
+    ENEMY_DEATH_FADE_FRAMES
+} from '../constants.js';
+
 export class EnemyInstancedAnimation {
     /**
+     * Calculates the death-animation state: the corpse topples over
+     * (accelerating, with a small rebound on impact), lies still, then fades.
+     * Returns the same shape as calculateState plus isDying/fallAngle/fade.
+     * @param {Enemy} enemy
+     * @returns {Object}
+     */
+    static calculateDeathState(enemy) {
+        const t = enemy.deathTime;
+
+        // Topple: ease-in (gravity), stopping just shy of flat so the
+        // corpse rests on the ground instead of clipping into it.
+        const fallProg = Math.min(1, t / ENEMY_DEATH_FALL_FRAMES);
+        let fallAngle = fallProg * fallProg * (Math.PI / 2 - 0.08);
+
+        // Small rebound right after impact
+        const reboundLen = 14;
+        if (t > ENEMY_DEATH_FALL_FRAMES && t < ENEMY_DEATH_FALL_FRAMES + reboundLen) {
+            fallAngle -= Math.sin(((t - ENEMY_DEATH_FALL_FRAMES) / reboundLen) * Math.PI) * 0.07;
+        }
+
+        // Fade out at the end
+        const fadeStart = ENEMY_DEATH_FALL_FRAMES + ENEMY_DEATH_HOLD_FRAMES;
+        let fade = 1;
+        if (t > fadeStart) {
+            fade = Math.max(0, 1 - (t - fadeStart) / ENEMY_DEATH_FADE_FRAMES);
+        }
+
+        // Limbs relax into a stable, slightly asymmetric sprawl
+        if (enemy._deathSplay === undefined) enemy._deathSplay = (Math.random() - 0.5) * 0.6;
+        const relax = fallProg;
+        const splay = enemy._deathSplay;
+
+        let s = 0.85;
+        if (enemy.type === 'tank') s = 1.2;
+        if (enemy.type === 'fast') s = 0.7;
+
+        return {
+            isMoving: false,
+            time: enemy._animTime || 0,
+            torsoY: 0,
+            limbs: {
+                lLegRot: (0.15 + splay) * relax,
+                rLegRot: (-0.25 + splay) * relax,
+                lArmRot: (0.5 + splay) * relax,
+                rArmRot: (-0.4 - splay) * relax
+            },
+            isShooter: (enemy.type === 'shooter' || enemy.type === 'ice'),
+            scale: s,
+            isDying: true,
+            fallAngle,
+            fade
+        };
+    }
+
+    /**
      * Calculates the animation state (time, bobbing, limb rotations) for an enemy.
-     * @param {Enemy} enemy 
-     * @param {number} dt 
+     * @param {Enemy} enemy
+     * @param {number} dt
      * @returns {Object} Animation state object with rotation/position helpers.
      */
     static calculateState(enemy, dt) {
+        if (enemy.isDying) return this.calculateDeathState(enemy);
         // --- Animation Timers ---
         const speed = Math.sqrt(enemy.vx * enemy.vx + enemy.vy * enemy.vy);
         const isMoving = speed > 0.1 && !enemy.frozen;
