@@ -44,12 +44,15 @@ export class UI3DRenderer {
         this.subjectContainer = new THREE.Group();
         this.scene.add(this.subjectContainer);
 
-        // Mock Enemy
+        // Mock Enemy. Mesh transforms place the model at x + width/2,
+        // so anchor at -size/2 to center it on the origin the camera
+        // looks at — x:0 would shift the render off-center in the icon.
+        const size = (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32));
         const mockEnemy = {
             type: type,
-            x: 0, y: 0,
-            width: (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32)),
-            height: (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32)),
+            x: -size / 2, y: -size / 2,
+            width: size,
+            height: size,
             angle: 0, vx: 0, vy: 0, isKneeling: false, frozen: false
         };
 
