@@ -675,7 +675,9 @@
     bottom: calc(100% + 12px);
     left: 50%;
     // Starts slightly counter-twisted so the hover reveal swings it
-    // to the right (see .help-icon:hover)
+    // to the right (see .help-icon:hover). Pivot at the arrow tip so
+    // the pin stays pointed at the (?) throughout the swing.
+    transform-origin: 50% calc(100% + 6px);
     transform: translateX(-50%) translateY(8px) rotate(-4deg);
     background: linear-gradient(180deg, #161625 0%, #0a0a14 100%);
     border: 1px solid #00ffff;
