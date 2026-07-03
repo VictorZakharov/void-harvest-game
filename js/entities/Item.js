@@ -214,8 +214,8 @@ export class Item extends Entity {
         let w = 0;
 
         for (let j = 0; j < ARC_COUNT; j++) {
-            // ~1 in 4 bolts sits out this cycle (flicker)
-            const active = Math.random() > 0.25;
+            // Occasionally a bolt sits out a cycle for subtle variation
+            const active = Math.random() > 0.12;
 
             // Random outward direction, biased toward the horizontal plane
             const theta = Math.random() * Math.PI * 2;
@@ -284,15 +284,15 @@ export class Item extends Entity {
             const pulse = 1 + Math.sin(t * 0.08) * 0.15;
             ud.core.scale.setScalar(pulse);
 
-            // Crackle the lightning: rebuild bolts every few frames
+            // Crackle the lightning: rebuild bolts periodically (kept slow to avoid strobing)
             if (ud.arcs.visible) {
                 ud.arcTimer -= 1;
                 if (ud.arcTimer <= 0) {
                     this.regenerateArcs(ud);
-                    ud.arcTimer = 3 + Math.floor(Math.random() * 4);
+                    ud.arcTimer = 10 + Math.floor(Math.random() * 8);
                 }
-                // Fast opacity flicker on top of the rebuild cadence
-                ud.arcs.material.opacity = 0.6 + Math.random() * 0.4;
+                // Gentle brightness pulse instead of random flicker
+                ud.arcs.material.opacity = 0.75 + Math.sin(t * 0.15) * 0.1;
             }
         } else {
             this.mesh.rotation.y += ud.rotationSpeed;
