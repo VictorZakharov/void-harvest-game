@@ -101,11 +101,10 @@ export class UIManager {
       // Clear any previous custom settings so we get a pure random start
       this.game.customEnemies = null;
       this.game.customSkills = null;
-      this.game.customSkills = null;
       this.game.customBiome = null;
       this.game.customSpawnRate = null;
       this.game.customMaxEnemies = null;
-      this.game.customMaxEnemies = null;
+      this.game.playerColors = null; // Lobby colors are a co-op choice
       this.game.isMultiplayer = false; // Reset to single player
       this.game.start();
     };
@@ -194,6 +193,8 @@ export class UIManager {
 
       this.game.isMultiplayer = is2P;
       this.game.friendlyFire = is2P && friendlyFire;
+      // Custom mode has no color pickers — don't inherit lobby colors
+      this.game.playerColors = null;
 
       const rateVal = parseFloat(this.dom.customSpawnRateInput.value);
       this.game.customSpawnRate = isNaN(rateVal) ? null : rateVal;
