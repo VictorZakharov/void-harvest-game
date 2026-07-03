@@ -217,12 +217,9 @@ export class LevelUpEffectSystem {
         if (this.game.weather) this.game.weather.hideWarning();
         if (this.game.resurrectionSystem) this.game.resurrectionSystem.hidePrompt();
 
-        // A level-up fully restores the player — a downed player gets back up
-        if (player.isDowned) {
-            player.isDowned = false;
-            player.downedTimer = 0;
-            player.reviveProgress = 0;
-        }
+        // NOTE: downed players never reach this effect — game.js routes
+        // their level-up to DownedLevelUpDustSystem instead (a level-up
+        // must not act as a free revive).
         this.startHealth = Math.max(0, player.health);
 
         // Tint everything with the player's color

@@ -41,6 +41,7 @@ import { CameraSystem } from './systems/CameraSystem.js';
 import { GameInputSystem } from './systems/GameInputSystem.js';
 import { LevelUpEffectSystem } from './systems/LevelUpEffectSystem.js';
 import { SkillCardEffectSystem } from './systems/SkillCardEffectSystem.js';
+import { DownedLevelUpDustSystem } from './systems/DownedLevelUpDustSystem.js';
 import { GameSessionManager } from './GameSessionManager.js';
 import { EnemyManager } from './entities/EnemyManager.js';
 
@@ -144,6 +145,7 @@ export class Game {
     this.gameInputSystem = new GameInputSystem(this);
     this.levelUpEffect = new LevelUpEffectSystem(this, this.scene);
     this.skillCardEffect = new SkillCardEffectSystem(this);
+    this.downedLevelUpDust = new DownedLevelUpDustSystem(this);
 
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
@@ -169,8 +171,12 @@ export class Game {
       onLevelUp: (player) => {
         // Downed players skip the skill pick — the level/xp rollover
         // already happened in addXP; no invigoration or modal for a
-        // player lying on the floor (2P shared-XP levels both at once)
-        if (player && player.isDowned) return;
+        // player lying on the floor (2P shared-XP levels both at once).
+        // Their XP dust instead orbits the body and scatters skyward.
+        if (player && player.isDowned) {
+          if (this.downedLevelUpDust) this.downedLevelUpDust.play(player);
+          return;
+        }
         this.ui.showLevelUpScreen(player);
       }
     });
@@ -180,6 +186,7 @@ export class Game {
     // Clear existing objects
     if (this.levelUpEffect) this.levelUpEffect.cancel();
     if (this.skillCardEffect) this.skillCardEffect.cancel();
+    if (this.downedLevelUpDust) this.downedLevelUpDust.cancel();
     this.timeDilation = 1.0;
     this.gameOverPending = false;
     this.gameOverTimer = 0;
@@ -663,6 +670,9 @@ export class Game {
 
     // Skill card pick cinematic (DOM clone + overlay particles + resume ramp)
     if (this.skillCardEffect) this.skillCardEffect.update(dt);
+
+    // Downed player's level-up dust (orbit + scatter, no invigoration)
+    if (this.downedLevelUpDust) this.downedLevelUpDust.update(dt);
 
     // Keep the status toast ([Q] Autoshoot etc.) anchored under the player
     if (this.ui && this.ui.updateStatusMessagePosition) this.ui.updateStatusMessagePosition();
