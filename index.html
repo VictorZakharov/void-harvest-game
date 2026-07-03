@@ -340,11 +340,13 @@
             <!-- Guide Modal -->
             <div id="guide-modal" class="modal hidden">
                 <div class="modal-content">
-                    <button id="close-guide-x" class="close-x" aria-label="Close">&times;</button>
                     <h2>Survivor's Guide</h2>
                     <div id="guide-content"></div>
                     <button id="close-guide-btn" class="btn">Close</button>
                 </div>
+                <!-- Sticky Close X: sibling of the scroll container so it
+                     stays in the corner regardless of scroll position -->
+                <span id="close-guide-x" class="modal-close-btn" aria-label="Close">&times;</span>
             </div>
 
             <!-- Custom Game Config Modal -->

@@ -98,14 +98,16 @@
     }
 }
 
-// Skill compendium cards (markup in ui-templates.js)
-.guide-skills-grid {
+// Skill compendium cards (markup in ui-templates.js). Scoped under
+// #guide-content so these win over its generic h4/p rules — bare
+// classes lose to the ID selector and inherit its 28px h4 margins.
+#guide-content .guide-skills-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: v.$spacing-lg;
 }
 
-.guide-skill-card {
+#guide-content .guide-skill-card {
     @include hud.panel(rgba(v.$color-primary, 0.25));
     padding: v.$spacing-md;
     display: flex;

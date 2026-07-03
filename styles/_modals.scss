@@ -231,8 +231,6 @@
 
         .controls-title {
             @include hud.section-label;
-            border-bottom: 1px solid rgba(v.$color-primary, 0.2);
-            padding-bottom: 6px;
             margin-bottom: v.$spacing-lg;
             text-align: left;
         }
@@ -667,48 +665,6 @@
     border: v.$border-width-sm solid #88ff88;
     border-radius: v.$border-radius-md;
     box-shadow: 0 0 5px rgba(100, 255, 100, 0.4);
-}
-
-// ============================================
-// Close X Button
-// ============================================
-
-.close-x {
-    position: fixed;
-    top: calc(50vh - 42.5vh + 10px);
-    right: calc(50% - 400px + 25px);
-    background: transparent;
-    border: none;
-    color: v.$color-primary;
-    font-size: 36px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all v.$transition-fast;
-    z-index: v.$z-close-button;
-    pointer-events: all;
-    text-shadow: 0 0 8px rgba(v.$color-black, 0.9),
-        0 0 15px rgba(v.$color-primary, 0.6),
-        2px 2px 4px rgba(v.$color-black, 0.8);
-    filter: drop-shadow(0 2px 6px rgba(v.$color-black, 0.8));
-
-    &:hover {
-        color: v.$color-white;
-        transform: scale(1.2);
-        text-shadow: 0 0 12px rgba(v.$color-black, 1),
-            0 0 20px rgba(v.$color-primary, 0.9),
-            2px 2px 6px rgba(v.$color-black, 0.9);
-        filter: drop-shadow(0 4px 8px rgba(v.$color-black, 1));
-    }
-
-    &:active {
-        transform: scale(1.1);
-    }
 }
 
 // ============================================
