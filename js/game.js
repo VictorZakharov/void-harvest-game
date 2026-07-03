@@ -449,10 +449,10 @@ export class Game {
     }
 
     // SP death sequence: the world keeps running while the downed animation
-    // plays, then the game over screen appears. Game-time (effectiveScale),
-    // so the wait tracks the game speed setting (shorter in fast mode).
+    // plays, then the game over screen appears. Fast mode shortens the wait
+    // (game time), but slow mode never stretches it past real time.
     if (this.gameOverPending) {
-      this.gameOverTimer -= effectiveScale;
+      this.gameOverTimer -= Math.max(dtFactor, effectiveScale);
       if (this.gameOverTimer <= 0) {
         this.gameOverPending = false;
         this.sessionManager.gameOver();
