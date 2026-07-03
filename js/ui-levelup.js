@@ -118,6 +118,8 @@ export function showLevelUpScreen(game, dom, player, onComplete) {
             `;
 
             div.onclick = () => {
+                if (isAnimating) return; // Block picks during reroll/card cinematic
+                isAnimating = true;
                 skill.apply(player); // Apply to SPECIFIC player
                 // Game stats might need to track who picked what? For now global stats.
                 game.stats.skillsPicked.push({ level: player.level, skill: skill.name });
@@ -127,8 +129,13 @@ export function showLevelUpScreen(game, dom, player, onComplete) {
                 game.ui.updateHUD(); // Update HUD (handles both P1/P2)
                 if (game.updateGlobalLights) game.updateGlobalLights();
 
-                // dom.hide(dom.levelupModal); // Now handled by onComplete
-                onComplete();
+                // Card pick cinematic: chosen card flies to center then into
+                // the player's skill HUD; onComplete fires as it descends
+                if (game.skillCardEffect) {
+                    game.skillCardEffect.play(div, player, onComplete);
+                } else {
+                    onComplete();
+                }
 
                 // [DELETED] Cleanup Reroll Button logic
 

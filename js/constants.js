@@ -137,6 +137,12 @@ export const LEVELUP_ANIM_SURGE_MS = 1400;  // Energy sweep from feet to head + 
 export const LEVELUP_ANIM_BURST_MS = 450;   // Flash/shockwave at the head before skill choices
 export const LEVELUP_ANIM_SWEEP_HEIGHT = 56; // World-units from feet to top of head
 
+// Skill card pick cinematic (real-time ms, scaled by game speed)
+export const SKILLCARD_CENTER_MS = 500;  // Card glides to screen center, other UI fades
+export const SKILLCARD_HOLD_MS = 550;    // Card hovers at center over the frozen game
+export const SKILLCARD_FLY_MS = 800;     // Card shrinks and flies into the player's skill HUD
+export const SKILLCARD_TAIL_MS = 600;    // Particle afterglow at the landing spot
+
 // ============================================
 // BALANCE MODIFIERS
 // ============================================
