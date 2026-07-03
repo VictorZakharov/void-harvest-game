@@ -49,6 +49,25 @@ export function getGuideHTML() {
             </ul>
         </div>
 
+        <h3>🤝 2 Player Co-op</h3>
+        <div class="guide-section">
+            <p>Two survivors, one screen, one light. <span class="stat-highlight">P1 moves with WASD</span> and aims/shoots with the mouse;
+            <span class="stat-highlight">P2 moves with the arrow keys</span> and fires automatically. The mouse controls the shared light —
+            coordinate to stay inside it.</p>
+            <ul>
+                <li><span class="stat-highlight">Shared XP:</span> pickups are split evenly, so both players level up together</li>
+                <li><span class="stat-highlight">Level-up heal:</span> leveling up restores a standing player to full health</li>
+                <li><span class="stat-highlight">Going down:</span> at 0 HP a player is downed, not dead. A rescue call marks them on screen
+                (with an edge arrow if they're off-screen) — but they bleed out if left too long</li>
+                <li><span class="stat-highlight">Reviving:</span> stand next to your partner and hold <strong>[E]</strong> (P1) or
+                <strong>[R-Ctrl]</strong> (P2) for 2 seconds — the dashed ring fills as you channel. They get back up at 50% HP</li>
+                <li><span class="stat-highlight">Leveling while down:</span> a downed player still gains the level, but skips the skill pick
+                and gets no heal — their XP dust circles the body and scatters skyward. Get them up before the next level!</li>
+                <li><span class="stat-highlight">Game Over</span> only when BOTH players are down</li>
+                <li><span class="stat-highlight">Friendly Fire</span> is off by default; enable it in the Custom Game config if you like danger</li>
+            </ul>
+        </div>
+
         <h3>⚔️ Know Your Enemy</h3>
         <p>Four types of hostile entities will hunt you. Learn their patterns to survive.</p>
 
