@@ -109,7 +109,7 @@ export function getGuideHTML() {
         <h3>⚡ Skills & Power-Ups</h3>
         <p>Each time you level up, choose 1 of 3 random skills. Stack them to build your perfect loadout.</p>
 
-        <div class="guide-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+        <div class="guide-skills-grid">
             ${SKILLS.map(skill => {
         let description;
         if (skill.id === 'berserk') {
@@ -121,16 +121,16 @@ export function getGuideHTML() {
             description = `+${skill.baseValue}${space}${skill.unit}${skill.maxLevel > 1 ? ' per level' : ''}`;
         }
         return `
-                <div style="background: rgba(0, 255, 255, 0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #00ffff; display: flex; align-items: start; gap: 12px; position: relative;">
-                    <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 3px;">
-                        ${Array(skill.maxLevel || 3).fill(0).map(() => '<div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(0, 255, 255, 0.6);"></div>').join('')}
+                <div class="guide-skill-card">
+                    <div class="guide-skill-pips">
+                        ${Array(skill.maxLevel || 3).fill(0).map(() => '<div class="pip"></div>').join('')}
                     </div>
-                    <div style="width: 40px; height: 40px; flex-shrink: 0; color: #00ffff; display: flex; align-items: center; justify-content: center; background: rgba(0, 255, 255, 0.1); border-radius: 6px;">
+                    <div class="guide-skill-icon">
                         ${skill.icon}
                     </div>
-                    <div style="flex: 1;">
-                        <h4 style="color: #00ffff; margin: 0 0 6px 0; font-size: 15px;">${skill.name}</h4>
-                        <p style="margin: 0; font-size: 13px; color: #ccc; line-height: 1.4;">${description}</p>
+                    <div class="guide-skill-body">
+                        <h4>${skill.name}</h4>
+                        <p>${description}</p>
                     </div>
                 </div>
             `;

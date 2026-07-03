@@ -67,7 +67,7 @@ export function showPauseScreen(game, dom) {
 
     if (game.isMultiplayer) {
         // Multi-Column Layout
-        html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px;">`;
+        html += `<div class="pause-columns">`;
 
         // Player 1 Column
         html += `<div>`;

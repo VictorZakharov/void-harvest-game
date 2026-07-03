@@ -165,24 +165,21 @@
                         </div>
                     </div>
                     <div id="meta-upgrades"></div>
-                    <button id="reset-meta-btn" class="btn" style="background: #665555;">Reset All</button>
+                    <button id="reset-meta-btn" class="btn">Reset All</button>
                     <button id="close-meta-btn" class="btn">Close</button>
                 </div>
             </div>
 
             <!-- Reset Confirmation Modal -->
-            <div id="reset-confirm-modal" class="modal hidden" style="z-index: 1001;">
-                <div class="modal-content" style="max-width: 500px; text-align: center;">
-                    <h2 style="color: #ff8844; margin-bottom: 20px;">⚠️ Reset All Upgrades?</h2>
-                    <p style="font-size: 18px; margin: 20px 0;">This will reset all permanent upgrades to level 0.</p>
-                    <p id="refund-amount" style="font-size: 20px; color: #00ff88; margin: 20px 0; font-weight: bold;">
-                    </p>
-                    <p style="color: #aaa; margin-bottom: 30px;">This action cannot be undone.</p>
-                    <div style="display: flex; gap: 20px; justify-content: center;">
-                        <button id="confirm-reset-btn" class="btn" style="background: #cc4444; min-width: 120px;">Yes,
-                            Reset
-                        </button>
-                        <button id="cancel-reset-btn" class="btn" style="min-width: 120px;">Cancel</button>
+            <div id="reset-confirm-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>⚠️ Reset All Upgrades?</h2>
+                    <p class="reset-warning">This will reset all permanent upgrades to level 0.</p>
+                    <p id="refund-amount" class="reset-refund"></p>
+                    <p class="reset-caution">This action cannot be undone.</p>
+                    <div class="reset-actions">
+                        <button id="confirm-reset-btn" class="btn">Yes, Reset</button>
+                        <button id="cancel-reset-btn" class="btn">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -222,19 +219,19 @@
                     <h1>Void Harvest</h1>
                     <p>Survive waves of enemies and become stronger!</p>
                     <div class="controls-info">
-                        <p style="margin-bottom: 15px;"><strong>Controls:</strong></p>
+                        <div class="controls-title">Controls</div>
                         <div class="controls-visual">
                             <div class="keyboard-section">
                                 <div class="keyboard-row">
                                     <div class="key esc">ESC</div>
                                 </div>
-                                <div class="key-label" style="margin-top: 3px;">Pause</div>
+                                <div class="key-label">Pause</div>
                             </div>
                             <div class="keyboard-section">
                                 <div class="keyboard-row">
                                     <div class="key space">SPACE</div>
                                 </div>
-                                <div class="key-label" style="margin-top: 3px;">Freeze</div>
+                                <div class="key-label">Freeze</div>
                             </div>
                             <div class="keyboard-section">
                                 <div class="keyboard-row">
@@ -288,13 +285,12 @@
                         </div>
                     </div>
                     <!-- Start Screen Actions Footer -->
-                    <div class="start-actions"
-                        style="margin-top: 30px; display: flex; align-items: flex-end; justify-content: space-between; width: 100%; box-sizing: border-box;">
+                    <div class="start-actions">
 
                         <!-- Speed Controls (Left) -->
-                        <div class="speed-controls-group" style="text-align: left;">
+                        <div class="speed-controls-group">
                             <div class="label-mono">Game Speed</div>
-                            <div class="speed-controls" style="display: flex; gap: 5px;">
+                            <div class="speed-controls">
                                 <button id="speed-slow-btn" class="btn btn-small speed-btn"
                                     data-speed="0.5">Slow</button>
                                 <button id="speed-med-btn" class="btn btn-small speed-btn"
@@ -305,8 +301,7 @@
                         </div>
 
                         <!-- Main Actions (Right) -->
-                        <div class="main-buttons-group"
-                            style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+                        <div class="main-buttons-group">
 
                             <div class="main-menu-pill">
                                 <!-- 1. 2 Player Co-op -->
@@ -344,8 +339,7 @@
 
             <!-- Guide Modal -->
             <div id="guide-modal" class="modal hidden">
-                <div class="modal-content"
-                    style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
+                <div class="modal-content">
                     <button id="close-guide-x" class="close-x" aria-label="Close">&times;</button>
                     <h2>Survivor's Guide</h2>
                     <div id="guide-content"></div>
@@ -456,28 +450,24 @@
 
             <!-- Multiplayer Lobby Modal -->
             <div id="lobby-modal" class="modal hidden">
-                <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-content">
                     <h2>Co-op Lobby</h2>
-                    <p style="margin-bottom: 30px; font-size: 18px; color: #ccc;">Two players survive together. Mouse
-                        controls shared light.</p>
+                    <p class="lobby-tagline">Two players survive together. Mouse controls shared light.</p>
 
-                    <div style="display: flex; gap: 20px; margin-bottom: 30px; align-items: stretch;">
+                    <div class="lobby-columns">
 
                         <!-- Player 1 (Left) -->
-                        <div
-                            style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid #44ccff; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; align-items: center;">
-                            <h3 style="color: #44ccff; margin-top: 0; margin-bottom: 20px;">Player 1</h3>
+                        <div class="lobby-player p1">
+                            <h3>Player 1</h3>
 
                             <!-- Color Picker -->
-                            <div style="margin-bottom: 20px;">
-                                <label for="p1-color"
-                                    style="display: block; color: #ccc; margin-bottom: 5px; font-size: 14px;">Color</label>
-                                <input type="color" id="p1-color" value="#00ffff"
-                                    style="background: none; border: none; width: 60px; height: 40px; cursor: pointer;">
+                            <div class="lobby-color-picker">
+                                <label for="p1-color">Color</label>
+                                <input type="color" id="p1-color" value="#00ffff">
                             </div>
 
                             <!-- WASD -->
-                            <div class="keyboard-section" style="margin-bottom: 20px;">
+                            <div class="keyboard-section lobby-move-keys">
                                 <div class="key">W</div>
                                 <div class="keyboard-row">
                                     <div class="key">A</div>
@@ -495,12 +485,10 @@
                         </div>
 
                         <!-- Shared Mouse (Center) -->
-                        <div
-                            style="flex: 0.8; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px;">
-                            <h3 style="color: #ffffff; margin-top: 0; margin-bottom: 10px; font-size: 18px;">Shared
-                                Controls</h3>
+                        <div class="lobby-shared">
+                            <h3>Shared Controls</h3>
 
-                            <div class="mouse-section" style="transform: scale(1.0); margin-bottom: 15px;">
+                            <div class="mouse-section">
                                 <div class="mouse">
                                     <div class="mouse-buttons">
                                         <div class="mouse-button left"></div>
@@ -510,29 +498,25 @@
                                 </div>
                             </div>
 
-                            <p style="color: #ccc; font-size: 14px; text-align: center; margin: 0; max-width: 200px;">
-                                <strong style="color: #fff; display: block; margin-bottom: 5px;">Mouse Controls Shared
-                                    Light</strong>
+                            <p class="lobby-shared-note">
+                                <strong>Mouse Controls Shared Light</strong>
                                 P1 Aims/Shoots<br>
                                 P2 Autoshoots
                             </p>
                         </div>
 
                         <!-- Player 2 (Right) -->
-                        <div
-                            style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid #ffaa44; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; align-items: center;">
-                            <h3 style="color: #ffaa44; margin-top: 0; margin-bottom: 20px;">Player 2</h3>
+                        <div class="lobby-player p2">
+                            <h3>Player 2</h3>
 
                             <!-- Color Picker -->
-                            <div style="margin-bottom: 20px;">
-                                <label for="p2-color"
-                                    style="display: block; color: #ccc; margin-bottom: 5px; font-size: 14px;">Color</label>
-                                <input type="color" id="p2-color" value="#0088ff"
-                                    style="background: none; border: none; width: 60px; height: 40px; cursor: pointer;">
+                            <div class="lobby-color-picker">
+                                <label for="p2-color">Color</label>
+                                <input type="color" id="p2-color" value="#0088ff">
                             </div>
 
                             <!-- Arrow Keys -->
-                            <div class="keyboard-section" style="margin-bottom: 20px;">
+                            <div class="keyboard-section lobby-move-keys">
                                 <div class="key">↑</div>
                                 <div class="keyboard-row">
                                     <div class="key">←</div>
@@ -544,25 +528,22 @@
 
                             <!-- Revive R-Ctrl -->
                             <div class="keyboard-section">
-                                <div class="key" style="font-size: 14px; width: 80px;">R-Ctrl</div>
+                                <div class="key key-wide">R-Ctrl</div>
                                 <div class="key-label">Revive (Hold 2s)</div>
                             </div>
                         </div>
 
                     </div>
 
-                    <div
-                        style="background: rgba(40, 0, 0, 0.5); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <div class="lobby-mechanic">
                         <strong>Mechanic:</strong> Players split XP. If a player falls, they can be revived. Game Over
                         if BOTH players fall.
-                        <br><span style="color: #ffff00; font-size: 0.9em;">Both players must coordinate to stay within
+                        <br><span class="lobby-mechanic-warning">Both players must coordinate to stay within
                             the light!</span>
                     </div>
 
                     <div class="modal-footer">
-                        <button id="start-coop-btn" class="btn btn-large"
-                            style="background: linear-gradient(135deg, #0044cc, #002266); width: 100%;">START
-                            CO-OP</button>
+                        <button id="start-coop-btn" class="btn btn-large">START CO-OP</button>
                     </div>
                 </div>
                 <span id="close-lobby-modal" class="modal-close-btn">&times;</span>

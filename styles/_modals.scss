@@ -3,6 +3,7 @@
 // ============================================
 
 @use 'variables' as v;
+@use 'hud-theme' as hud;
 
 .modal {
     position: absolute;
@@ -28,6 +29,13 @@
     .modal-content {
         max-width: 1000px; // Much wider for 2 players
         width: 95%;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.25s ease-out;
+
+        h2 {
+            @include hud.modal-title;
+            margin-bottom: v.$spacing-lg;
+        }
     }
 }
 
@@ -38,6 +46,8 @@
     .modal-content {
         max-width: 600px; // Reset for meta
         padding: v.$spacing-sm v.$spacing-xl; // Tighter padding
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.3s ease-out;
     }
 
     .modal-header-row {
@@ -45,13 +55,11 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        margin-bottom: v.$spacing-sm;
+        margin: v.$spacing-md 0 v.$spacing-sm;
 
         h2 {
             margin: 0;
-            font-size: 24px;
-            color: v.$color-primary;
-            text-shadow: v.$text-shadow-glow;
+            @include hud.modal-title;
         }
 
         .souls-display {
@@ -68,8 +76,69 @@
                 font-weight: bold;
                 font-size: 20px;
                 text-shadow: 0 0 5px #b388ff;
-                font-family: 'Courier New', monospace;
+                font-family: v.$font-display;
+                font-variant-numeric: tabular-nums;
             }
+        }
+    }
+
+    // Muted destructive action
+    #reset-meta-btn {
+        background: #665555;
+    }
+}
+
+// Reset confirmation (sits above the meta modal)
+#reset-confirm-modal {
+    z-index: v.$z-modal-meta + 1;
+
+    .modal-content {
+        max-width: 500px;
+        text-align: center;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.25s ease-out;
+
+        h2 {
+            @include hud.modal-title(22px);
+            color: v.$enemy-shooter;
+            text-shadow: 0 0 14px rgba(v.$enemy-shooter, 0.5);
+            margin-bottom: v.$spacing-xl;
+        }
+    }
+
+    .reset-warning {
+        font-family: v.$font-ui;
+        font-size: 17px;
+        margin: v.$spacing-xl 0;
+    }
+
+    .reset-refund {
+        font-family: v.$font-display;
+        font-variant-numeric: tabular-nums;
+        font-size: 18px;
+        color: #00ff88;
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        margin: v.$spacing-xl 0;
+        font-weight: bold;
+    }
+
+    .reset-caution {
+        font-family: v.$font-ui;
+        color: v.$color-gray;
+        margin-bottom: v.$spacing-xxl;
+    }
+
+    .reset-actions {
+        display: flex;
+        gap: v.$spacing-xl;
+        justify-content: center;
+
+        .btn {
+            min-width: 120px;
+        }
+
+        #confirm-reset-btn {
+            background: #cc4444;
         }
     }
 }
@@ -136,6 +205,62 @@
         max-width: 950px;
         width: 95%;
         position: relative; // Needed for absolute positioning of buttons
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.35s ease-out;
+
+        h1 {
+            @include hud.modal-title(42px);
+            letter-spacing: 8px;
+            margin-bottom: v.$spacing-md;
+        }
+
+        // Tagline under the title
+        >p {
+            font-family: v.$font-ui;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: rgba(v.$color-white, 0.6);
+        }
+    }
+
+    .controls-info {
+        @include hud.panel;
+        background: none;
+        border: none;
+        border-radius: 0;
+
+        .controls-title {
+            @include hud.section-label;
+            border-bottom: 1px solid rgba(v.$color-primary, 0.2);
+            padding-bottom: 6px;
+            margin-bottom: v.$spacing-lg;
+            text-align: left;
+        }
+    }
+
+    // Footer: speed controls (left) + main pill actions (right)
+    .start-actions {
+        margin-top: v.$spacing-xxl;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        width: 100%;
+
+        .speed-controls-group {
+            text-align: left;
+        }
+
+        .speed-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .main-buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
     }
 
     #meta-btn,

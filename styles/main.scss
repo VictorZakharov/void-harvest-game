@@ -8,6 +8,7 @@
 
 // Import all partials
 // Note: Variables are imported within each partial using @use
+@use 'hud-theme';
 @use 'base';
 @use 'layout';
 @use 'hud';
@@ -18,3 +19,4 @@
 @use 'skills';
 @use 'guide';
 @use 'custom-game';
+@use 'lobby';

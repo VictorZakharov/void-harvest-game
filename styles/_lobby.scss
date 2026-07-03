@@ -1,0 +1,167 @@
+// ============================================
+// CO-OP LOBBY MODAL — HUD theme
+// ============================================
+
+@use 'variables' as v;
+@use 'hud-theme' as hud;
+
+// Player accent colors (match the in-game P1/P2 HUD panels)
+$lobby-p1: #44ccff;
+$lobby-p2: #ffaa44;
+
+#lobby-modal .modal-content {
+    max-width: 800px;
+    @include hud.modal-chrome;
+    animation: hud-modal-rise 0.3s ease-out;
+
+    h2 {
+        @include hud.modal-title;
+    }
+}
+
+.lobby-tagline {
+    font-family: v.$font-ui;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: rgba(v.$color-white, 0.6);
+    margin-bottom: v.$spacing-xxl;
+}
+
+.lobby-columns {
+    display: flex;
+    gap: v.$spacing-xl;
+    margin-bottom: v.$spacing-xxl;
+    align-items: stretch;
+}
+
+.lobby-player {
+    @include hud.panel;
+    flex: 1;
+    padding: v.$spacing-xl;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    h3 {
+        @include hud.section-label(12px);
+        margin: 0 0 v.$spacing-xl;
+    }
+
+    &.p1 {
+        &::before {
+            border-color: rgba($lobby-p1, 0.5);
+        }
+
+        h3 {
+            color: $lobby-p1;
+        }
+    }
+
+    &.p2 {
+        &::before {
+            border-color: rgba($lobby-p2, 0.5);
+        }
+
+        h3 {
+            color: $lobby-p2;
+        }
+    }
+}
+
+.lobby-color-picker {
+    margin-bottom: v.$spacing-xl;
+
+    label {
+        display: block;
+        font-family: v.$font-ui;
+        font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(v.$color-white, 0.6);
+        margin-bottom: v.$spacing-xs;
+    }
+
+    input[type="color"] {
+        background: none;
+        border: none;
+        width: 60px;
+        height: 40px;
+        cursor: pointer;
+    }
+}
+
+.lobby-move-keys {
+    margin-bottom: v.$spacing-xl;
+}
+
+.key-wide {
+    font-size: 14px;
+    width: 80px;
+}
+
+.lobby-shared {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: v.$spacing-md;
+
+    h3 {
+        @include hud.section-label(12px);
+        color: rgba(v.$color-white, 0.8);
+        margin: 0 0 v.$spacing-md;
+    }
+
+    .mouse-section {
+        margin-bottom: v.$spacing-lg;
+    }
+}
+
+.lobby-shared-note {
+    font-family: v.$font-ui;
+    color: v.$color-light-gray;
+    font-size: 14px;
+    text-align: center;
+    margin: 0;
+    max-width: 200px;
+
+    strong {
+        color: v.$color-white;
+        display: block;
+        margin-bottom: v.$spacing-xs;
+    }
+}
+
+.lobby-mechanic {
+    @include hud.panel(rgba(v.$enemy-basic, 0.4));
+    font-family: v.$font-ui;
+    text-align: left;
+    padding: v.$spacing-lg;
+    margin-bottom: v.$spacing-xl;
+
+    &::before {
+        border-left: 3px solid rgba(v.$enemy-basic, 0.7);
+    }
+
+    strong {
+        color: v.$enemy-basic;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .lobby-mechanic-warning {
+        color: v.$color-info;
+        font-size: 0.9em;
+    }
+}
+
+#lobby-modal .modal-footer {
+    border-top: 1px solid rgba(v.$color-primary, 0.2);
+    padding-top: v.$spacing-xl;
+
+    #start-coop-btn {
+        background: linear-gradient(135deg, #0044cc, #002266);
+        width: 100%;
+    }
+}
