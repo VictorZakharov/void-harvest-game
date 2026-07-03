@@ -30,6 +30,10 @@ export class EnemyManager {
                 continue;
             }
 
+            // Player death sequence: live enemies freeze in place (no
+            // movement, no shooting) while corpses above still animate out.
+            if (game.gameOverPending) continue;
+
             let currentSpeedMod = speedMod;
 
             // Stasis / Polar Vortex Logic

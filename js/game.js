@@ -559,7 +559,9 @@ export class Game {
 
 
 
-    if (this.trainingMode) {
+    if (this.gameOverPending) {
+      // Death sequence: no new enemies while the world is frozen
+    } else if (this.trainingMode) {
       // Training Mode: Maintain constant dummy population
       this.enemySpawner.updateTrainingMode(this.player);
     } else {
