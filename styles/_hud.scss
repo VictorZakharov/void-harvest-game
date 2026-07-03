@@ -224,6 +224,41 @@
     display: none;
 }
 
+// New-level badge pop (triggered by LevelUpEffectSystem at the burst moment)
+.stat-bar.xp>span:last-of-type.level-pop {
+    // Grow inward so the badge never clips off the screen edge
+    transform-origin: right center;
+    animation: level-badge-pop 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+// drop-shadow (not box-shadow) so the glow hugs the clip-path silhouette
+@keyframes level-badge-pop {
+    0% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 0 transparent);
+    }
+
+    30% {
+        transform: scale(2.1);
+        filter: brightness(1.9) drop-shadow(0 0 22px var(--player-color, #00ffff)) drop-shadow(0 0 8px var(--player-color, #00ffff));
+    }
+
+    55% {
+        transform: scale(0.9);
+        filter: brightness(1.2) drop-shadow(0 0 10px var(--player-color, #00ffff));
+    }
+
+    75% {
+        transform: scale(1.18);
+        filter: brightness(1.35) drop-shadow(0 0 14px var(--player-color, #00ffff));
+    }
+
+    100% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 0 transparent);
+    }
+}
+
 // ============================================
 // Status Effects - positioned above health bar
 // ============================================

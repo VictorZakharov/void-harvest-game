@@ -132,6 +132,11 @@ export const ENEMY_DEATH_FADE_FRAMES = 60;   // Fading out
 export const ENEMY_DEATH_TOTAL_FRAMES =
     ENEMY_DEATH_FALL_FRAMES + ENEMY_DEATH_HOLD_FRAMES + ENEMY_DEATH_FADE_FRAMES;
 
+// Level-up invigoration animation (real-time ms, plays while game is frozen)
+export const LEVELUP_ANIM_SURGE_MS = 1400;  // Energy sweep from feet to head + health refill
+export const LEVELUP_ANIM_BURST_MS = 450;   // Flash/shockwave at the head before skill choices
+export const LEVELUP_ANIM_SWEEP_HEIGHT = 56; // World-units from feet to top of head
+
 // ============================================
 // BALANCE MODIFIERS
 // ============================================

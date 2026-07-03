@@ -11,16 +11,19 @@ export class GameInputSystem {
     }
 
     update(dt) {
+        // Level-up animation owns the screen: swallow pause/freeze toggles
+        const levelUpAnimating = this.game.levelUpEffect && this.game.levelUpEffect.isPlaying();
+
         // 1. Toggle Pause (ESC)
         if (this.input.escapePressed) {
             this.input.escapePressed = false;
-            this.togglePause();
+            if (!levelUpAnimating) this.togglePause();
         }
 
         // 2. Toggle Freeze (SPACE)
         if (this.input.spacePressed) {
             this.input.spacePressed = false;
-            this.toggleFreeze();
+            if (!levelUpAnimating) this.toggleFreeze();
         }
 
         // 3. Handle Frozen Logic
