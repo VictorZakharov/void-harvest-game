@@ -27,7 +27,7 @@ export class CustomGameUI {
 
       // Header
       const header = document.createElement('div');
-      header.className = 'skill-category-header';
+      header.className = `skill-category-header ${cat.id}`;
       header.textContent = cat.name;
       section.appendChild(header);
 
