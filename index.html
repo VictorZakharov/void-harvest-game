@@ -355,15 +355,12 @@
 
             <!-- Custom Game Config Modal -->
             <div id="custom-modal" class="modal hidden">
-                <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-content">
                     <h2>Custom Game Configuration</h2>
 
-                    <div class="custom-config-row"
-                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
-                        <!-- Label Column (Left) -->
-                        <div
-                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
-                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Enemy Types</h3>
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Enemy Types</h3>
 
                             <!-- Select All Checkbox -->
                             <div class="sci-fi-checkbox-wrapper">
@@ -372,88 +369,70 @@
                             </div>
                         </div>
 
-                        <!-- Enemy Options (Center/Right) -->
+                        <!-- Enemy Options -->
                         <div id="enemy-type-config" class="enemy-selector-group">
                             <!-- Populated by JS -->
                         </div>
                     </div>
 
-                    <div class="custom-config-row"
-                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
-                        <!-- Label Column (Left) -->
-                        <div
-                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
-                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Spawn Settings</h3>
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Spawn Settings</h3>
                         </div>
 
-                        <!-- Spawn Options (Center) -->
-                        <div class="spawn-config-group" style="display: flex; gap: 20px;">
-                            <div class="input-wrapper" style="display: flex; flex-direction: column;">
-                                <label for="custom-spawn-rate"
-                                    style="color: #ccc; font-size: 14px; margin-bottom: 5px;">Spawn Rate (per
-                                    sec)</label>
+                        <div class="spawn-config-group">
+                            <div class="input-wrapper">
+                                <label for="custom-spawn-rate">Spawn Rate (per sec)</label>
                                 <input type="number" id="custom-spawn-rate" class="sci-fi-input" min="0.1" value="1"
-                                    step="0.1"
-                                    style="background: rgba(0,0,0,0.5); border: 1px solid #00ffff; color: #fff; padding: 5px; width: 100px;">
+                                    step="0.1">
                             </div>
-                            <div class="input-wrapper" style="display: flex; flex-direction: column;">
-                                <label for="custom-max-enemies"
-                                    style="color: #ccc; font-size: 14px; margin-bottom: 5px;">Max Enemies</label>
-                                <input type="number" id="custom-max-enemies" class="sci-fi-input" min="1" value="100"
-                                    style="background: rgba(0,0,0,0.5); border: 1px solid #00ffff; color: #fff; padding: 5px; width: 100px;">
+                            <div class="input-wrapper">
+                                <label for="custom-max-enemies">Max Enemies</label>
+                                <input type="number" id="custom-max-enemies" class="sci-fi-input" min="1" value="100">
                             </div>
                         </div>
                     </div>
 
-                    <div class="custom-config-row"
-                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
-                        <!-- Label Column (Left) -->
-                        <div
-                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
-                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Biome Selection</h3>
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Biome Selection</h3>
 
-                            <!-- Debug Checkbox moved here -->
                             <div class="sci-fi-checkbox-wrapper">
                                 <input type="checkbox" id="debug-weather-check" class="sci-fi-checkbox">
                                 <label for="debug-weather-check" style="font-size: 12px;">Debug Weather</label>
                             </div>
-
                         </div>
 
-                        <!-- Biome Options (Center) -->
+                        <!-- Biome Options -->
                         <div id="custom-biome-config" class="biome-selector-group">
                             <!-- Populated by JS -->
                         </div>
                     </div>
 
-                    <!-- New Game Mode Section -->
-                    <div class="custom-config-row"
-                        style="margin-top: 25px; display: flex; align-items: center; gap: 20px;">
-                        <div
-                            style="display: flex; flex-direction: column; align-items: flex-end; width: 220px; flex-shrink: 0; gap: 10px;">
-                            <h3 style="color: #00ffff; margin: 0; text-align: right;">Game Mode</h3>
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Game Mode</h3>
                         </div>
 
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            <!-- 2 Player Checkbox -->
+                        <div class="game-mode-group">
                             <div class="sci-fi-checkbox-wrapper">
                                 <input type="checkbox" id="custom-2p-check" class="sci-fi-checkbox">
                                 <label for="custom-2p-check">2 Player Co-op</label>
                             </div>
 
-                            <!-- Friendly Fire Checkbox -->
                             <div class="sci-fi-checkbox-wrapper">
                                 <input type="checkbox" id="custom-friendly-fire-check" class="sci-fi-checkbox" disabled>
-                                <label for="custom-friendly-fire-check" style="color: #888;">Friendly Fire</label>
+                                <label for="custom-friendly-fire-check">Friendly Fire</label>
                             </div>
                         </div>
                     </div>
 
-                    <h3 style="color: #00ffff; margin-top: 25px; margin-bottom: 15px;">Starting Skills</h3>
-                    <p style="color: #ccc; margin-bottom: 10px;">Left click to advance level, right click to decrease.
-                        Click
-                        at max level to reset.</p>
-                    <div id="custom-skill-config"></div>
+                    <div class="cfg-row cfg-row-stack">
+                        <h3>Starting Skills</h3>
+                        <p class="cfg-hint">Left click to advance level, right click to decrease. Click at max level to
+                            reset.</p>
+                        <div id="custom-skill-config"></div>
+                    </div>
 
                     <!-- Footer with Speed Slider and Start Button -->
                     <!-- Footer with Speed Buttons and Start Button -->

@@ -44,13 +44,22 @@ export class UI3DRenderer {
         this.subjectContainer = new THREE.Group();
         this.scene.add(this.subjectContainer);
 
-        // Mock Enemy
+        // Mock Enemy. Mesh transforms place the model at x + width/2,
+        // so anchor at -size/2 to center it on the origin the camera
+        // looks at — x:0 would shift the render off-center in the icon.
+        const size = (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32));
+        const isShooterType = (type === 'shooter' || type === 'ice');
         const mockEnemy = {
             type: type,
-            x: 0, y: 0,
-            width: (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32)),
-            height: (type === 'tank' ? 40 : (type === 'fast' ? 28 : 32)),
-            angle: 0, vx: 0, vy: 0, isKneeling: false, frozen: false
+            x: -size / 2, y: -size / 2,
+            width: size,
+            height: size,
+            // Face the camera so the limb spread reads across the frame
+            // (angle 0 shows the model side-on and hides the limbs
+            // behind the torso). Shooters stay turned ~30° so the gun
+            // extends across the icon instead of foreshortening into it.
+            angle: isShooterType ? Math.PI / 2 - 0.5 : Math.PI / 2,
+            vx: 0, vy: 0, isKneeling: false, frozen: false
         };
 
         // 1. Geometries & Materials
@@ -87,16 +96,23 @@ export class UI3DRenderer {
         const armW = 3 * s;
         const legW = 3 * s;
 
-        const createLimb = (rot, xOff, yOff, len, wid) => {
+        const createLimb = (rot, xOff, yOff, len, wid, spread = 0) => {
             const limb = new THREE.Mesh(geos.limbs, bodyMat);
             EnemyInstancedAnimation.applyLimbTransform(limb, mockEnemy, animState, rot, xOff, yOff, len, wid);
+            // Icon pose: tilt the limb sideways around its top pivot so
+            // arms/legs read as a silhouette instead of hiding behind the
+            // torso (game anims only swing limbs forward/back).
+            if (spread) limb.rotation.z = spread;
             this.subjectContainer.add(limb);
         };
 
-        createLimb(animState.limbs.lArmRot, -armX, shoulderY, armL, armW);
-        createLimb(animState.limbs.rArmRot, armX, shoulderY, armL, armW);
-        createLimb(animState.limbs.lLegRot, -legX, hipY, legL, legW);
-        createLimb(animState.limbs.rLegRot, legX, hipY, legL, legW);
+        const ARM_SPREAD = Math.PI / 4; // 45 degrees
+        const LEG_SPREAD = Math.PI / 6; // 30 degrees
+        createLimb(animState.limbs.lArmRot, -armX, shoulderY, armL, armW, -ARM_SPREAD);
+        // Shooters keep the right arm aiming forward — it holds the gun
+        createLimb(animState.limbs.rArmRot, armX, shoulderY, armL, armW, animState.isShooter ? 0 : ARM_SPREAD);
+        createLimb(animState.limbs.lLegRot, -legX, hipY, legL, legW, -LEG_SPREAD);
+        createLimb(animState.limbs.rLegRot, legX, hipY, legL, legW, LEG_SPREAD);
 
         // Gun
         if (animState.isShooter) {
