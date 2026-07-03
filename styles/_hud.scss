@@ -743,3 +743,23 @@
         box-shadow: 0 0 10px rgba(v.$color-danger, 0.5);
     }
 }
+// ============================================
+// HUD visibility in menu context
+// ============================================
+// While the main menu or one of its sub-screens is open the run
+// hasn't started, so the HP/XP panels and Time/Wave/Kills topbar are
+// noise (they also z-index above the modal backdrop). Visibility is
+// driven purely by the .hidden class, so :has() stays in sync with
+// every show/hide call site without JS plumbing.
+#ui-overlay:has(#start-screen:not(.hidden)),
+#ui-overlay:has(#guide-modal:not(.hidden)),
+#ui-overlay:has(#lobby-modal:not(.hidden)),
+#ui-overlay:has(#custom-modal:not(.hidden)),
+#ui-overlay:has(#meta-modal:not(.hidden)) {
+
+    .hud-panel,
+    #game-stats-content,
+    #fps-counter {
+        display: none;
+    }
+}
