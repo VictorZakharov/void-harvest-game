@@ -25,12 +25,33 @@ export function showGameOverStats(game, dom, souls, isVictory = false) {
         }
     };
 
-    // Initial render — the zoom-in plays only on this first reveal;
+    // Initial render — the entrance plays only on this first reveal;
     // re-shows (e.g. returning from Upgrades) skip it
     render();
-    dom.gameoverModal.classList.add('animate-in');
-    dom.show(dom.gameoverModal);
-    setTimeout(() => dom.gameoverModal.classList.remove('animate-in'), 600);
+    if (game.ui && game.ui.isGameOverBannerVisible && game.ui.isGameOverBannerVisible()) {
+        // Cinematic hand-off (SP death): the floating GAME OVER banner
+        // glides down into the modal's title slot while the backdrop
+        // fades in, then the rest of the popup scaffolds down under it.
+        dom.gameoverModal.classList.add('scaffold-in');
+        dom.show(dom.gameoverModal);
+        const container = document.getElementById('gameover-content') || dom.finalStats;
+        const title = container ? container.querySelector('.go-title h2') : null;
+        game.ui.glideGameOverBanner(title);
+        setTimeout(() => {
+            // Banner has landed: swap it for the real title and cascade
+            // the panels in beneath
+            dom.gameoverModal.classList.add('scaffold-reveal');
+            game.ui.hideGameOverBanner();
+            setTimeout(() => {
+                dom.gameoverModal.classList.remove('scaffold-in', 'scaffold-reveal');
+            }, 900);
+        }, 580);
+    } else {
+        // MP / victory path: no banner, plain zoom-in
+        dom.gameoverModal.classList.add('animate-in');
+        dom.show(dom.gameoverModal);
+        setTimeout(() => dom.gameoverModal.classList.remove('animate-in'), 600);
+    }
 
     function attachEventListeners(game, container) {
         const statsBtn = container.querySelector('#view-stats-btn');

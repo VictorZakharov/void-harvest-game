@@ -288,6 +288,120 @@
     }
 }
 
+// ============================================
+// Cinematic death sequence
+// ============================================
+
+// "GAME OVER" banner that slams in above the downed player, tracks
+// them during the death wait (left/top set per frame by UIManager),
+// then glides down into the modal's title slot.
+#gameover-banner {
+    position: fixed;
+    z-index: 1500; // Above the modal backdrop so the glide passes over it
+    transform: translate(-50%, -50%);
+    font-family: v.$font-display;
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #ff4444;
+    text-shadow: 0 0 18px rgba(255, 68, 68, 0.75);
+    pointer-events: none;
+    opacity: 0;
+
+    &.show {
+        opacity: 1;
+        animation: go-banner-slam 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    // Hand-off flight into the modal title slot; size/spacing/color
+    // (danger red -> title cyan) are set inline by glideGameOverBanner
+    &.glide {
+        transition:
+            left 0.55s cubic-bezier(0.5, 0, 0.3, 1),
+            top 0.55s cubic-bezier(0.5, 0, 0.3, 1),
+            font-size 0.55s ease,
+            letter-spacing 0.55s ease,
+            color 0.55s ease,
+            text-shadow 0.55s ease;
+    }
+}
+
+// Slam-in: huge, blurred and letter-scattered, snaps down to size
+@keyframes go-banner-slam {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.6);
+        letter-spacing: 28px;
+        filter: blur(12px);
+    }
+
+    55% {
+        opacity: 1;
+        filter: blur(0);
+        transform: translate(-50%, -50%) scale(0.94);
+        letter-spacing: 4px;
+    }
+
+    75% {
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        letter-spacing: 6px;
+    }
+}
+
+// Hand-off phase 1: backdrop fades in while the banner glides down;
+// the modal content stays hidden until the banner lands on the title
+#gameover-modal.scaffold-in {
+    animation: go-backdrop-fade 0.5s ease-out;
+
+    &:not(.scaffold-reveal) .modal-content {
+        visibility: hidden;
+    }
+}
+
+@keyframes go-backdrop-fade {
+    from {
+        background: rgba(0, 0, 0, 0);
+    }
+}
+
+// Hand-off phase 2: the real title shows where the banner landed,
+// and everything below it scaffolds down row by row
+#gameover-modal.scaffold-reveal {
+    .go-header .btn {
+        animation: go-cascade 0.35s 0.1s ease-out backwards;
+    }
+
+    .go-subtitle {
+        animation: go-cascade 0.3s 0.05s ease-out backwards;
+    }
+
+    .go-panel {
+        animation: go-cascade 0.4s 0.2s ease-out backwards;
+    }
+
+    .go-custom-warning {
+        animation: go-cascade 0.4s 0.3s ease-out backwards;
+    }
+
+    .go-actions {
+        animation: go-cascade 0.4s 0.35s ease-out backwards;
+    }
+}
+
+@keyframes go-cascade {
+    from {
+        opacity: 0;
+        transform: translateY(-16px);
+    }
+}
+
 // Skills picked list
 .go-skill-list {
     max-height: 120px;

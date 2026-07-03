@@ -139,6 +139,17 @@ export class DOMCache {
             });
             document.body.appendChild(this.statusMessage);
         }
+
+        // Floating GAME OVER banner (SP death sequence). Styled in
+        // _gameover.scss; positioned above the player each frame by
+        // UIManager.updateGameOverBannerPosition().
+        this.gameoverBanner = document.getElementById('gameover-banner');
+        if (!this.gameoverBanner) {
+            this.gameoverBanner = document.createElement('div');
+            this.gameoverBanner.id = 'gameover-banner';
+            this.gameoverBanner.textContent = 'Game Over';
+            document.body.appendChild(this.gameoverBanner);
+        }
     }
 
     /**
