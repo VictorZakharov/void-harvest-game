@@ -449,10 +449,10 @@ export class Game {
     }
 
     // SP death sequence: the world keeps running while the downed animation
-    // plays, then the game over screen appears. Real-time (dtFactor), so the
-    // slow-motion setting doesn't stretch the wait.
+    // plays, then the game over screen appears. Game-time (effectiveScale),
+    // so the wait tracks the game speed setting (shorter in fast mode).
     if (this.gameOverPending) {
-      this.gameOverTimer -= dtFactor;
+      this.gameOverTimer -= effectiveScale;
       if (this.gameOverTimer <= 0) {
         this.gameOverPending = false;
         this.sessionManager.gameOver();
