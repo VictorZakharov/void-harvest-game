@@ -76,7 +76,11 @@ export class WeatherManager {
                 this.weatherSystem.update(player.x, player.y, fadeFactor);
             }
 
-            if (player) {
+            // One-tick slow re-applied every frame while the storm is
+            // active. Only for players still standing: a downed body's
+            // update() never expires these, so they'd stack every frame
+            // into a permanent full freeze on the corpse.
+            if (player && !player.isDowned && player.health > 0) {
                 player.slowEffects.push({
                     amount: WEATHER_SLOW_AMOUNT * fadeFactor,
                     timer: 1

@@ -510,8 +510,10 @@ export class PlayerVisuals {
     }
 
     // Freeze Visuals
-    // Check if player has slow effects
-    const totalSlow = this.player.slowEffects.reduce((sum, effect) => sum + effect.amount, 0);
+    // Check if player has slow effects. A bled-out husk is immune to
+    // tinting — it stays grey no matter what lands on the body.
+    const totalSlow = this._bledOutGrey ? 0 :
+        this.player.slowEffects.reduce((sum, effect) => sum + effect.amount, 0);
     // Cap at 1.0 for intensity calculation
     const freezeIntensity = Math.min(1.0, totalSlow);
     const isFullyFrozen = totalSlow >= 1.0;
