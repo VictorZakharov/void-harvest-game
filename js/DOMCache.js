@@ -150,6 +150,16 @@ export class DOMCache {
             this.gameoverBanner.textContent = 'Game Over';
             document.body.appendChild(this.gameoverBanner);
         }
+
+        // Floating "PLAYER X IS DOWN" rescue call (2P). Styled in
+        // _hud.scss; shown/positioned each frame by
+        // UIManager.updateDownedBanner().
+        this.downedBanner = document.getElementById('downed-banner');
+        if (!this.downedBanner) {
+            this.downedBanner = document.createElement('div');
+            this.downedBanner.id = 'downed-banner';
+            document.body.appendChild(this.downedBanner);
+        }
     }
 
     /**

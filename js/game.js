@@ -664,6 +664,9 @@ export class Game {
     // Keep the GAME OVER banner anchored above the downed player
     if (this.ui && this.ui.updateGameOverBannerPosition) this.ui.updateGameOverBannerPosition();
 
+    // 2P: "PLAYER X IS DOWN" rescue call above a downed teammate
+    if (this.ui && this.ui.updateDownedBanner) this.ui.updateDownedBanner();
+
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)
     const cursorTargetForCull = this.lighting.getCursorTarget();

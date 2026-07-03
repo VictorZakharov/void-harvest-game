@@ -153,6 +153,11 @@ export class GameSessionManager {
             const c2 = game.playerColors ? game.playerColors[1] : '#0088ff';
             const p1 = new Player(CANVAS_WIDTH / 2 - 60, CANVAS_HEIGHT / 2, game.scene, 0, c1);
             const p2 = new Player(CANVAS_WIDTH / 2 + 60, CANVAS_HEIGHT / 2, game.scene, 1, c2);
+            // 2P only: gates the revive ring and the DOWNED HUD badge.
+            // (game.js reset() sets this too, but game.start() runs THIS
+            // reset — leaving it unset here killed both visuals in co-op.)
+            p1.canBeRevived = true;
+            p2.canBeRevived = true;
             game.players = [p1, p2];
         } else {
             const c1 = game.playerColors ? game.playerColors[0] : '#00ffff';

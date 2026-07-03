@@ -579,6 +579,71 @@ export class UIManager {
     this.gameOverBannerGliding = false;
   }
 
+  /**
+   * 2P rescue call: floats "PLAYER X IS DOWN" above a downed teammate.
+   * Driven entirely from render3D each frame — shows while a revivable
+   * player is down mid-run, hides itself in every other state.
+   */
+  updateDownedBanner() {
+    const el = this.dom.downedBanner;
+    if (!el) return;
+    const g = this.game;
+    const downed = (g.isMultiplayer && g.state === 'playing' && g.players)
+      ? g.players.find(p => p.isDowned && p.canBeRevived)
+      : null;
+
+    if (!downed) {
+      if (el.classList.contains('show')) {
+        el.classList.remove('show');
+        this.downedBannerId = null;
+      }
+      return;
+    }
+
+    // (Re)build content when the banner appears or the downed player
+    // changes (e.g. P1 revived just as P2 falls)
+    if (!el.classList.contains('show') || this.downedBannerId !== downed.id) {
+      this.downedBannerId = downed.id;
+      const keyName = downed.id === 0 ? 'E' : 'R-CTRL';
+      el.innerHTML = `
+        <div class="downed-title">Player ${downed.id + 1} is down</div>
+        <div class="downed-sub">Come revive — hold [${keyName}]</div>
+        <div class="downed-chevron">&#10095;</div>`;
+      el.classList.add('show');
+    }
+
+    // Track above the downed player (same feet-projection as the toast)
+    const cam = g.rendering && g.rendering.camera3D;
+    if (!cam || !g.canvas) return;
+    const v = new THREE.Vector3(downed.x + downed.width / 2, 0, downed.y + downed.height / 2);
+    v.project(cam);
+    const rect = g.canvas.getBoundingClientRect();
+    const rawX = rect.left + (v.x * 0.5 + 0.5) * rect.width;
+    // High enough to clear the overhead health bar sprite
+    const rawY = rect.top + (-v.y * 0.5 + 0.5) * rect.height - 160;
+
+    // If the downed player is off-screen, pin the banner to the nearest
+    // screen edge and point a chevron toward them
+    const x = Math.max(rect.left + 150, Math.min(rect.right - 150, rawX));
+    const y = Math.max(rect.top + 80, Math.min(rect.bottom - 30, rawY));
+    const offscreen = (Math.abs(x - rawX) > 1 || Math.abs(y - rawY) > 1);
+
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.classList.toggle('offscreen', offscreen);
+
+    if (offscreen) {
+      const chev = el.querySelector('.downed-chevron');
+      if (chev) {
+        // Orbit the chevron around the label, pointing off-screen
+        const ang = Math.atan2(rawY - y, rawX - x);
+        chev.style.left = `calc(50% + ${Math.round(Math.cos(ang) * 110)}px)`;
+        chev.style.top = `calc(50% + ${Math.round(Math.sin(ang) * 45)}px)`;
+        chev.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
+      }
+    }
+  }
+
   showFrozenMessage(show) {
     if (this.dom.frozenMessage) {
       if (show) this.dom.show(this.dom.frozenMessage);
