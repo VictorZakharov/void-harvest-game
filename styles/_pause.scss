@@ -29,11 +29,28 @@
 }
 
 // Each 2P column carries the player's chosen lobby color in
-// --player-accent (set inline by ui-pause.js); section titles pick
-// it up so the columns read as "their" color, not a hardcoded theme
-.pause-player-column .pause-section-title.player-accent {
-    color: var(--player-accent, #{v.$color-primary});
-    border-bottom-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 30%, transparent);
+// --player-accent (set inline by ui-pause.js); section titles and
+// stat cells pick it up so the columns read as "their" color, not a
+// hardcoded theme
+.pause-player-column {
+    .pause-section-title.player-accent {
+        color: var(--player-accent, #{v.$color-primary});
+        border-bottom-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 30%, transparent);
+    }
+
+    .stat-item {
+        &::before {
+            border-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 35%, transparent);
+        }
+
+        .stat-value {
+            text-shadow: 0 0 10px color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 30%, transparent);
+        }
+
+        &.tooltip-container:hover::before {
+            border-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 65%, transparent);
+        }
+    }
 }
 
 .stat-item {
@@ -418,4 +435,13 @@
             border-color: v.$skill-survival transparent transparent transparent;
         }
     }
+}
+// 2P pause: skill icons carry the player's chosen color, matching
+// the in-game HUD badges (ui-hud.js tints those with player.color).
+// Kept at the end of this file so it wins the specificity tie with
+// the .active-skill.<category> .skill-icon rules above.
+.pause-player-column .active-skill .skill-icon {
+    border-color: var(--player-accent, #{v.$color-primary});
+    background: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 25%, transparent);
+    color: var(--player-accent, #{v.$color-primary});
 }
