@@ -177,6 +177,11 @@ export class Game {
     this.timeDilation = 1.0;
     this.gameOverPending = false;
     this.gameOverTimer = 0;
+    if (this.skipDeathWaitListener) {
+      window.removeEventListener('pointerdown', this.skipDeathWaitListener);
+      this.skipDeathWaitListener = null;
+    }
+    if (this.ui && this.ui.hideGameOverBanner) this.ui.hideGameOverBanner();
 
     // 1. Standard Cleanup via References
     if (this.players) {
@@ -656,6 +661,9 @@ export class Game {
     // Keep the status toast ([Q] Autoshoot etc.) anchored under the player
     if (this.ui && this.ui.updateStatusMessagePosition) this.ui.updateStatusMessagePosition();
 
+    // Keep the GAME OVER banner anchored above the downed player
+    if (this.ui && this.ui.updateGameOverBannerPosition) this.ui.updateGameOverBannerPosition();
+
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)
     const cursorTargetForCull = this.lighting.getCursorTarget();
@@ -705,6 +713,20 @@ export class Game {
     if (!this.isMultiplayer) {
       this.gameOverPending = true;
       this.gameOverTimer = GAMEOVER_DOWNED_DELAY;
+
+      // Cinematic: GAME OVER banner slams in above the downed player
+      if (this.ui && this.ui.showGameOverBanner) this.ui.showGameOverBanner();
+      if (this.cameraSystem) this.cameraSystem.addShake(8);
+
+      // A click during the wait skips ahead to the menu scaffold (the
+      // hand-off animation still plays — the click only cuts the wait).
+      // mousedown (not held state) so the fire button held at death
+      // doesn't insta-skip; the player must click fresh.
+      this.skipDeathWaitListener = () => {
+        if (this.gameOverPending) this.gameOverTimer = 0;
+        this.skipDeathWaitListener = null;
+      };
+      window.addEventListener('pointerdown', this.skipDeathWaitListener, { once: true });
       return;
     }
 

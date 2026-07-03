@@ -435,6 +435,8 @@ export class UIManager {
       clearTimeout(this.statusMessageTimer);
       this.statusMessageTimer = null;
     }
+    // Keep the death banner from floating over the pause menu
+    if (this.dom.gameoverBanner) this.dom.gameoverBanner.style.visibility = 'hidden';
     showPauseScreen(this.game, this.dom);
   }
 
@@ -443,6 +445,7 @@ export class UIManager {
   }
 
   resumeGame() {
+    if (this.dom.gameoverBanner) this.dom.gameoverBanner.style.visibility = '';
     resumeGame(this.game, this.dom);
   }
 
@@ -497,6 +500,83 @@ export class UIManager {
     el.style.transform = 'translate(-50%, 0)';
   }
 
+
+  // ==================== GAME OVER BANNER ====================
+  // Cinematic SP death sequence: "GAME OVER" slams in above the downed
+  // player, tracks them during the death wait, then glides down into the
+  // modal's title slot (see showGameOverStats in ui-gameover.js).
+
+  showGameOverBanner() {
+    const el = this.dom.gameoverBanner;
+    if (!el) return;
+    // Reset leftover glide styling from a previous run
+    el.classList.remove('glide');
+    el.style.cssText = '';
+    this.gameOverBannerGliding = false;
+    this.updateGameOverBannerPosition(true);
+    el.classList.add('show');
+  }
+
+  isGameOverBannerVisible() {
+    return !!(this.dom.gameoverBanner && this.dom.gameoverBanner.classList.contains('show'));
+  }
+
+  /**
+   * Anchors the banner above the downed player's head. Called every
+   * frame from render3D while visible; stops once the glide hand-off
+   * to the modal begins.
+   */
+  updateGameOverBannerPosition(force = false) {
+    const el = this.dom.gameoverBanner;
+    if (!el || this.gameOverBannerGliding) return;
+    if (!force && !el.classList.contains('show')) return;
+
+    const p = this.game.player;
+    const cam = this.game.rendering && this.game.rendering.camera3D;
+    if (!p || !cam || !this.game.canvas) return;
+
+    const v = new THREE.Vector3(p.x + p.width / 2, 0, p.y + p.height / 2);
+    v.project(cam);
+    const rect = this.game.canvas.getBoundingClientRect();
+    const x = rect.left + (v.x * 0.5 + 0.5) * rect.width;
+    const y = rect.top + (-v.y * 0.5 + 0.5) * rect.height;
+
+    el.style.left = `${x}px`;
+    el.style.top = `${y - 130}px`;
+  }
+
+  /**
+   * Flies the banner from its spot above the player into the modal's
+   * title slot, morphing size/spacing/color to match the target h2.
+   */
+  glideGameOverBanner(targetEl) {
+    const el = this.dom.gameoverBanner;
+    if (!el || !targetEl) return;
+    this.gameOverBannerGliding = true;
+
+    const rect = targetEl.getBoundingClientRect();
+    const cs = getComputedStyle(targetEl);
+
+    // Kill the slam keyframes (may still be mid-flight on a skip click)
+    // so the glide transition owns transform/letter-spacing.
+    el.style.animation = 'none';
+    void el.offsetWidth; // Flush so the transition starts from here
+    el.classList.add('glide');
+    el.style.left = `${rect.left + rect.width / 2}px`;
+    el.style.top = `${rect.top + rect.height / 2}px`;
+    el.style.fontSize = cs.fontSize;
+    el.style.letterSpacing = cs.letterSpacing;
+    el.style.color = cs.color;
+    el.style.textShadow = cs.textShadow;
+  }
+
+  hideGameOverBanner() {
+    const el = this.dom.gameoverBanner;
+    if (!el) return;
+    el.classList.remove('show', 'glide');
+    el.style.cssText = '';
+    this.gameOverBannerGliding = false;
+  }
 
   showFrozenMessage(show) {
     if (this.dom.frozenMessage) {
