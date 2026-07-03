@@ -334,3 +334,20 @@
 }
 
 // Old currency text selector removed
+// ============================================
+// SKILL CARD PICK CINEMATIC
+// ============================================
+// While the chosen card's clone flies over the frozen game
+// (SkillCardEffectSystem), the modal backdrop, unchosen cards and
+// chrome all fade away so only the card remains on screen
+#levelup-modal.card-picked {
+    background: rgba(0, 0, 0, 0) !important;
+    transition: background 0.4s ease;
+    pointer-events: none;
+
+    .modal-content {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+    }
+}

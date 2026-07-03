@@ -40,6 +40,7 @@ import { ResurrectionSystem } from './systems/ResurrectionSystem.js';
 import { CameraSystem } from './systems/CameraSystem.js';
 import { GameInputSystem } from './systems/GameInputSystem.js';
 import { LevelUpEffectSystem } from './systems/LevelUpEffectSystem.js';
+import { SkillCardEffectSystem } from './systems/SkillCardEffectSystem.js';
 import { GameSessionManager } from './GameSessionManager.js';
 import { EnemyManager } from './entities/EnemyManager.js';
 
@@ -56,6 +57,9 @@ export class Game {
 
     // Load Game Speed (Default 1.0)
     this.timeScale = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 1.0;
+    // Transient multiplier on top of timeScale (0..1), used by the skill
+    // card cinematic to ramp gameplay speed back up after a level-up freeze
+    this.timeDilation = 1.0;
 
     this.ui = new UIManager(this);
     this.canvas = this.ui.dom.gameCanvas;
@@ -133,6 +137,7 @@ export class Game {
     this.cameraSystem = new CameraSystem(this.rendering, this.input);
     this.gameInputSystem = new GameInputSystem(this);
     this.levelUpEffect = new LevelUpEffectSystem(this, this.scene);
+    this.skillCardEffect = new SkillCardEffectSystem(this);
 
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
@@ -162,6 +167,8 @@ export class Game {
   reset(commitHistory = false) {
     // Clear existing objects
     if (this.levelUpEffect) this.levelUpEffect.cancel();
+    if (this.skillCardEffect) this.skillCardEffect.cancel();
+    this.timeDilation = 1.0;
 
     // 1. Standard Cleanup via References
     if (this.players) {
@@ -421,8 +428,8 @@ export class Game {
     const safeDt = Math.min(dt, 100); // Cap at 100ms
     const dtFactor = safeDt / TARGET_DT;
 
-    // Effective Scale = TimeScale (User setting) * DT Correction (Frame variance)
-    const effectiveScale = this.timeScale * dtFactor;
+    // Effective Scale = TimeScale (User setting) * Dilation (resume ramp) * DT Correction
+    const effectiveScale = this.timeScale * this.timeDilation * dtFactor;
 
     // Advance game time by the scaled amount
     this.gameTime += effectiveScale;
@@ -578,7 +585,7 @@ export class Game {
 
     // --- System Updates ---
     // Update physics simulation with scaled delta time to maintain consistency during slow-motion.
-    this.physicsSystem.update(dt * this.timeScale);
+    this.physicsSystem.update(dt * this.timeScale * this.timeDilation);
 
     // Update game systems (Bullets, Items, Particles) with the effective time scale (including DT correction).
     this.bulletManager.update(this.players, this.enemies, effectiveScale);
@@ -605,7 +612,7 @@ export class Game {
     const target = this.lighting.getCursorTarget();
 
     // Calculate animation delta (0 if paused/frozen)
-    const animDelta = (this.state === 'playing' ? this.timeScale : 0) * dt;
+    const animDelta = (this.state === 'playing' ? this.timeScale * this.timeDilation : 0) * dt;
     // Update mesh for ALL players
     this.players.forEach(p => p.updateMesh(animDelta));
 
@@ -613,13 +620,16 @@ export class Game {
     // Must run after updateMesh so its body glow overrides the restore pass.
     if (this.levelUpEffect) this.levelUpEffect.update(dt);
 
+    // Skill card pick cinematic (DOM clone + overlay particles + resume ramp)
+    if (this.skillCardEffect) this.skillCardEffect.update(dt);
+
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)
     const cursorTargetForCull = this.lighting.getCursorTarget();
     this.instancedRenderer.update(this.enemies, animDelta, this.player, cursorTargetForCull);
 
     // Update BulletManager with Friendly Fire flag
-    const effectiveScale = (this.state === 'playing' ? this.timeScale : 0);
+    const effectiveScale = (this.state === 'playing' ? this.timeScale * this.timeDilation : 0);
     this.bulletManager.update(this.players, this.enemies, effectiveScale, this.friendlyFire);
 
     // Update Overlay Visuals (Heath Bars)
