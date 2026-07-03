@@ -146,6 +146,14 @@ export class UIManager {
     if (this.dom.multiplayerBtn) {
       this.dom.multiplayerBtn.onclick = () => {
         this.dom.hide(this.dom.startScreen);
+        // Restore the last-used co-op colors (persisted in meta progress)
+        const saved = this.game.metaProgress.lobbyColors;
+        if (saved && saved.length === 2) {
+          const p1Input = document.getElementById('p1-color');
+          const p2Input = document.getElementById('p2-color');
+          if (p1Input && saved[0]) p1Input.value = saved[0];
+          if (p2Input && saved[1]) p2Input.value = saved[1];
+        }
         this.dom.show(this.dom.lobbyModal);
       };
     }
@@ -168,6 +176,10 @@ export class UIManager {
         const p1Color = document.getElementById('p1-color').value;
         const p2Color = document.getElementById('p2-color').value;
         this.game.playerColors = [p1Color, p2Color];
+
+        // Remember the choices for the next session
+        this.game.metaProgress.lobbyColors = [p1Color, p2Color];
+        this.game.saveMetaProgress();
 
         this.game.start();
       };
