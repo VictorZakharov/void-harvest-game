@@ -105,59 +105,58 @@ function renderSummaryView(game, souls, isVictory) {
     const statsIcon = `<span style="margin-left: 6px;">📊</span>`;
 
     return `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 10px;">
-            <button id="upgrades-btn" class="btn" style="width: 130px; font-size: 13px; flex-shrink: 0; padding: 8px 5px; display: flex; align-items: center; justify-content: center;">${upgradeIcon}Upgrades</button>
-            
-            <div style="flex-grow: 1; text-align: center;">
-                <h2 style="margin: 0; font-size: 26px; line-height: 1.1; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.5);">${isVictory ? 'Victory!' : 'Game Over'}</h2>
+        <div class="go-header">
+            <button id="upgrades-btn" class="btn">${upgradeIcon}Upgrades</button>
+
+            <div class="go-title">
+                <h2 class="${isVictory ? 'victory' : ''}">${isVictory ? 'Victory' : 'Game Over'}</h2>
                 ${isVictory ?
-            '<p style="color: #00ff00; font-size: 14px; margin: 3px 0 0 0;">You survived the void!</p>' :
-            `<p style="font-size: 14px; color: #ff6666; margin: 3px 0 0 0; opacity: 0.9;">Killed by: <strong style="color: #ff4444;">${causeLabel}</strong></p>`
+            '<p class="go-subtitle victory">You survived the void!</p>' :
+            `<p class="go-subtitle">Killed by: <strong>${causeLabel}</strong></p>`
         }
             </div>
 
-            <button id="view-stats-btn" class="btn" style="width: 130px; font-size: 13px; flex-shrink: 0; padding: 8px 5px; display: flex; align-items: center; justify-content: center;">Stats${statsIcon}</button>
+            <button id="view-stats-btn" class="btn">Stats${statsIcon}</button>
         </div>
 
-        <div style="background: rgba(0,0,0,0.5); border: 1px solid #444; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
-            <h4 style="color: #00ffff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px;">Soul Payout</h4>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <div class="go-panel">
+            <div class="go-panel-title">Soul Payout</div>
+            <div class="go-row">
                 <span>Directly Collected <span class="help-icon"><div class="tooltip"><strong>Direct Souls</strong>Souls dropped by elite enemies during the run.</div></span></span>
-                <span>${game.runSouls || 0}</span>
+                <span class="go-value">${game.runSouls || 0}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <div class="go-row">
                 <span>Kill Bonus <span class="help-icon"><div class="tooltip"><strong>Kill Bonus</strong>You earn 1 Soul per 5 enemies defeated.<div class="example-box">Example: 100 kills = 20 Souls.</div></div></span></span>
-                <span>${killBonus}</span>
+                <span class="go-value">${killBonus}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <div class="go-row">
                 <span>Level Bonus <span class="help-icon"><div class="tooltip"><strong>Level Bonus</strong>You earn 2 Souls per level reached (starting from Level 2).<div class="example-box">Example: Level 10 = (10-1) * 2 = 18 Souls.</div></div></span></span>
-                <span>${levelBonus}</span>
+                <span class="go-value">${levelBonus}</span>
             </div>
             ${isVictory ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #00ff00;">
+            <div class="go-row bonus">
                 <span>Victory Bonus <span class="help-icon"><div class="tooltip"><strong>Victory Bonus</strong>A flat bonus for surviving the full 10 minute invasion.</div></span></span>
-                <span>+50</span>
+                <span class="go-value">+50</span>
             </div>
             ` : ''}
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 1px solid #555; font-size: 18px; font-weight: bold; color: #b388ff;">
-                <span>Earned this Run:</span>
-                <span>${runTotal}</span>
+            <div class="go-row total">
+                <span>Earned this Run</span>
+                <span class="go-value">${runTotal}</span>
             </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; color: #888;">
-                <span>Existing Bank:</span>
-                <span>${previousTotal}</span>
+            <div class="go-row bank">
+                <span>Existing Bank</span>
+                <span class="go-value">${previousTotal}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 22px; font-weight: bold; color: #00ffd0; border-top: 1px dashed #444; padding-top: 5px;">
-                <span>Grand Total:</span>
-                <span>${game.totalSouls}</span>
+            <div class="go-row grand">
+                <span>Grand Total</span>
+                <span class="go-value">${game.totalSouls}</span>
             </div>
         </div>
-        ${game.isCustomGame ? '<p style="color: #ffaa44; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 5px #000;">⚠️ Custom Game: No souls banked.</p>' : ''}
+        ${game.isCustomGame ? '<p class="go-custom-warning">⚠️ Custom Game: No souls banked.</p>' : ''}
 
-        <div style="grid-template-columns: 1.2fr 1fr; display: grid; gap: 15px; margin-top: 20px;">
-            <button id="gameover-exit-btn" class="btn" style="background: #444; width: 100%; font-size: 18px; font-weight: bold; padding: 15px 0; display: flex; align-items: center; justify-content: center;">${backIcon}Main Menu</button>
-            <button id="restart-btn" class="btn btn-large" style="width: 100%; border: 1px solid #00ffff !important; white-space: nowrap; font-size: 20px;">Play Again</button>
+        <div class="go-actions">
+            <button id="gameover-exit-btn" class="btn">${backIcon}Main Menu</button>
+            <button id="restart-btn" class="btn btn-large">Play Again</button>
         </div>
     `;
 }
@@ -176,74 +175,92 @@ function renderStatsView(game, prevStats, souls, isVictory) {
     const showDelta = (current, previous, higherIsBetter = true) => {
         if (!previous && previous !== 0) return '';
         const delta = Math.round(current - previous);
-        if (delta === 0) return ' <span style="color: #888;">(=)</span>';
-        const color = (higherIsBetter && delta > 0) || (!higherIsBetter && delta < 0) ? '#00ff00' : '#ff6666';
+        if (delta === 0) return ' <span class="go-delta same">(=)</span>';
+        const better = (higherIsBetter && delta > 0) || (!higherIsBetter && delta < 0);
         const sign = delta > 0 ? '+' : '';
-        return ` <span style="color: ${color}; font-size: 0.9em;">(${sign}${delta})</span>`;
+        return ` <span class="go-delta ${better ? 'up' : 'down'}">(${sign}${delta})</span>`;
     };
+
+    const statCell = (label, value) => `
+        <div class="go-stat">
+            <span class="go-stat-label">${label}</span>
+            <span class="go-stat-value">${value}</span>
+        </div>`;
+
+    const enemyChip = (type, label, value) => `
+        <span class="enemy-indicator ${type}"><span class="dot"></span>${label} <span class="count">${value}</span></span>`;
 
     const backIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-right: 6px;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`;
 
+    const ek = game.stats.enemiesKilled;
+    const dr = game.stats.damageReceived;
+    const pk = prevStats?.enemiesKilled;
+
     let html = `
-        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-            <button id="view-summary-btn" class="btn" style="width: 200px; font-size: 14px; padding: 10px; display: flex; align-items: center; justify-content: center;">${backIcon}Back to Summary</button>
+        <div class="go-header">
+            <button id="view-summary-btn" class="btn" style="width: 200px;">${backIcon}Back to Summary</button>
+
+            <div class="go-title">
+                <h2>Run Statistics</h2>
+            </div>
+
+            <div style="width: 200px; flex-shrink: 0;"></div>
         </div>
 
-        <h2 style="margin-bottom: 5px;">Run Statistics</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-top: 10px; max-height: 420px; overflow-y: auto; padding-right: 8px;">
-            <div>
-                <h4 style="color: #00ffff; margin-bottom: 8px;">General Stats</h4>
-                <p><strong>Time:</strong> ${minutes}:${secs.toString().padStart(2, '0')}</p>
-                <p><strong>Final Wave:</strong> ${game.stats.finalWave}${showDelta(game.stats.finalWave, prevStats?.finalWave)}</p>
-                <p><strong>Level:</strong> ${game.player.level}${showDelta(game.player.level, prevStats?.level)}</p>
-                <p><strong>Souls Earned:</strong> ${souls}</p>
-            </div>
-            <div>
-                <h4 style="color: #00ffff; margin-bottom: 8px;">Combat Stats</h4>
-                <p><strong>Damage Dealt:</strong> ${Math.floor(game.stats.damageDealt).toLocaleString()}${showDelta(Math.floor(game.stats.damageDealt), Math.floor(prevStats?.damageDealt || 0))}</p>
-                <p><strong>Accuracy:</strong> ${accuracy}%${showDelta(accuracy, prevStats?.accuracy)}</p>
-                <p><strong>Shots:</strong> ${game.stats.shotsHit}/${game.stats.shotsFired}</p>
-                <p><strong>Dmg Taken:</strong> ${Math.floor(totalDamageReceived).toLocaleString()}${showDelta(Math.floor(totalDamageReceived), Math.floor(prevStats?.totalDamageReceived || 0), false)}</p>
-            </div>
-
-            <div style="grid-column: span 2; margin-top: 5px;">
-                <h4 style="color: #00ffff; margin-bottom: 8px; text-align: center;">Enemies Killed</h4>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
-                    <p style="color: #ff8888;"><strong>Basic:</strong> ${game.stats.enemiesKilled.basic}${showDelta(game.stats.enemiesKilled.basic, prevStats?.enemiesKilled?.basic)}</p>
-                    <p style="color: #ff66aa;"><strong>Fast:</strong> ${game.stats.enemiesKilled.fast}${showDelta(game.stats.enemiesKilled.fast, prevStats?.enemiesKilled?.fast)}</p>
-                    <p style="color: #cc88cc;"><strong>Tank:</strong> ${game.stats.enemiesKilled.tank}${showDelta(game.stats.enemiesKilled.tank, prevStats?.enemiesKilled?.tank)}</p>
-                    <p style="color: #ffaa44;"><strong>Shooter:</strong> ${game.stats.enemiesKilled.shooter}${showDelta(game.stats.enemiesKilled.shooter, prevStats?.enemiesKilled?.shooter)}</p>
-                    <p style="color: #66ccff;"><strong>Ice:</strong> ${game.stats.enemiesKilled.ice}${showDelta(game.stats.enemiesKilled.ice, prevStats?.enemiesKilled?.ice)}</p>
+        <div class="go-stats-scroll">
+            <div class="go-stats-columns">
+                <div class="go-panel" style="margin-bottom: 0;">
+                    <div class="go-panel-title">General</div>
+                    ${statCell('Time', `${minutes}:${secs.toString().padStart(2, '0')}`)}
+                    ${statCell('Final Wave', `${game.stats.finalWave}${showDelta(game.stats.finalWave, prevStats?.finalWave)}`)}
+                    ${statCell('Level', `${game.player.level}${showDelta(game.player.level, prevStats?.level)}`)}
+                    ${statCell('Souls Earned', souls)}
+                </div>
+                <div class="go-panel" style="margin-bottom: 0;">
+                    <div class="go-panel-title">Combat</div>
+                    ${statCell('Damage Dealt', `${Math.floor(game.stats.damageDealt).toLocaleString()}${showDelta(Math.floor(game.stats.damageDealt), Math.floor(prevStats?.damageDealt || 0))}`)}
+                    ${statCell('Accuracy', `${accuracy}%${showDelta(accuracy, prevStats?.accuracy)}`)}
+                    ${statCell('Shots', `${game.stats.shotsHit}/${game.stats.shotsFired}`)}
+                    ${statCell('Dmg Taken', `${Math.floor(totalDamageReceived).toLocaleString()}${showDelta(Math.floor(totalDamageReceived), Math.floor(prevStats?.totalDamageReceived || 0), false)}`)}
                 </div>
             </div>
 
-            <div style="grid-column: span 2; margin-top: 5px;">
-                <h4 style="color: #00ffff; margin-bottom: 8px; text-align: center;">Damage Received By Type</h4>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 13px; text-align: center;">
-                    <p>Basic: ${game.stats.damageReceived.basic}</p>
-                    <p>Fast: ${game.stats.damageReceived.fast}</p>
-                    <p>Tank: ${game.stats.damageReceived.tank}</p>
-                    <p>Shooter: ${game.stats.damageReceived.shooter}</p>
-                    <p>Ice: ${game.stats.damageReceived.ice}</p>
-                    <p>Bullets: ${game.stats.damageReceived.bullet}</p>
+            <div class="go-panel" style="margin-top: 14px;">
+                <div class="go-panel-title" style="text-align: center;">Enemies Killed</div>
+                <div class="go-chips">
+                    ${enemyChip('basic', 'Basic', `${ek.basic}${showDelta(ek.basic, pk?.basic)}`)}
+                    ${enemyChip('fast', 'Fast', `${ek.fast}${showDelta(ek.fast, pk?.fast)}`)}
+                    ${enemyChip('tank', 'Tank', `${ek.tank}${showDelta(ek.tank, pk?.tank)}`)}
+                    ${enemyChip('shooter', 'Shooter', `${ek.shooter}${showDelta(ek.shooter, pk?.shooter)}`)}
+                    ${enemyChip('ice', 'Ice', `${ek.ice}${showDelta(ek.ice, pk?.ice)}`)}
+                </div>
+            </div>
+
+            <div class="go-panel" style="margin-top: 14px; margin-bottom: 0;">
+                <div class="go-panel-title" style="text-align: center;">Damage Received By Type</div>
+                <div class="go-chips">
+                    ${enemyChip('basic', 'Basic', dr.basic)}
+                    ${enemyChip('fast', 'Fast', dr.fast)}
+                    ${enemyChip('tank', 'Tank', dr.tank)}
+                    ${enemyChip('shooter', 'Shooter', dr.shooter)}
+                    ${enemyChip('ice', 'Ice', dr.ice)}
+                    ${enemyChip('shooter', 'Bullets', dr.bullet)}
                 </div>
             </div>
 
             ${game.stats.skillsPicked.length > 0 ? `
-            <div style="grid-column: span 2; margin-top: 10px;">
-                <h4 style="color: #00ffff; margin-bottom: 8px;">Skills Picked</h4>
-                <div style="max-height: 120px; overflow-y: auto; font-size: 13px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                        ${game.stats.skillsPicked.map(s => `<div><strong>Lv${s.level}:</strong> ${s.skill}</div>`).join('')}
-                    </div>
+            <div class="go-panel" style="margin-top: 14px; margin-bottom: 0;">
+                <div class="go-panel-title">Skills Picked</div>
+                <div class="go-skill-list">
+                    ${game.stats.skillsPicked.map(s => `<div><strong>Lv${s.level}</strong> ${s.skill}</div>`).join('')}
                 </div>
             </div>
             ` : ''}
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; margin-top: 20px;">
-            <button id="gameover-exit-btn" class="btn" style="background: #444; width: 100%; font-size: 18px; font-weight: bold; padding: 15px 0; display: flex; align-items: center; justify-content: center;">${backIcon}Main Menu</button>
-            <button id="restart-btn" class="btn btn-large" style="width: 100%; border: 1px solid #00ffff !important; white-space: nowrap; font-size: 20px;">Play Again</button>
+        <div class="go-actions">
+            <button id="gameover-exit-btn" class="btn">${backIcon}Main Menu</button>
+            <button id="restart-btn" class="btn btn-large">Play Again</button>
         </div>
     `;
 
