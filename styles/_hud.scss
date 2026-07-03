@@ -743,3 +743,109 @@
         box-shadow: 0 0 10px rgba(v.$color-danger, 0.5);
     }
 }
+// ============================================
+// HUD visibility in menu context
+// ============================================
+// While the main menu or one of its sub-screens is open the run
+// hasn't started, so the HP/XP panels and Time/Wave/Kills topbar are
+// noise (they also z-index above the modal backdrop). Visibility is
+// driven purely by the .hidden class, so :has() stays in sync with
+// every show/hide call site without JS plumbing.
+#ui-overlay:has(#start-screen:not(.hidden)),
+#ui-overlay:has(#guide-modal:not(.hidden)),
+#ui-overlay:has(#lobby-modal:not(.hidden)),
+#ui-overlay:has(#custom-modal:not(.hidden)),
+#ui-overlay:has(#meta-modal:not(.hidden)) {
+
+    .hud-panel,
+    #game-stats-content,
+    #fps-counter {
+        display: none;
+    }
+}
+
+// ============================================
+// Downed teammate rescue call (2P)
+// ============================================
+// Floating label above a downed player, tracked per frame by
+// UIManager.updateDownedBanner(). z-index below modals so the pause
+// menu covers it.
+#downed-banner {
+    position: fixed;
+    z-index: 90;
+    transform: translate(-50%, -100%);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    display: none;
+
+    &.show {
+        display: block;
+        animation: downed-banner-in 0.35s ease-out;
+    }
+
+    .downed-title {
+        font-family: v.$font-display;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #ff4444;
+        text-shadow: 0 0 12px rgba(255, 68, 68, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
+        animation: downed-pulse 1.4s ease-in-out infinite;
+    }
+
+    .downed-sub {
+        font-family: v.$font-ui;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.85);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        margin-top: 2px;
+    }
+
+    // Chevron pointing at an off-screen downed player; positioned and
+    // rotated per frame by updateDownedBanner()
+    .downed-chevron {
+        display: none;
+        position: absolute;
+        font-family: v.$font-display;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
+        color: #ff4444;
+        text-shadow: 0 0 10px rgba(255, 68, 68, 0.7);
+        animation: downed-pulse 1.4s ease-in-out infinite;
+    }
+
+    &.offscreen .downed-chevron {
+        display: block;
+    }
+}
+
+// Gentle urgency pulse on the title only — the hint line stays steady
+@keyframes downed-pulse {
+    50% {
+        opacity: 0.55;
+    }
+}
+
+@keyframes downed-banner-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -100%) translateY(10px);
+    }
+}
+
+// ============================================
+// Bled-out player panel (2P)
+// ============================================
+// When the downed timer expires the player is gone for the run —
+// their whole HUD panel (XP bar, skills, level badge) desaturates to
+// match the grey husk in the world. Class toggled by ui-hud.js.
+.hud-panel.bled-out {
+    filter: grayscale(1) brightness(0.65);
+    transition: filter 0.6s ease;
+}

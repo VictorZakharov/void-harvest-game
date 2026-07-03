@@ -101,11 +101,10 @@ export class UIManager {
       // Clear any previous custom settings so we get a pure random start
       this.game.customEnemies = null;
       this.game.customSkills = null;
-      this.game.customSkills = null;
       this.game.customBiome = null;
       this.game.customSpawnRate = null;
       this.game.customMaxEnemies = null;
-      this.game.customMaxEnemies = null;
+      this.game.playerColors = null; // Lobby colors are a co-op choice
       this.game.isMultiplayer = false; // Reset to single player
       this.game.start();
     };
@@ -147,6 +146,14 @@ export class UIManager {
     if (this.dom.multiplayerBtn) {
       this.dom.multiplayerBtn.onclick = () => {
         this.dom.hide(this.dom.startScreen);
+        // Restore the last-used co-op colors (persisted in meta progress)
+        const saved = this.game.metaProgress.lobbyColors;
+        if (saved && saved.length === 2) {
+          const p1Input = document.getElementById('p1-color');
+          const p2Input = document.getElementById('p2-color');
+          if (p1Input && saved[0]) p1Input.value = saved[0];
+          if (p2Input && saved[1]) p2Input.value = saved[1];
+        }
         this.dom.show(this.dom.lobbyModal);
       };
     }
@@ -169,6 +176,10 @@ export class UIManager {
         const p1Color = document.getElementById('p1-color').value;
         const p2Color = document.getElementById('p2-color').value;
         this.game.playerColors = [p1Color, p2Color];
+
+        // Remember the choices for the next session
+        this.game.metaProgress.lobbyColors = [p1Color, p2Color];
+        this.game.saveMetaProgress();
 
         this.game.start();
       };
@@ -194,6 +205,8 @@ export class UIManager {
 
       this.game.isMultiplayer = is2P;
       this.game.friendlyFire = is2P && friendlyFire;
+      // Custom mode has no color pickers — don't inherit lobby colors
+      this.game.playerColors = null;
 
       const rateVal = parseFloat(this.dom.customSpawnRateInput.value);
       this.game.customSpawnRate = isNaN(rateVal) ? null : rateVal;
@@ -366,6 +379,10 @@ export class UIManager {
   showLevelUpScreen(player) {
     if (!player) player = this.game.players ? this.game.players[0] : this.game.player;
 
+    // Bled-out players level silently: no dust turn, no freeze — the
+    // level/xp rollover already happened in addXP and that's all they get
+    if (player && player.isBledOut) return;
+
     if (this.isLevelUpActive) {
       this.levelUpQueue.push(player);
       return;
@@ -376,6 +393,17 @@ export class UIManager {
     // Play the invigoration animation (freeze + heal-to-full sweep) first,
     // then present the skill choices.
     const beginFor = (p) => {
+      // Downed players take their queue turn as the dust tribute —
+      // no invigoration, no modal, no heal; the queue advances when
+      // the dust scatters (so 2P level-ups still alternate cleanly)
+      if (p.isDowned) {
+        if (this.game.downedLevelUpDust) {
+          this.game.downedLevelUpDust.play(p, onComplete);
+        } else {
+          onComplete();
+        }
+        return;
+      }
       if (this.game.levelUpEffect) {
         this.game.levelUpEffect.play(p, () => showLevelUpScreen(this.game, this.dom, p, onComplete));
       } else {
@@ -576,6 +604,71 @@ export class UIManager {
     el.classList.remove('show', 'glide');
     el.style.cssText = '';
     this.gameOverBannerGliding = false;
+  }
+
+  /**
+   * 2P rescue call: floats "PLAYER X IS DOWN" above a downed teammate.
+   * Driven entirely from render3D each frame — shows while a revivable
+   * player is down mid-run, hides itself in every other state.
+   */
+  updateDownedBanner() {
+    const el = this.dom.downedBanner;
+    if (!el) return;
+    const g = this.game;
+    const downed = (g.isMultiplayer && g.state === 'playing' && g.players)
+      ? g.players.find(p => p.isDowned && p.canBeRevived)
+      : null;
+
+    if (!downed) {
+      if (el.classList.contains('show')) {
+        el.classList.remove('show');
+        this.downedBannerId = null;
+      }
+      return;
+    }
+
+    // (Re)build content when the banner appears or the downed player
+    // changes (e.g. P1 revived just as P2 falls)
+    if (!el.classList.contains('show') || this.downedBannerId !== downed.id) {
+      this.downedBannerId = downed.id;
+      const keyName = downed.id === 0 ? 'E' : 'R-CTRL';
+      el.innerHTML = `
+        <div class="downed-title">Player ${downed.id + 1} is down</div>
+        <div class="downed-sub">Come revive — hold [${keyName}]</div>
+        <div class="downed-chevron">&#10095;</div>`;
+      el.classList.add('show');
+    }
+
+    // Track above the downed player (same feet-projection as the toast)
+    const cam = g.rendering && g.rendering.camera3D;
+    if (!cam || !g.canvas) return;
+    const v = new THREE.Vector3(downed.x + downed.width / 2, 0, downed.y + downed.height / 2);
+    v.project(cam);
+    const rect = g.canvas.getBoundingClientRect();
+    const rawX = rect.left + (v.x * 0.5 + 0.5) * rect.width;
+    // High enough to clear the overhead health bar sprite
+    const rawY = rect.top + (-v.y * 0.5 + 0.5) * rect.height - 160;
+
+    // If the downed player is off-screen, pin the banner to the nearest
+    // screen edge and point a chevron toward them
+    const x = Math.max(rect.left + 150, Math.min(rect.right - 150, rawX));
+    const y = Math.max(rect.top + 80, Math.min(rect.bottom - 30, rawY));
+    const offscreen = (Math.abs(x - rawX) > 1 || Math.abs(y - rawY) > 1);
+
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.classList.toggle('offscreen', offscreen);
+
+    if (offscreen) {
+      const chev = el.querySelector('.downed-chevron');
+      if (chev) {
+        // Orbit the chevron around the label, pointing off-screen
+        const ang = Math.atan2(rawY - y, rawX - x);
+        chev.style.left = `calc(50% + ${Math.round(Math.cos(ang) * 110)}px)`;
+        chev.style.top = `calc(50% + ${Math.round(Math.sin(ang) * 45)}px)`;
+        chev.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
+      }
+    }
   }
 
   showFrozenMessage(show) {

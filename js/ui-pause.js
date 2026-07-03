@@ -67,21 +67,17 @@ export function showPauseScreen(game, dom) {
 
     if (game.isMultiplayer) {
         // Multi-Column Layout
-        html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px;">`;
+        html += `<div class="pause-columns">`;
 
-        // Player 1 Column
-        html += `<div>`;
-        html += `<div class="pause-section-title" style="color: #44ccff;">Player 1</div>`;
-        html += renderStatsBlock(game, game.players[0]);
-        html += renderSkillsBlock(game, game.players[0]);
-        html += `</div>`;
-
-        // Player 2 Column
-        html += `<div>`;
-        html += `<div class="pause-section-title" style="color: #ffaa44;">Player 2</div>`;
-        html += renderStatsBlock(game, game.players[1]);
-        html += renderSkillsBlock(game, game.players[1]);
-        html += `</div>`;
+        // Player columns, tinted with each player's chosen lobby color
+        game.players.forEach((player, i) => {
+            const accent = player.color || (i === 0 ? '#44ccff' : '#ffaa44');
+            html += `<div class="pause-player-column" style="--player-accent: ${accent};">`;
+            html += `<div class="pause-section-title player-accent">Player ${i + 1}</div>`;
+            html += renderStatsBlock(game, player);
+            html += renderSkillsBlock(game, player, true);
+            html += `</div>`;
+        });
 
         html += `</div>`; // End Grid
     } else {
@@ -146,7 +142,7 @@ function renderStatsBlock(game, player, columns = 2) {
     `;
 }
 
-function renderSkillsBlock(game, player) {
+function renderSkillsBlock(game, player, accent = false) {
     let skillsHtml = '';
     const activeSkills = [];
 
@@ -166,7 +162,7 @@ function renderSkillsBlock(game, player) {
     activeSkills.sort((a, b) => (a.isCustom === b.isCustom ? 0 : a.isCustom ? 1 : -1));
 
     if (activeSkills.length > 0) {
-        skillsHtml += `<div class="pause-section-title" style="margin-top: 15px;">Skills</div>
+        skillsHtml += `<div class="pause-section-title${accent ? ' player-accent' : ''}" style="margin-top: 15px;">Skills</div>
         <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start;">`;
 
         activeSkills.forEach(({ skillId, level, skillDef, isCustom }) => {

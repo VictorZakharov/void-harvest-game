@@ -3,6 +3,7 @@
 // ============================================
 
 @use 'variables' as v;
+@use 'hud-theme' as hud;
 
 .modal {
     position: absolute;
@@ -28,6 +29,13 @@
     .modal-content {
         max-width: 1000px; // Much wider for 2 players
         width: 95%;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.25s ease-out;
+
+        h2 {
+            @include hud.modal-title;
+            margin-bottom: v.$spacing-lg;
+        }
     }
 }
 
@@ -38,6 +46,8 @@
     .modal-content {
         max-width: 600px; // Reset for meta
         padding: v.$spacing-sm v.$spacing-xl; // Tighter padding
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.3s ease-out;
     }
 
     .modal-header-row {
@@ -45,13 +55,11 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        margin-bottom: v.$spacing-sm;
+        margin: v.$spacing-md 0 v.$spacing-sm;
 
         h2 {
             margin: 0;
-            font-size: 24px;
-            color: v.$color-primary;
-            text-shadow: v.$text-shadow-glow;
+            @include hud.modal-title;
         }
 
         .souls-display {
@@ -68,8 +76,69 @@
                 font-weight: bold;
                 font-size: 20px;
                 text-shadow: 0 0 5px #b388ff;
-                font-family: 'Courier New', monospace;
+                font-family: v.$font-display;
+                font-variant-numeric: tabular-nums;
             }
+        }
+    }
+
+    // Muted destructive action
+    #reset-meta-btn {
+        background: #665555;
+    }
+}
+
+// Reset confirmation (sits above the meta modal)
+#reset-confirm-modal {
+    z-index: v.$z-modal-meta + 1;
+
+    .modal-content {
+        max-width: 500px;
+        text-align: center;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.25s ease-out;
+
+        h2 {
+            @include hud.modal-title(22px);
+            color: v.$enemy-shooter;
+            text-shadow: 0 0 14px rgba(v.$enemy-shooter, 0.5);
+            margin-bottom: v.$spacing-xl;
+        }
+    }
+
+    .reset-warning {
+        font-family: v.$font-ui;
+        font-size: 17px;
+        margin: v.$spacing-xl 0;
+    }
+
+    .reset-refund {
+        font-family: v.$font-display;
+        font-variant-numeric: tabular-nums;
+        font-size: 18px;
+        color: #00ff88;
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        margin: v.$spacing-xl 0;
+        font-weight: bold;
+    }
+
+    .reset-caution {
+        font-family: v.$font-ui;
+        color: v.$color-gray;
+        margin-bottom: v.$spacing-xxl;
+    }
+
+    .reset-actions {
+        display: flex;
+        gap: v.$spacing-xl;
+        justify-content: center;
+
+        .btn {
+            min-width: 120px;
+        }
+
+        #confirm-reset-btn {
+            background: #cc4444;
         }
     }
 }
@@ -136,6 +205,60 @@
         max-width: 950px;
         width: 95%;
         position: relative; // Needed for absolute positioning of buttons
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.35s ease-out;
+
+        h1 {
+            @include hud.modal-title(42px);
+            letter-spacing: 8px;
+            margin-bottom: v.$spacing-md;
+        }
+
+        // Tagline under the title
+        >p {
+            font-family: v.$font-ui;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: rgba(v.$color-white, 0.6);
+        }
+    }
+
+    .controls-info {
+        @include hud.panel;
+        background: none;
+        border: none;
+        border-radius: 0;
+
+        .controls-title {
+            @include hud.section-label;
+            margin-bottom: v.$spacing-lg;
+            text-align: left;
+        }
+    }
+
+    // Footer: speed controls (left) + main pill actions (right)
+    .start-actions {
+        margin-top: v.$spacing-xxl;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        width: 100%;
+
+        .speed-controls-group {
+            text-align: left;
+        }
+
+        .speed-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .main-buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
     }
 
     #meta-btn,
@@ -179,7 +302,9 @@
                 color: #d1c4e9;
                 font-weight: bold;
                 text-shadow: 0 0 5px #b388ff, 0 0 10px rgba(179, 136, 255, 0.5);
-                font-family: 'Courier New', monospace; // Tech/Sci-fi feel
+                // Match the souls readouts in the HUD and meta modal
+                font-family: v.$font-display;
+                font-variant-numeric: tabular-nums;
             }
         }
     }
@@ -542,48 +667,6 @@
     border: v.$border-width-sm solid #88ff88;
     border-radius: v.$border-radius-md;
     box-shadow: 0 0 5px rgba(100, 255, 100, 0.4);
-}
-
-// ============================================
-// Close X Button
-// ============================================
-
-.close-x {
-    position: fixed;
-    top: calc(50vh - 42.5vh + 10px);
-    right: calc(50% - 400px + 25px);
-    background: transparent;
-    border: none;
-    color: v.$color-primary;
-    font-size: 36px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all v.$transition-fast;
-    z-index: v.$z-close-button;
-    pointer-events: all;
-    text-shadow: 0 0 8px rgba(v.$color-black, 0.9),
-        0 0 15px rgba(v.$color-primary, 0.6),
-        2px 2px 4px rgba(v.$color-black, 0.8);
-    filter: drop-shadow(0 2px 6px rgba(v.$color-black, 0.8));
-
-    &:hover {
-        color: v.$color-white;
-        transform: scale(1.2);
-        text-shadow: 0 0 12px rgba(v.$color-black, 1),
-            0 0 20px rgba(v.$color-primary, 0.9),
-            2px 2px 6px rgba(v.$color-black, 0.9);
-        filter: drop-shadow(0 4px 8px rgba(v.$color-black, 1));
-    }
-
-    &:active {
-        transform: scale(1.1);
-    }
 }
 
 // ============================================

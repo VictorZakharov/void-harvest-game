@@ -128,17 +128,19 @@ export class ItemManager {
                 const xpBoostLevel = this.metaProgress.upgrades['xp_gain'] || 0;
                 xpGain *= (1 + 0.2 * xpBoostLevel); // +20% per level
 
-                // Split XP evenly among all players to ensure simultaneous progression.
-                const splitAmount = Math.ceil(xpGain / this.players.length);
+                // Split XP evenly among eligible players to ensure
+                // simultaneous progression. Bled-out players are inert —
+                // they take no XP, so a lone survivor gets the full gain.
+                const recipients = this.players.filter(p =>
+                    !p.isBledOut && (p.health > 0 || p.isDowned));
+                if (recipients.length === 0) break;
+                const splitAmount = Math.ceil(xpGain / recipients.length);
 
-                this.players.forEach(p => {
-                    // Check if player levels up
-                    if (p.health > 0 || p.isDowned) { // Gain XP even if downed? Sure.
-                        if (p.addXP(splitAmount)) {
-                            // Player leveled up!
-                            if (this.callbacks.onLevelUp) {
-                                this.callbacks.onLevelUp(p); // Pass the specific player
-                            }
+                recipients.forEach(p => {
+                    if (p.addXP(splitAmount)) {
+                        // Player leveled up!
+                        if (this.callbacks.onLevelUp) {
+                            this.callbacks.onLevelUp(p); // Pass the specific player
                         }
                     }
                 });

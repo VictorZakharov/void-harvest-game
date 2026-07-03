@@ -71,6 +71,13 @@ export function updateHUD(game, dom) {
 }
 
 function updatePlayerStats(player, game, dom, prefix) {
+    // Bled-out players read as inert: their whole panel greys out
+    const panel = dom[prefix + 'Panel'];
+    if (panel) {
+        if (player.isBledOut) dom.addClass(panel, 'bled-out');
+        else dom.removeClass(panel, 'bled-out');
+    }
+
     const healthPercent = (player.health / player.maxHealth) * 100;
     const hpBar = dom[prefix + 'HealthBar'];
     const hpText = dom[prefix + 'HealthText'];
@@ -101,8 +108,11 @@ function updatePlayerStats(player, game, dom, prefix) {
     }
 
     // Status Effects
+    // Bled-out players are inert: no debuffs, no passives, nothing ticks
     const statusContainer = dom[prefix + 'StatusEffects'];
-    if (statusContainer) {
+    if (statusContainer && player.isBledOut) {
+        dom.setHTML(statusContainer, '');
+    } else if (statusContainer) {
         let statusHtml = '';
 
         // Ice Slow
@@ -137,7 +147,9 @@ function updatePlayerStats(player, game, dom, prefix) {
         // Revive Progress (Downed State) — revive is 2P-only; in SP the
         // death sequence handles it, so no countdown badge
         if (player.isDowned && player.canBeRevived) {
-            const timeLeft = Math.ceil(player.downedTimer / 60); // approx seconds
+            // Same second definition as the top clock (60 game units,
+            // see game.gameTime) so both timers tick at one speed
+            const timeLeft = Math.max(0, Math.ceil(player.downedTimer / 60));
             statusHtml += `<div class="status-effect" style="border-color: #ff0000; color: #ff0000; background: rgba(50,0,0,0.8);">DOWNED (${timeLeft}s)</div>`;
         }
 

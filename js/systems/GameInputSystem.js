@@ -14,7 +14,8 @@ export class GameInputSystem {
         // Level-up / card-pick animations own the screen: swallow pause/freeze toggles
         const levelUpAnimating =
             (this.game.levelUpEffect && this.game.levelUpEffect.isPlaying()) ||
-            (this.game.skillCardEffect && this.game.skillCardEffect.isPlaying());
+            (this.game.skillCardEffect && this.game.skillCardEffect.isPlaying()) ||
+            (this.game.downedLevelUpDust && this.game.downedLevelUpDust.isPlaying());
 
         // 1. Toggle Pause (ESC)
         if (this.input.escapePressed) {

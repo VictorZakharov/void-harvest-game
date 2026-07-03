@@ -4,6 +4,7 @@
 
 @use 'sass:color';
 @use 'variables' as v;
+@use 'hud-theme' as hud;
 
 #skill-choices {
     display: grid;
@@ -194,10 +195,8 @@
 }
 
 .meta-upgrade {
-    background: rgba(v.$color-primary, 0.1);
-    border: v.$border-width-md solid #444;
+    @include hud.panel(rgba(v.$color-white, 0.18));
     padding: v.$spacing-lg;
-    border-radius: v.$border-radius-lg;
     cursor: default;
     transition: all v.$transition-base;
     pointer-events: all;
@@ -205,15 +204,14 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    position: relative;
-    overflow: hidden;
+
+    &::before {
+        transition: border-color v.$transition-base, box-shadow v.$transition-base;
+    }
 
     // MAXED OUT STATE (Previously 'unlocked')
     &.unlocked {
-        border-color: #444;
-        background: rgba(0, 0, 0, 0.4);
         opacity: 0.6; // Greyed out look
-        box-shadow: none;
         cursor: default;
 
         .meta-icon {
@@ -237,8 +235,11 @@
 
     // AFFORDABLE STATE (Actionable)
     &.affordable:not(.unlocked) {
-        border-color: v.$color-primary; // Cyan
         cursor: pointer;
+
+        &::before {
+            border-color: rgba(v.$color-primary, 0.6);
+        }
 
         .meta-icon {
             border-color: v.$color-primary;
@@ -252,8 +253,13 @@
 
         &:hover {
             transform: translateY(-4px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 10px rgba(v.$color-primary, 0.3);
-            background: rgba(v.$color-primary, 0.1);
+
+            &::before {
+                border-color: v.$color-primary;
+                box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.6),
+                    0 5px 15px rgba(0, 0, 0, 0.3),
+                    0 0 10px rgba(v.$color-primary, 0.3);
+            }
         }
     }
 
@@ -281,12 +287,17 @@
     }
 
     h4 {
+        font-family: v.$font-ui;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
         color: v.$color-white;
         margin: 0 0 5px 0;
-        font-size: 16px;
+        font-size: 15px;
     }
 
     .description {
+        font-family: v.$font-ui;
         font-size: 13px;
         color: #aaa;
         min-height: 40px; // Ensure consistent height
@@ -309,7 +320,16 @@
         font-weight: 600;
 
         .meta-label {
+            font-family: v.$font-ui;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             color: #888;
+        }
+
+        .cost,
+        .maxed {
+            font-family: v.$font-display;
+            font-variant-numeric: tabular-nums;
         }
 
         .cost {

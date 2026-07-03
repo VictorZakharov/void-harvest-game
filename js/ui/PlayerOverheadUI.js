@@ -133,8 +133,11 @@ export class PlayerOverheadUI {
         }
 
         const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-        const textColor = (yiq >= 128) ? '#000000' : '#ffffff';
-        const outlineColor = (yiq >= 128) ? '#ffffff' : '#000000';
+        // "White" is dimmed to stay under the bloom luminance threshold,
+        // like the bar fill above — pure #ffffff makes the whole bar glow
+        const white = '#d0d0d0';
+        const textColor = (yiq >= 128) ? '#000000' : white;
+        const outlineColor = (yiq >= 128) ? white : '#000000';
 
         // Outline (Opposite of text for max readbility)
         ctx.strokeStyle = outlineColor;

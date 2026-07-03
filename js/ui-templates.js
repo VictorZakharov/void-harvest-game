@@ -49,48 +49,83 @@ export function getGuideHTML() {
             </ul>
         </div>
 
+        <h3>🤝 2 Player Co-op</h3>
+        <div class="guide-section">
+            <p>Two survivors, one screen, one light. <span class="stat-highlight">P1 moves with WASD</span> and aims/shoots with the mouse;
+            <span class="stat-highlight">P2 moves with the arrow keys</span> and fires automatically. The mouse controls the shared light —
+            coordinate to stay inside it.</p>
+            <ul>
+                <li><span class="stat-highlight">Shared XP:</span> pickups are split evenly, so both players level up together</li>
+                <li><span class="stat-highlight">Level-up heal:</span> leveling up restores a standing player to full health</li>
+                <li><span class="stat-highlight">Going down:</span> at 0 HP a player is downed, not dead. A rescue call marks them on screen
+                (with an edge arrow if they're off-screen) — but after 30 seconds they bleed out: body and HUD turn grey,
+                no more revives, no more level-ups. The run continues on one survivor</li>
+                <li><span class="stat-highlight">Reviving:</span> stand next to your partner and hold <strong>[E]</strong> (P1) or
+                <strong>[R-Ctrl]</strong> (P2) for 2 seconds — the dashed ring fills as you channel. They get back up at 50% HP</li>
+                <li><span class="stat-highlight">Leveling while down:</span> a downed player still gains the level, but skips the skill pick
+                and gets no heal — their XP dust circles the body and scatters skyward. Get them up before the next level!</li>
+                <li><span class="stat-highlight">Game Over</span> only when BOTH players are down</li>
+                <li><span class="stat-highlight">Friendly Fire</span> is off by default; enable it in the Custom Game config if you like danger</li>
+            </ul>
+        </div>
+
         <h3>⚔️ Know Your Enemy</h3>
         <p>Four types of hostile entities will hunt you. Learn their patterns to survive.</p>
 
         <div class="enemy-card basic">
-            <h4 style="color: #ff3333; margin-top: 0;">⬤ Basic Enemy</h4>
-            <p><strong>Health:</strong> 30 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 10</p>
-            <p>The most common threat. They move directly toward you and deal moderate damage on contact.
-            Easy to kill individually, but deadly in swarms.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 1</p>
+            <div class="enemy-card-model"><img data-enemy-model="basic" alt="Basic Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #ff3333; margin-top: 0;">Basic Enemy</h4>
+                <p><strong>Health:</strong> 30 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 10</p>
+                <p>The most common threat. They move directly toward you and deal moderate damage on contact.
+                Easy to kill individually, but deadly in swarms.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 1</p>
+            </div>
         </div>
 
         <div class="enemy-card fast">
-            <h4 style="color: #ff66aa; margin-top: 0;">⬤ Fast Enemy</h4>
-            <p><strong>Health:</strong> 15 | <strong>Speed:</strong> Fast | <strong>Damage:</strong> 5</p>
-            <p>Fragile but quick. These enemies close the distance rapidly and are hard to avoid.
-            They die easily but yield double the XP as a reward for your precision.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 3</p>
+            <div class="enemy-card-model"><img data-enemy-model="fast" alt="Fast Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #ff66aa; margin-top: 0;">Fast Enemy</h4>
+                <p><strong>Health:</strong> 15 | <strong>Speed:</strong> Fast | <strong>Damage:</strong> 5</p>
+                <p>Fragile but quick. These enemies close the distance rapidly and are hard to avoid.
+                They die easily but yield double the XP as a reward for your precision.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 3</p>
+            </div>
         </div>
 
         <div class="enemy-card tank">
-            <h4 style="color: #cc88cc; margin-top: 0;">⬤ Tank Enemy</h4>
-            <p><strong>Health:</strong> 100 | <strong>Speed:</strong> Slow | <strong>Damage:</strong> 20</p>
-            <p>Living walls that soak tremendous damage. They move slowly but hit hard.
-            Killing one grants massive XP. Often block your escape routes.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 7</p>
+            <div class="enemy-card-model"><img data-enemy-model="tank" alt="Tank Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #cc88cc; margin-top: 0;">Tank Enemy</h4>
+                <p><strong>Health:</strong> 100 | <strong>Speed:</strong> Slow | <strong>Damage:</strong> 20</p>
+                <p>Living walls that soak tremendous damage. They move slowly but hit hard.
+                Killing one grants massive XP. Often block your escape routes.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 7</p>
+            </div>
         </div>
 
         <div class="enemy-card shooter">
-            <h4 style="color: #ffaa44; margin-top: 0;">⬤ Shooter Enemy</h4>
-            <p><strong>Health:</strong> 20 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 5 (contact + ranged)</p>
-            <p>The most dangerous foe. They maintain distance and fire projectiles at you every 2 seconds.
-            Priority targets - eliminate them before they overwhelm you with bullets.</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 5</p>
+            <div class="enemy-card-model"><img data-enemy-model="shooter" alt="Shooter Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #ffaa44; margin-top: 0;">Shooter Enemy</h4>
+                <p><strong>Health:</strong> 20 | <strong>Speed:</strong> Medium | <strong>Damage:</strong> 5 (contact + ranged)</p>
+                <p>The most dangerous foe. They maintain distance and fire projectiles at you every 2 seconds.
+                Priority targets - eliminate them before they overwhelm you with bullets.</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 5</p>
+            </div>
         </div>
 
-        <div class="enemy-card" style="border-left-color: #66ccff;">
-            <h4 style="color: #66ccff; margin-top: 0;">⬤ Ice Shooter Enemy</h4>
-            <p><strong>Health:</strong> 25 | <strong>Speed:</strong> Medium-Slow | <strong>Damage:</strong> 5 (contact), Slow (ranged)</p>
-            <p>A chilling threat that fires ice projectiles. Each bullet applies a <span class="stat-highlight">15% slow for 1 second</span>, and <strong>effects stack cumulatively!</strong>
-            Multiple hits can reduce your speed by 30%, 45%, or even freeze you completely at 100% slow.
-            Watch for the ❄ counter next to your health bar - it shows how many slow stacks you have. Screen glow intensifies dramatically with more stacks!</p>
-            <p><span class="stat-highlight">First Appears:</span> Wave 8</p>
+        <div class="enemy-card ice">
+            <div class="enemy-card-model"><img data-enemy-model="ice" alt="Ice Shooter Enemy"></div>
+            <div class="enemy-card-body">
+                <h4 style="color: #66ccff; margin-top: 0;">Ice Shooter Enemy</h4>
+                <p><strong>Health:</strong> 25 | <strong>Speed:</strong> Medium-Slow | <strong>Damage:</strong> 5 (contact), Slow (ranged)</p>
+                <p>A chilling threat that fires ice projectiles. Each bullet applies a <span class="stat-highlight">15% slow for 1 second</span>, and <strong>effects stack cumulatively!</strong>
+                Multiple hits can reduce your speed by 30%, 45%, or even freeze you completely at 100% slow.
+                Watch for the ❄ counter next to your health bar - it shows how many slow stacks you have. Screen glow intensifies dramatically with more stacks!</p>
+                <p><span class="stat-highlight">First Appears:</span> Wave 8</p>
+            </div>
         </div>
 
         <h3>📈 Difficulty Scaling</h3>
@@ -109,7 +144,7 @@ export function getGuideHTML() {
         <h3>⚡ Skills & Power-Ups</h3>
         <p>Each time you level up, choose 1 of 3 random skills. Stack them to build your perfect loadout.</p>
 
-        <div class="guide-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+        <div class="guide-skills-grid">
             ${SKILLS.map(skill => {
         let description;
         if (skill.id === 'berserk') {
@@ -121,16 +156,16 @@ export function getGuideHTML() {
             description = `+${skill.baseValue}${space}${skill.unit}${skill.maxLevel > 1 ? ' per level' : ''}`;
         }
         return `
-                <div style="background: rgba(0, 255, 255, 0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #00ffff; display: flex; align-items: start; gap: 12px; position: relative;">
-                    <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 3px;">
-                        ${Array(skill.maxLevel || 3).fill(0).map(() => '<div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(0, 255, 255, 0.6);"></div>').join('')}
+                <div class="guide-skill-card">
+                    <div class="guide-skill-pips">
+                        ${Array(skill.maxLevel || 3).fill(0).map(() => '<div class="pip"></div>').join('')}
                     </div>
-                    <div style="width: 40px; height: 40px; flex-shrink: 0; color: #00ffff; display: flex; align-items: center; justify-content: center; background: rgba(0, 255, 255, 0.1); border-radius: 6px;">
+                    <div class="guide-skill-icon">
                         ${skill.icon}
                     </div>
-                    <div style="flex: 1;">
-                        <h4 style="color: #00ffff; margin: 0 0 6px 0; font-size: 15px;">${skill.name}</h4>
-                        <p style="margin: 0; font-size: 13px; color: #ccc; line-height: 1.4;">${description}</p>
+                    <div class="guide-skill-body">
+                        <h4>${skill.name}</h4>
+                        <p>${description}</p>
                     </div>
                 </div>
             `;

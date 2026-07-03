@@ -510,8 +510,10 @@ export class PlayerVisuals {
     }
 
     // Freeze Visuals
-    // Check if player has slow effects
-    const totalSlow = this.player.slowEffects.reduce((sum, effect) => sum + effect.amount, 0);
+    // Check if player has slow effects. A bled-out husk is immune to
+    // tinting — it stays grey no matter what lands on the body.
+    const totalSlow = this._bledOutGrey ? 0 :
+        this.player.slowEffects.reduce((sum, effect) => sum + effect.amount, 0);
     // Cap at 1.0 for intensity calculation
     const freezeIntensity = Math.min(1.0, totalSlow);
     const isFullyFrozen = totalSlow >= 1.0;
@@ -562,6 +564,41 @@ export class PlayerVisuals {
               child.material.emissive.copy(child.userData.originalEmissive);
               child.material.emissiveIntensity = child.userData.originalEmissiveIntensity;
             }
+          }
+        }
+      });
+    }
+
+    // Bled-out: the body desaturates to an inert grey husk. One-way —
+    // bleed-out is irreversible within a run, and a new run builds
+    // fresh visuals.
+    if (this.player.isBledOut && !this._bledOutGrey) {
+      this._bledOutGrey = true;
+      // Lights out — a husk doesn't glow in the dark. Intensity, not
+      // .visible: toggling a light's visibility forces THREE to
+      // recompile every shader program (visible hitch).
+      if (this.selfLight) this.selfLight.intensity = 0;
+      if (this.spotLight) this.spotLight.intensity = 0;
+      this.mesh.traverse((child) => {
+        if (child.isMesh && child.material && child.material.color) {
+          const mat = child.material;
+          // Grey from the true original (not the current color, which
+          // may be freeze-tinted or already greyed via a shared mat)
+          const base = child.userData.originalColor || mat.color;
+          const l = 0.3 * base.r + 0.59 * base.g + 0.11 * base.b;
+          const grey = new THREE.Color(l * 0.5, l * 0.5, l * 0.5);
+          mat.color.copy(grey);
+          // The freeze-visuals pass restores color/emissive from these
+          // userData "originals" every frame — rewrite them so the
+          // restore keeps the husk grey and dark instead of stomping it
+          child.userData.originalColor = grey.clone();
+          if (mat.emissive) {
+            mat.emissive.setRGB(0, 0, 0);
+            mat.emissiveIntensity = 0;
+            if (child.userData.originalEmissive) {
+              child.userData.originalEmissive.setRGB(0, 0, 0);
+            }
+            child.userData.originalEmissiveIntensity = 0;
           }
         }
       });

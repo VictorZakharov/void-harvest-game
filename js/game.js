@@ -41,6 +41,7 @@ import { CameraSystem } from './systems/CameraSystem.js';
 import { GameInputSystem } from './systems/GameInputSystem.js';
 import { LevelUpEffectSystem } from './systems/LevelUpEffectSystem.js';
 import { SkillCardEffectSystem } from './systems/SkillCardEffectSystem.js';
+import { DownedLevelUpDustSystem } from './systems/DownedLevelUpDustSystem.js';
 import { GameSessionManager } from './GameSessionManager.js';
 import { EnemyManager } from './entities/EnemyManager.js';
 
@@ -144,6 +145,7 @@ export class Game {
     this.gameInputSystem = new GameInputSystem(this);
     this.levelUpEffect = new LevelUpEffectSystem(this, this.scene);
     this.skillCardEffect = new SkillCardEffectSystem(this);
+    this.downedLevelUpDust = new DownedLevelUpDustSystem(this);
 
     this.bulletManager = new BulletManager(this.scene, this.stats, this.spatialHash, {
       createParticles: (x, y, c, count) => this.particleManager.create(x, y, c, count),
@@ -166,6 +168,9 @@ export class Game {
     });
 
     this.itemManager = new ItemManager(this.scene, this.player, this.metaProgress, {
+      // All level-ups go through the UIManager queue so 2P turns stay
+      // sequential; downed players get the dust tribute turn instead of
+      // the invigoration + pick (decided in showLevelUpScreen's beginFor)
       onLevelUp: (player) => this.ui.showLevelUpScreen(player)
     });
   }
@@ -174,6 +179,7 @@ export class Game {
     // Clear existing objects
     if (this.levelUpEffect) this.levelUpEffect.cancel();
     if (this.skillCardEffect) this.skillCardEffect.cancel();
+    if (this.downedLevelUpDust) this.downedLevelUpDust.cancel();
     this.timeDilation = 1.0;
     this.gameOverPending = false;
     this.gameOverTimer = 0;
@@ -658,11 +664,17 @@ export class Game {
     // Skill card pick cinematic (DOM clone + overlay particles + resume ramp)
     if (this.skillCardEffect) this.skillCardEffect.update(dt);
 
+    // Downed player's level-up dust (orbit + scatter, no invigoration)
+    if (this.downedLevelUpDust) this.downedLevelUpDust.update(dt);
+
     // Keep the status toast ([Q] Autoshoot etc.) anchored under the player
     if (this.ui && this.ui.updateStatusMessagePosition) this.ui.updateStatusMessagePosition();
 
     // Keep the GAME OVER banner anchored above the downed player
     if (this.ui && this.ui.updateGameOverBannerPosition) this.ui.updateGameOverBannerPosition();
+
+    // 2P: "PLAYER X IS DOWN" rescue call above a downed teammate
+    if (this.ui && this.ui.updateDownedBanner) this.ui.updateDownedBanner();
 
     // Update Instanced Renderer (Batches all enemies)
     // We pass player and cursorTarget for visibility/culling logic (Fog of War)

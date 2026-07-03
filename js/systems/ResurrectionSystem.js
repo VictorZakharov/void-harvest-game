@@ -86,9 +86,9 @@ export class ResurrectionSystem {
             }
         };
 
-        // Check both directions
-        if (p1.isDowned && !p2.isDowned) handleInteraction(p2, p1);
-        if (p2.isDowned && !p1.isDowned) handleInteraction(p1, p2);
+        // Check both directions (a bled-out player can't be revived)
+        if (p1.isDowned && p1.canBeRevived && !p2.isDowned) handleInteraction(p2, p1);
+        if (p2.isDowned && p2.canBeRevived && !p1.isDowned) handleInteraction(p1, p2);
 
         // Hide prompt if no valid interaction occurred this frame
         if (!processedRevive && this.promptEl) {

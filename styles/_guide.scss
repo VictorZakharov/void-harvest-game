@@ -3,21 +3,38 @@
 // ============================================
 
 @use 'variables' as v;
+@use 'hud-theme' as hud;
+
+#guide-modal .modal-content {
+    max-width: 800px;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    @include hud.modal-chrome;
+    animation: hud-modal-rise 0.3s ease-out;
+
+    >h2 {
+        @include hud.modal-title;
+    }
+}
 
 #guide-content {
     text-align: left;
     line-height: 1.6;
+    font-family: v.$font-ui;
 
     h3 {
-        color: v.$color-primary;
-        margin-top: 25px;
+        @include hud.section-label(13px);
+        margin-top: 28px;
         margin-bottom: v.$spacing-md;
-        font-size: v.$font-size-h2;
-        border-bottom: v.$border-width-md solid rgba(v.$color-primary, 0.3);
+        border-bottom: 1px solid rgba(v.$color-primary, 0.2);
         padding-bottom: v.$spacing-sm;
     }
 
     h4 {
+        font-family: v.$font-ui;
+        font-weight: 700;
+        letter-spacing: 1px;
         color: v.$color-primary;
         margin-top: v.$spacing-xxl - 2px;
         margin-bottom: v.$spacing-xs + v.$spacing-xs;
@@ -27,7 +44,7 @@
     p {
         margin: v.$spacing-xs + v.$spacing-xs 0;
         color: v.$color-light-gray;
-        font-size: v.$font-size-lg;
+        font-size: 15px;
     }
 
     ul {
@@ -38,51 +55,131 @@
 
     li {
         margin: v.$spacing-sm 0;
-        font-size: v.$font-size-lg;
+        font-size: 15px;
     }
 }
 
 .guide-intro {
-    background: linear-gradient(135deg, rgba(v.$color-primary, 0.1), rgba(v.$color-secondary, 0.1));
+    @include hud.panel;
     padding: v.$spacing-xl;
-    border-radius: v.$border-radius-lg;
-    border-left: 4px solid v.$color-primary;
     margin-bottom: v.$spacing-xl;
 }
 
 .guide-section {
-    background: rgba(v.$color-primary, 0.05);
+    @include hud.panel(rgba(v.$color-primary, 0.25));
     padding: v.$spacing-lg;
-    border-radius: v.$border-radius-lg;
     margin: v.$spacing-lg 0;
-    border: v.$border-width-sm solid rgba(v.$color-primary, 0.2);
 }
 
 .enemy-card {
-    background: rgba(v.$color-black, 0.3);
+    @include hud.panel(rgba(v.$color-white, 0.15));
+    padding: v.$spacing-md v.$spacing-lg;
+    margin: v.$spacing-md 0;
+    display: flex;
+    align-items: center;
+    gap: v.$spacing-xl;
+
+    // 3D model portrait (same renderer as the custom config cards,
+    // just displayed larger)
+    .enemy-card-model {
+        flex-shrink: 0;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+        }
+    }
+
+    .enemy-card-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    // Type accent on the clipped layer so the color follows the shape
+    &.basic::before {
+        border-left: 3px solid v.$enemy-basic;
+    }
+
+    &.fast::before {
+        border-left: 3px solid v.$enemy-fast;
+    }
+
+    &.tank::before {
+        border-left: 3px solid v.$enemy-tank;
+    }
+
+    &.shooter::before {
+        border-left: 3px solid v.$enemy-shooter;
+    }
+
+    &.ice::before {
+        border-left: 3px solid v.$enemy-ice;
+    }
+}
+
+// Skill compendium cards (markup in ui-templates.js). Scoped under
+// #guide-content so these win over its generic h4/p rules — bare
+// classes lose to the ID selector and inherit its 28px h4 margins.
+#guide-content .guide-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: v.$spacing-lg;
+}
+
+#guide-content .guide-skill-card {
+    @include hud.panel(rgba(v.$color-primary, 0.25));
     padding: v.$spacing-md;
-    border-radius: v.$spacing-xs;
-    margin: v.$spacing-xs + v.$spacing-xs 0;
-    border-left: v.$border-width-lg solid;
+    display: flex;
+    align-items: flex-start;
+    gap: v.$spacing-md;
 
-    &.basic {
-        border-left-color: v.$enemy-basic;
+    .guide-skill-pips {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        display: flex;
+        gap: 3px;
+
+        .pip {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(v.$color-primary, 0.5);
+        }
     }
 
-    &.fast {
-        border-left-color: v.$enemy-fast;
+    .guide-skill-icon {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        color: v.$color-primary;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(v.$color-primary, 0.1);
+        border: 1px solid rgba(v.$color-primary, 0.25);
     }
 
-    &.tank {
-        border-left-color: v.$enemy-tank;
-    }
+    .guide-skill-body {
+        flex: 1;
 
-    &.shooter {
-        border-left-color: v.$enemy-shooter;
-    }
+        h4 {
+            margin: 0 0 6px 0;
+            font-size: 15px;
+        }
 
-    &.ice {
-        border-left-color: v.$enemy-ice;
+        p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
     }
 }
 
@@ -92,11 +189,13 @@
 }
 
 .tip-box {
-    background: rgba(v.$color-info, 0.1);
-    padding: v.$spacing-md;
-    border-radius: v.$spacing-xs;
-    border-left: v.$border-width-lg solid v.$color-info;
-    margin: v.$spacing-xs + v.$spacing-xs 0;
+    @include hud.panel(rgba(v.$color-info, 0.3));
+    padding: v.$spacing-md v.$spacing-lg;
+    margin: v.$spacing-md 0;
+
+    &::before {
+        border-left: 3px solid v.$color-info;
+    }
 
     strong {
         color: v.$color-info;

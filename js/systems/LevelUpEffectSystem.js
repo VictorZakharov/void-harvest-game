@@ -217,12 +217,9 @@ export class LevelUpEffectSystem {
         if (this.game.weather) this.game.weather.hideWarning();
         if (this.game.resurrectionSystem) this.game.resurrectionSystem.hidePrompt();
 
-        // A level-up fully restores the player — a downed player gets back up
-        if (player.isDowned) {
-            player.isDowned = false;
-            player.downedTimer = 0;
-            player.reviveProgress = 0;
-        }
+        // NOTE: downed players never reach this effect — game.js routes
+        // their level-up to DownedLevelUpDustSystem instead (a level-up
+        // must not act as a free revive).
         this.startHealth = Math.max(0, player.health);
 
         // Tint everything with the player's color
@@ -354,10 +351,15 @@ export class LevelUpEffectSystem {
         const sweepY = 2 + sweep * LEVELUP_ANIM_SWEEP_HEIGHT;
 
         // --- Health refill, synced to the sweep ---
-        const targetHealth = this.startHealth +
-            (player.maxHealth - this.startHealth) * sweep;
-        player.health = Math.min(player.maxHealth, targetHealth);
-        if (surgeT >= 1) player.health = player.maxHealth;
+        // Downed players don't get the heal: in 2P both players level
+        // together (shared XP), and the refill must not act as a free
+        // revive — health only restores if you're up.
+        if (!player.isDowned) {
+            const targetHealth = this.startHealth +
+                (player.maxHealth - this.startHealth) * sweep;
+            player.health = Math.min(player.maxHealth, targetHealth);
+            if (surgeT >= 1) player.health = player.maxHealth;
+        }
         this.game.ui.updateHUD();
         this._updateBadge(burstT);
 
