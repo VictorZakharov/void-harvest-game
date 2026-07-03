@@ -706,7 +706,6 @@ export class Game {
     }
     this.kills++;
     this.stats.enemiesKilled[enemy.type]++;
-    this.player.onKill(); // This should probably be removed or adapted for multiple players
     this.particleManager.create(enemy.x, enemy.y, '#ff0000', PARTICLE_COUNT_DEATH);
     this.itemManager.spawnXP(enemy.x, enemy.y, enemy.xpValue);
 

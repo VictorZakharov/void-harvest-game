@@ -126,22 +126,9 @@ function updatePlayerStats(player, game, dom, prefix) {
             const skill = SKILLS.find(s => s.id === 'regen');
             statusHtml += createPassiveBadge(skill, player.skills.regen, `Passive Heal: ${player.healthRegen} HP/s`);
         }
-        if (player.skills.vampire > 0) {
-            const skill = SKILLS.find(s => s.id === 'vampire');
-            statusHtml += createPassiveBadge(skill, player.skills.vampire, `Vampiric Touch: ${player.vampire} HP/kill`);
-        }
         if (player.skills.armor > 0) {
             const skill = SKILLS.find(s => s.id === 'armor');
             statusHtml += createPassiveBadge(skill, player.skills.armor, `Armor: -${player.armor} dmg red.`);
-        }
-        if (player.skills.berserk > 0) {
-            const healthPct = player.health / player.maxHealth;
-            const threshold = player.berserkBonus * 0.1 + 0.05;
-            if (healthPct <= threshold) {
-                const skill = SKILLS.find(s => s.id === 'berserk');
-                const bonus = Math.round(player.berserkBonus * 100);
-                statusHtml += createPassiveBadge(skill, player.skills.berserk, `Berserk Mode: +${bonus}% DMG`);
-            }
         }
 
         // Revive Progress (Downed State) — revive is 2P-only; in SP the

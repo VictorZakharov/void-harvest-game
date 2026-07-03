@@ -52,7 +52,6 @@ export function showPauseScreen(game, dom) {
 
     const armor = game.player.armor || 0;
     const regen = game.player.healthRegen || 0;
-    const vampire = game.player.vampire || 0;
 
     // Build the Pause Screen HTML
     let html = `
@@ -119,7 +118,6 @@ function renderStatsBlock(game, player, columns = 2) {
     const armor = player.armor || 0;
     const regen = player.healthRegen || 0;
 
-    const vampire = player.vampire || 0;
     const pierce = player.piercing || 0;
 
     // Use default columns style if columns > 2, else compact grid
@@ -136,7 +134,6 @@ function renderStatsBlock(game, player, columns = 2) {
              ${UIStatItem.render(game, 'Armor', '0', armor > 0 ? armor : null, armor, 'armor', 'Flat damage reduction.<br>Reduces damage taken from hits.')}
              ${UIStatItem.render(game, 'Regen', '0', regen > 0 ? regen : null, `${regen}/s`, 'regen', 'Health recovered per second.<br>Passive healing.')}
 
-             ${UIStatItem.render(game, 'Vampire', '0', vampire > 0 ? vampire : null, vampire, 'vampire', 'Health recovered per kill.<br>Sustain during combat.')}
              ${UIStatItem.render(game, 'Pierce', '0', pierce > 0 ? pierce : null, pierce, 'pierce', 'Number of enemies bullets pass through.<br>Base: 0.')}
         </div>
     `;
