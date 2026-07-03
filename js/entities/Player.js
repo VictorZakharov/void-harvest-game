@@ -371,6 +371,11 @@ export class Player extends Entity {
       this.isDowned = true;
       this.downedTimer = this.maxDownedTime;
       this.killedBy = source;
+      // Shed combat debuffs on the way down — update() early-returns
+      // while downed, so their timers would never expire and the body
+      // would stay ice-tinted/frozen forever
+      this.slowEffects.length = 0;
+      this.freezeDoTTimer = 0;
     }
 
     return this.isDowned; // Returns true if incapacitated

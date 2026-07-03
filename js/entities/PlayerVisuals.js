@@ -580,18 +580,23 @@ export class PlayerVisuals {
       this.mesh.traverse((child) => {
         if (child.isMesh && child.material && child.material.color) {
           const mat = child.material;
-          if (mat.userData.bledOutGrey) return; // shared material, already done
-          mat.userData.bledOutGrey = true;
-          const c = mat.color;
-          const l = 0.3 * c.r + 0.59 * c.g + 0.11 * c.b;
-          c.setRGB(l * 0.5, l * 0.5, l * 0.5);
-          // Kill the glow too — including the "original" the per-frame
-          // emissive restore pass writes back
+          // Grey from the true original (not the current color, which
+          // may be freeze-tinted or already greyed via a shared mat)
+          const base = child.userData.originalColor || mat.color;
+          const l = 0.3 * base.r + 0.59 * base.g + 0.11 * base.b;
+          const grey = new THREE.Color(l * 0.5, l * 0.5, l * 0.5);
+          mat.color.copy(grey);
+          // The freeze-visuals pass restores color/emissive from these
+          // userData "originals" every frame — rewrite them so the
+          // restore keeps the husk grey and dark instead of stomping it
+          child.userData.originalColor = grey.clone();
           if (mat.emissive) {
+            mat.emissive.setRGB(0, 0, 0);
             mat.emissiveIntensity = 0;
-            if (child.userData.originalEmissiveIntensity !== undefined) {
-              child.userData.originalEmissiveIntensity = 0;
+            if (child.userData.originalEmissive) {
+              child.userData.originalEmissive.setRGB(0, 0, 0);
             }
+            child.userData.originalEmissiveIntensity = 0;
           }
         }
       });
