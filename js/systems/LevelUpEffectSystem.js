@@ -172,9 +172,11 @@ export class LevelUpEffectSystem {
             return { points, mat, count: cfg.count, data: [] };
         });
 
-        // Temporary glow light that ramps with the sweep
+        // Temporary glow light that ramps with the sweep.
+        // Stays visible at intensity 0 when idle: toggling a light's
+        // visibility changes the scene's light count and forces THREE to
+        // recompile every shader program (a visible hitch, worst in 2P).
         this.light = new THREE.PointLight(0x00ffff, 0, 320, 2);
-        this.light.visible = false;
         this.scene.add(this.light);
     }
 
@@ -261,7 +263,6 @@ export class LevelUpEffectSystem {
         this.pillarGroup.visible = true;
         this.dashRings.forEach(r => { r.line.visible = true; });
         this._sparkSystems.forEach(s => { s.points.visible = true; });
-        this.light.visible = true;
     }
 
     /** Holds the HUD badge at the previous level until the pop moment. */
@@ -625,8 +626,7 @@ export class LevelUpEffectSystem {
         this.pillarGroup.visible = false;
         this.dashRings.forEach(r => { r.line.visible = false; r.line.scale.setScalar(1); });
         this._sparkSystems.forEach(s => { s.points.visible = false; });
-        this.light.visible = false;
-        this.light.intensity = 0;
+        this.light.intensity = 0; // stays visible: see note in _buildMeshes
         this.overlay.style.display = 'none';
         this._dust.length = 0;
         this._ripples.length = 0;

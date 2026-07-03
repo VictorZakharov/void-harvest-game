@@ -385,6 +385,10 @@ export class UIManager {
     const onComplete = () => {
       if (this.levelUpQueue.length > 0) {
         const nextPlayer = this.levelUpQueue.shift();
+        // Hide the previous player's choices during the next animation —
+        // a lingering modal is clickable and a stray click would re-enter
+        // onComplete with an empty queue and unfreeze the game mid-animation
+        this.dom.hide(this.dom.levelupModal);
         // Small delay to prevent instant flash or allow UI update
         setTimeout(() => {
           beginFor(nextPlayer);
