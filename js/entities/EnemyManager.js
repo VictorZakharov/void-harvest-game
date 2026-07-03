@@ -1,4 +1,4 @@
-import { POLAR_VORTEX_RADIUS } from '../constants.js';
+import { POLAR_VORTEX_RADIUS, ENEMY_DEATH_TOTAL_FRAMES } from '../constants.js';
 
 export class EnemyManager {
     constructor(game) {
@@ -18,6 +18,18 @@ export class EnemyManager {
 
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
+
+            // Dying enemies are inert corpses: tick the death animation,
+            // remove once it completes, skip all AI.
+            if (enemy.isDying) {
+                enemy.deathTime += effectiveScale;
+                if (enemy.deathTime >= ENEMY_DEATH_TOTAL_FRAMES) {
+                    enemy.dispose(game.scene);
+                    enemies.splice(i, 1);
+                }
+                continue;
+            }
+
             let currentSpeedMod = speedMod;
 
             // Stasis / Polar Vortex Logic

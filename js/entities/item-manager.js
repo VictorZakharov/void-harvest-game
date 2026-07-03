@@ -33,9 +33,9 @@ export class ItemManager {
      */
     spawnXP(x, y, amount) {
         for (let i = 0; i < amount; i++) {
-            const offsetX = (Math.random() - 0.5) * 20;
-            const offsetY = (Math.random() - 0.5) * 20;
-            const item = new Item(x + offsetX, y + offsetY, 'xp');
+            // Fly out of the corpse to a random side, then settle
+            const item = new Item(x, y, 'xp');
+            item.toss(Math.random() * Math.PI * 2, 2.5 + Math.random() * 2.5, 20 + Math.random() * 14);
             this.items.push(item);
             this.scene.add(item.mesh);
         }
@@ -46,6 +46,7 @@ export class ItemManager {
 
         if (Math.random() < healthDropRate) {
             const item = new Item(x, y, 'health');
+            item.toss(Math.random() * Math.PI * 2, 3 + Math.random() * 2.5, 24 + Math.random() * 12);
             this.items.push(item);
             this.scene.add(item.mesh);
         }

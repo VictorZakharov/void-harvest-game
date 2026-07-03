@@ -152,6 +152,7 @@ export class MinimapSystem {
         if (cursor) {
             const fadeDistance = 150;
             for (const enemy of game.enemies) {
+                if (enemy.isDying) continue; // corpses are not threats
                 const dCursor = Math.sqrt((enemy.x - cursor.x) ** 2 + (enemy.y - cursor.z) ** 2);
                 if (dCursor > visRadius) continue;
 

@@ -75,6 +75,33 @@ export class Enemy extends Entity {
         // Knockback handling state
         this.knockbackVy = 0;
         this.knockbackTimer = 0;
+
+        // Death animation state (corpse topples, lies still, fades out)
+        this.isDying = false;
+        this.deathTime = 0;
+        this.fallDirX = 0;
+        this.fallDirZ = 0;
+    }
+
+    /**
+     * Puts the enemy into its dying state: it stops acting, topples over,
+     * and is removed by EnemyManager once the death animation completes.
+     * @returns {boolean} False if the enemy was already dying.
+     */
+    startDeath() {
+        if (this.isDying) return false;
+        this.isDying = true;
+        this.health = 0;
+        this.deathTime = 0;
+        this.frozen = false;
+        this.vx = 0;
+        this.vy = 0;
+
+        // Fall mostly backward (away from facing) with some randomness
+        const fallAngle = this.angle + Math.PI + (Math.random() - 0.5) * 1.2;
+        this.fallDirX = Math.cos(fallAngle);
+        this.fallDirZ = Math.sin(fallAngle);
+        return true;
     }
 
     /**

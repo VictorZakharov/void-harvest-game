@@ -30,7 +30,7 @@ export class PhysicsSystem {
     }
 
     handlePlayerCollision(enemy, player) {
-        const { stats, particleManager, cameraSystem, scene, enemies } = this.game;
+        const { stats, particleManager, cameraSystem } = this.game;
 
         const blocked = player.shieldActive;
         if (!blocked) {
@@ -66,10 +66,8 @@ export class PhysicsSystem {
             if (cameraSystem) cameraSystem.addShake(5);
         }
 
-        enemy.dispose(scene);
-        const index = enemies.indexOf(enemy);
-        if (index > -1) {
-            enemies.splice(index, 1);
-        }
+        // Enemy expends itself on impact: topple and fade (no loot)
+        this.game.healthBarSystem.unregister(enemy);
+        enemy.startDeath();
     }
 }
