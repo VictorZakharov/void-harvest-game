@@ -2,6 +2,12 @@
   "name": "void-harvest",
   "version": "1.0.0",
   "description": "Void Harvest - Roguelite Shooter Game",
+  "license": "MIT",
+  "author": "Victor Zakharov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VictorZakharov/void-harvest-game.git"
+  },
   "scripts": {
     "dev": "webpack serve --mode development",
     "build": "webpack --mode production"

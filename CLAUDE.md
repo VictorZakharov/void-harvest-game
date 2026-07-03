@@ -2,6 +2,8 @@
 
 This document provides instructions for AI assistants (like Claude) to maintain and extend this Void Harvest project.
 
+> **⚠ Partially historical:** Parts of this guide predate the migration from 2D Canvas rendering to Three.js 3D. The workflow, skill/enemy recipes, and balance notes remain useful, but for the current file map and rendering architecture, trust **[ARCHITECTURE.md](ARCHITECTURE.md)** and **[AGENTS.md](AGENTS.md)** over the structure described below.
+
 ## Project Overview
 
 **Tech Stack:**
