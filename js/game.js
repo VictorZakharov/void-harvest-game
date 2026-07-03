@@ -55,8 +55,10 @@ export class Game {
     if (isNaN(loadedSouls)) loadedSouls = 0;
     this.totalSouls = loadedSouls;
 
-    // Load Game Speed (Default 1.0)
-    this.timeScale = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 1.0;
+    // Load Game Speed (Default 0.85 = Fast). Clamp legacy saves — Fast
+    // used to be 1.0; snap them onto the current Fast button.
+    const savedSpeed = this.metaProgress.gameSpeed !== undefined ? this.metaProgress.gameSpeed : 0.85;
+    this.timeScale = Math.min(savedSpeed, 0.85);
     // Transient multiplier on top of timeScale (0..1), used by the skill
     // card cinematic to ramp gameplay speed back up after a level-up freeze
     this.timeDilation = 1.0;
