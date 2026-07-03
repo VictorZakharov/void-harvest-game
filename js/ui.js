@@ -377,6 +377,17 @@ export class UIManager {
     // Play the invigoration animation (freeze + heal-to-full sweep) first,
     // then present the skill choices.
     const beginFor = (p) => {
+      // Downed players take their queue turn as the dust tribute —
+      // no invigoration, no modal, no heal; the queue advances when
+      // the dust scatters (so 2P level-ups still alternate cleanly)
+      if (p.isDowned) {
+        if (this.game.downedLevelUpDust) {
+          this.game.downedLevelUpDust.play(p, onComplete);
+        } else {
+          onComplete();
+        }
+        return;
+      }
       if (this.game.levelUpEffect) {
         this.game.levelUpEffect.play(p, () => showLevelUpScreen(this.game, this.dom, p, onComplete));
       } else {

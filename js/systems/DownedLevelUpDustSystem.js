@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 
 const MOTE_COUNT = 34;
+// Slow-motion resume length (matches the skill-card descent feel)
+const RESUME_RAMP_MS = 700;
 
 /**
  * Consolation effect for a downed player's level-up (2P shares XP, so
@@ -9,9 +11,10 @@ const MOTE_COUNT = 34;
  * body, orbits it briefly, then scatters off toward the upper half of
  * the screen: the level passes through them without taking hold.
  *
- * Screen-space only (own 2D canvas overlay), no game-state changes.
- * Runs from render3D on real dt, so it plays out even while the other
- * player's level-up freeze owns the game state.
+ * Takes a full turn in the UIManager level-up queue: the world freezes
+ * exactly like an invigoration turn (everything the same, just no skill
+ * pick) and onComplete advances the queue / resumes the game.
+ * Runs from render3D on real dt while game.state is 'paused'.
  */
 export class DownedLevelUpDustSystem {
     constructor(game) {
@@ -42,11 +45,23 @@ export class DownedLevelUpDustSystem {
         this.overlayCtx = this.overlay.getContext('2d');
     }
 
-    /** Starts (or restarts) the dust tribute for a downed player. */
-    play(player) {
+    /**
+     * Starts the dust tribute as a level-up queue turn. Freezes the
+     * game like the invigoration does; onComplete fires when the dust
+     * has scattered (advances the queue / resumes).
+     */
+    play(player, onComplete = null) {
+        if (this.active) this._finish();
+
         this.active = true;
         this.player = player;
+        this.onComplete = onComplete;
         this.elapsed = 0;
+
+        // Freeze the world (render loop keeps running; update() does not)
+        this.game.state = 'paused';
+        if (this.game.weather) this.game.weather.hideWarning();
+        if (this.game.resurrectionSystem) this.game.resurrectionSystem.hidePrompt();
 
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         this.overlay.width = window.innerWidth * dpr;
@@ -87,6 +102,17 @@ export class DownedLevelUpDustSystem {
             this._endTime = Math.max(this._endTime,
                 m.t0 + m.flyDur + m.orbitDur + m.leaveDur);
         }
+
+        // The queue hand-off fires as the scatter begins, so the slow-mo
+        // resume overlaps the departing dust (like the card descent)
+        this._rampStart = Math.max(0, this._endTime - RESUME_RAMP_MS);
+        this._resumeFired = false;
+        this._ramping = false;
+    }
+
+    /** True while the dust turn owns the screen (blocks pause/freeze toggles). */
+    isPlaying() {
+        return this.active;
     }
 
     /** Projects the downed body to overlay-canvas CSS pixels (lying low). */
@@ -108,8 +134,27 @@ export class DownedLevelUpDustSystem {
 
         dt *= this.game.timeScale || 1;
         this.elapsed += dt;
+
+        // Hand off as the motes start scattering: advance the queue (or,
+        // queue empty, resume the game in slow motion — timeDilation ramps
+        // 0 -> 1 while the last dust leaves, same feel as a skill pick)
+        if (!this._resumeFired && this.elapsed >= this._rampStart) {
+            this._resumeFired = true;
+            const queue = this.game.ui && this.game.ui.levelUpQueue;
+            this._ramping = !queue || queue.length === 0;
+            if (this._ramping) this.game.timeDilation = 0;
+            const done = this.onComplete;
+            this.onComplete = null;
+            if (done) done();
+        }
+        if (this._ramping) {
+            const k = Math.min(1, (this.elapsed - this._rampStart) / RESUME_RAMP_MS);
+            const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+            this.game.timeDilation = k >= 1 ? 1 : e;
+        }
+
         if (this.elapsed >= this._endTime) {
-            this.cancel();
+            this._finish();
             return;
         }
 
@@ -185,10 +230,22 @@ export class DownedLevelUpDustSystem {
         return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
     }
 
-    /** Stops and hides (also called on game reset / exit to menu). */
+    /** Natural end: hide, then advance the queue if it hasn't fired yet. */
+    _finish() {
+        const done = this.onComplete;
+        this.cancel();
+        if (done) done();
+    }
+
+    /** Aborts without the completion callback (game reset / exit to menu). */
     cancel() {
+        // Never leave the game stuck in slow motion
+        if (this._ramping) this.game.timeDilation = 1;
+        this._ramping = false;
+        this._resumeFired = false;
         this.active = false;
         this.player = null;
+        this.onComplete = null;
         this._motes.length = 0;
         this.overlay.style.display = 'none';
     }

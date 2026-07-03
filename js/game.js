@@ -168,17 +168,10 @@ export class Game {
     });
 
     this.itemManager = new ItemManager(this.scene, this.player, this.metaProgress, {
-      onLevelUp: (player) => {
-        // Downed players skip the skill pick — the level/xp rollover
-        // already happened in addXP; no invigoration or modal for a
-        // player lying on the floor (2P shared-XP levels both at once).
-        // Their XP dust instead orbits the body and scatters skyward.
-        if (player && player.isDowned) {
-          if (this.downedLevelUpDust) this.downedLevelUpDust.play(player);
-          return;
-        }
-        this.ui.showLevelUpScreen(player);
-      }
+      // All level-ups go through the UIManager queue so 2P turns stay
+      // sequential; downed players get the dust tribute turn instead of
+      // the invigoration + pick (decided in showLevelUpScreen's beginFor)
+      onLevelUp: (player) => this.ui.showLevelUpScreen(player)
     });
   }
 
