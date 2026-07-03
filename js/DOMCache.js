@@ -107,6 +107,10 @@ export class DOMCache {
         this.mainSoulsCount = document.getElementById('main-souls-count');
         this.fpsCounter = document.getElementById('fps-counter');
 
+        // Minimap
+        this.minimapContainer = document.getElementById('minimap-container');
+        this.minimapCanvas = document.getElementById('minimap-canvas');
+
         // Game Canvas
         this.gameCanvas = document.getElementById('gameCanvas');
 

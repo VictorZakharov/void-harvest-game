@@ -28,6 +28,7 @@ import * as THREE from 'three';
 import { RenderingManager } from './RenderingManager.js';
 import { EnemyInstancedRenderer } from './entities/EnemyInstancedRenderer.js';
 import { HealthBarSystem } from './ui/HealthBarSystem.js';
+import { MinimapSystem } from './ui/MinimapSystem.js';
 import { PlayerOverheadUI } from './ui/PlayerOverheadUI.js';
 import { LightingManager } from './LightingManager.js';
 import { PersistenceManager } from './PersistenceManager.js';
@@ -123,6 +124,7 @@ export class Game {
     this.instancedRenderer = new EnemyInstancedRenderer(this.scene, 15000); // Support up to 3000 enemies
     this.healthBarSystem = new HealthBarSystem(this.scene);
     this.overheadUI = new PlayerOverheadUI(this.scene);
+    this.minimap = new MinimapSystem(this, this.ui.dom.minimapContainer, this.ui.dom.minimapCanvas);
 
     this.enemySpawner = new EnemySpawner(this.scene, this.enemies, this.healthBarSystem);
     this.targetingSystem = new TargetingSystem(this.spatialHash, this.lighting);
@@ -269,6 +271,9 @@ export class Game {
 
     // Reset camera
     if (this.cameraSystem) this.cameraSystem.reset();
+
+    // Sync minimap visibility with current state (hides it on exit to menu)
+    if (this.minimap) this.minimap.update();
 
     // Reset input state
     if (this.gameInputSystem) this.gameInputSystem.reset();
@@ -611,6 +616,7 @@ export class Game {
 
     this.bulletManager.updateMeshes();
     this.itemManager.updateMeshes();
+    if (this.minimap) this.minimap.update();
     // Shake applied in CameraSystem update() now, but needs to be called per frame? 
     // Wait, update() does logic. render3D does interpolate.
     // The cameraSystem.update() includes applyShake().
